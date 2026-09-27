@@ -5951,7 +5951,7 @@ function backendIdl({IDL}){
     getAllGameRawTicketPools:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,rawTicketPool:IDL.Nat}))],['query']),
     getAllGameBackedTicketPools:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,backedTicketPool:IDL.Nat}))],['query']),
     setGameScreenshots:IDL.Func([IDL.Text,IDL.Vec(IDL.Text)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    buyGameBoost:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Int,err:IDL.Text})],[]),
+    buyGameBoost:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     buyNftBoost:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminBanUser:IDL.Func([IDL.Principal,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminSoftPunishBlackholeUploader:IDL.Func([IDL.Principal,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -6104,12 +6104,7 @@ function backendIdl({IDL}){
     addProposalReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     closeProposal:IDL.Func([IDL.Text],[Result],[]),
     daoStats:IDL.Func([],[IDL.Record({proposals:IDL.Nat,activeProposals:IDL.Nat,badgeHolders:IDL.Nat,forumThreads:IDL.Nat})],['query']),
-    getActiveBoosts:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,expiresAt:IDL.Int}))],['query']),
-    getBoostPrice:IDL.Func([],[IDL.Nat],['query']),
-    getSpotlightSlots:IDL.Func([],[IDL.Record({used:IDL.Nat,max:IDL.Nat})],['query']),
-    adminSetBoostPrice:IDL.Func([IDL.Nat],[ResultNat],[]),
-    getBoostTreasuryBalance:IDL.Func([],[ResultNat],[]),
-    adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
+    getActiveBoosts:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,activatedAt:IDL.Int,expiresAt:IDL.Int}))],['query']),
     getBoostBalance:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     hasJackpotNotifications:IDL.Func([IDL.Principal],[IDL.Bool],['query']),
     claimJackpotNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Int))],[]),
@@ -9730,22 +9725,6 @@ async function saveDevGameDetails(gameId){
     renderDevDash();
   }catch(e){ st.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'save game details'))+'</span>'; }
 }
-// Session #3 phase 3: creator-paid Spotlight boost (price from backend, buyer pays the ledger fee).
-let _devBoostPriceE8s=200000000n;
-async function devBoostGame(gameId){
-  const s=getSubmissions().find(g=>g.id===gameId); if(!s) return;
-  const price=(Number(_devBoostPriceE8s)/1e8).toFixed(4);
-  if(!await arcadeConfirm('Boost to Spotlight','Boost <b>'+escHtml(s.name)+'</b> to the Showroom Spotlight for <b>7 days</b>?<br><br><b>Cost:</b> '+price+' ICP + 0.0001 ICP ledger fee, paid from your arcade wallet.<br>Stacks with any remaining boost time. Non-refundable.')) return;
-  try{
-    const be=await getBackendActor(true);
-    const r=await be.buyGameBoost(gameId);
-    if('err' in r) throw new Error(r.err);
-    const until=new Date(Number(r.ok)/1e6).toLocaleString();
-    await arcadeAlert('Boosted!',escHtml(s.name)+' is in the Spotlight until '+escHtml(until)+'.');
-    try{ await refreshWalletBalance(); }catch(_){}
-    renderDevDash();
-  }catch(e){ arcadeAlert('Boost failed',escHtml(safeUserErrorMessage(e,'game boost'))); }
-}
 async function renderDevDashAsync(){
   if(!S.connected||!S.principalText) return;
   if(!_gameSubsCache){ try{ await refreshGameCache(); }catch(_){ } }
@@ -9758,12 +9737,10 @@ async function renderDevDashAsync(){
   setT('devSumTicket',ticket.length); setT('devSumNonTicket',nonTicket.length); setT('devSumBack',back.length);
   root.innerHTML='<div style="color:var(--cyan);font-size:.75rem;padding:8px">Loading your games…</div>';
   const be=await getBackendActor(false);
-  const [rawArr,backedArr,highs,holes,boosts,boostPrice,slots]=await Promise.all([
+  const [rawArr,backedArr,highs,holes]=await Promise.all([
     be.getAllGameRawTicketPools().catch(()=>[]), be.getAllGameBackedTicketPools().catch(()=>[]),
     Promise.all(mine.map(s=>be.getHighScore(s.id).catch(()=>[]))),
-    be.getMyHoleSubmissions(S.principal).catch(()=>[]),
-    be.getActiveBoosts().catch(()=>[]), be.getBoostPrice().catch(()=>200000000n),
-    be.getSpotlightSlots().catch(()=>({used:0n,max:10n}))
+    be.getMyHoleSubmissions(S.principal).catch(()=>[])
   ]);
   const holesSorted=[...holes].sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
   setT('devSumHole',holesSorted.length);
@@ -9771,20 +9748,16 @@ async function renderDevDashAsync(){
   if(holesSorted.length){ try{ (await be.getHoleVoteSummary(holesSorted.map(h=>h.id),S.principal)).forEach(v=>votes.set(v[0],{likes:Number(v[1]),dislikes:Number(v[2])})); }catch(_){ } }
   const raw=new Map(rawArr.map(p=>[p.gameId,Number(p.rawTicketPool)])), backed=new Map(backedArr.map(p=>[p.gameId,Number(p.backedTicketPool)]));
   const hiOf=new Map(mine.map((s,i)=>[s.id,highs[i]&&highs[i][0]]));
-  const boostOf=new Map(boosts.map(b=>[b.gameId,Number(b.expiresAt)/1e6])); _devBoostPriceE8s=BigInt(boostPrice);
-  const spotUsed=Number(slots.used), spotMax=Number(slots.max), spotFull=spotUsed>=spotMax;
   const statusColor={live:'#22c55e',active:'#22c55e',removed:'#ef4444',deleted:'#ef4444',suspended:'#fbbf24','removal-requested':'#f97316'};
   const statusTag=st=>`<div style="font-size:.66rem;font-weight:700;color:${statusColor[st]||'#5a7a9a'};text-transform:uppercase;letter-spacing:1px">${st==='removal-requested'?'REMOVAL PENDING':escHtml(st||'')}</div>`;
   const thumb=s=>s.thumb?`<img src="${escHtml(s.thumb)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0"/>`:'<div style="width:56px;height:56px;background:#1a2548;border-radius:8px;display:grid;place-items:center;flex-shrink:0">🎮</div>';
   const hsLine=s=>{const h=hiOf.get(s.id); return h?`🏆 High score <b style="color:#ffd700">${Number(h.score).toLocaleString()}</b> <span style="color:#5a7a9a">by ${escHtml(h.player.toText().slice(0,11))}…</span>`:'🏆 <span style="color:#5a7a9a">No scores yet</span>';};
   const gameRow=(s,extra)=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
     ${thumb(s)}
-    <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;color:#e0e6f0">${escHtml(s.name)}${(boostOf.get(s.id)||0)>Date.now()?` <span style="font-size:.6rem;color:#ffd700">⚡ Spotlight until ${escHtml(new Date(boostOf.get(s.id)).toLocaleDateString())}</span>`:''}${s.wantsPurchasable&&!s.paysTickets&&isShow(s)?' <span style="font-size:.6rem;color:#86efac">💰 Purchasable</span>':''}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;color:#e0e6f0">${escHtml(s.name)}${s.wantsPurchasable&&!s.paysTickets&&isShow(s)?' <span style="font-size:.6rem;color:#86efac">💰 Purchasable</span>':''}</div>
     <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">${hsLine(s)}${extra||''}</div>
     <div style="font-size:.58rem;color:#3d6090;margin-top:2px">ID: ${escHtml(s.id)}</div></div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${statusTag(s.status)}
-    ${isShow(s)&&s.status==='live'&&spotFull&&!((boostOf.get(s.id)||0)>Date.now())?'<span style="font-size:.55rem;color:#5a7a9a">⚡ Spotlight full</span>':''}
-    ${isShow(s)&&s.status==='live'&&(!spotFull||(boostOf.get(s.id)||0)>Date.now())?`<button onclick='devBoostGame(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.45);border-radius:5px;color:#ffd700;cursor:pointer">⚡ Boost</button>`:''}
     <button onclick='openDevGameDetails(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(0,170,255,.1);border:1px solid rgba(0,170,255,.4);border-radius:5px;color:#00aaff;cursor:pointer">Details</button>
     ${s.status==='live'?`<button onclick='devRequestRemoval(${JSON.stringify(s.id)})' style="font-size:.55rem;padding:2px 7px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer">Request Removal</button>`:''}</div>
   </div>`;
@@ -9798,7 +9771,7 @@ async function renderDevDashAsync(){
       <div style="font-size:.66rem;color:#5a7a9a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(h.url)}</div>
       <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">👍 ${v.likes.toLocaleString()} · 👎 ${v.dislikes.toLocaleString()} · submitted ${escHtml(d)}</div></div>
       ${statusTag(h.status)}</div>`;};
-  root.innerHTML=`<div style="font-size:.72rem;color:${spotFull?'#fbbf24':'#ffd700'};margin:0 0 12px 2px">⚡ Spotlight: <b>${spotUsed}/${spotMax}</b> slots in use${spotFull?' — full. Boost reopens when a slot frees up.':''}</div>`+
+  root.innerHTML=
     section('🎟️ SHOWROOM · TICKET GAMES','#39ff14',ticket.length,ticket.map(s=>gameRow(s,ticketExtra(s))).join(''),'No Ticket games yet')+
     section('🪙 SHOWROOM · NON-TICKET GAMES','#8bb4ff',nonTicket.length,nonTicket.map(s=>gameRow(s)).join(''),'No Non-Ticket games yet')+
     section('🎮 THE BACK','#c084fc',back.length,back.map(s=>gameRow(s)).join(''),'No games in The Back yet')+
@@ -11752,8 +11725,7 @@ async function openShowroomTreasuryWithdraw(){
 const ARCADE_SHARE_LANES=[
   {key:'ticket',label:'Showroom Ticket games (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
   {key:'nonticket',label:'Showroom Non-Ticket games (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
-  {key:'purchase',label:'Showroom game purchases (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
-  {key:'boost',label:'Boost Treasury (creator Spotlight boosts)',get:'getBoostTreasuryBalance',wd:'adminWithdrawBoostTreasury'}
+  {key:'purchase',label:'Showroom game purchases (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'}
 ];
 const ARCADE_SHARE_FEE_E8S=10000n;
 async function loadArcadeShareInfo(){
@@ -11764,7 +11736,7 @@ async function loadArcadeShareInfo(){
   rows.innerHTML='<span style="color:var(--cyan);font-size:.7rem">Loading...</span>';
   try{
     const be=await getBackendActor(true);
-    const bals=await Promise.all(ARCADE_SHARE_LANES.map(l=>be[l.get]().then(v=>(v&&typeof v==='object'&&'ok' in v)?v.ok:v)));
+    const bals=await Promise.all(ARCADE_SHARE_LANES.map(l=>be[l.get]()));
     const dao=await be.getDaoTreasuryBalance();
     rows.innerHTML=ARCADE_SHARE_LANES.map((l,i)=>{
       const bal=BigInt(bals[i]); const max=bal>ARCADE_SHARE_FEE_E8S?bal-ARCADE_SHARE_FEE_E8S:0n;
@@ -15850,7 +15822,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],

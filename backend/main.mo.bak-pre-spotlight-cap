@@ -3504,20 +3504,12 @@ persistent actor ArcadeBackend {
     0, 0, 0, 0, 0, 0, 0, 0,
   ]);
   transient let BOOST_DURATION_NS : Int = 7 * 24 * 60 * 60 * 1_000_000_000;
-  transient let MAX_SPOTLIGHT_SLOTS : Nat = 10; // max games boosted at once (session #3)
   stable var boostPriceE8s : Nat = 200_000_000;
   stable var gameBoostEntries : [(Text, Int)] = [];
   transient var boostPurchaseInFlight = HashMap.HashMap<Principal, Bool>(8, Principal.equal, Principal.hash);
   transient var boostTreasuryWithdrawalInFlight : Bool = false;
 
   public query func getBoostPrice() : async Nat { boostPriceE8s };
-
-  public query func getSpotlightSlots() : async { used : Nat; max : Nat } {
-    let now = Time.now();
-    var used = 0;
-    for ((_, exp) in gameBoostEntries.vals()) { if (exp > now) used += 1 };
-    { used = used; max = MAX_SPOTLIGHT_SLOTS }
-  };
 
   public shared(msg) func adminSetBoostPrice(priceE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
@@ -3543,15 +3535,6 @@ persistent actor ArcadeBackend {
     if (not Principal.equal(game.creator, caller) and not isAdmin(caller)) return #err("Only the game's creator can boost it");
     if (game.gameTier != "showroom" and game.gameTier != "jays-picks") return #err("Only Showroom games can be boosted");
     if (game.status != "live") return #err("Only live games can be boosted");
-    // Spotlight cap: checked before any await (atomic), counting in-flight purchases as taken slots so
-    // simultaneous buyers can't overshoot. Extending an already-active boost never takes a new slot.
-    let nowCheck = Time.now();
-    var activeCount = 0;
-    var alreadyActive = false;
-    for ((id, exp) in gameBoostEntries.vals()) { if (exp > nowCheck) { activeCount += 1; if (id == gameId) alreadyActive := true } };
-    if (not alreadyActive and activeCount + boostPurchaseInFlight.size() >= MAX_SPOTLIGHT_SLOTS) {
-      return #err("Spotlight is full (" # Nat.toText(MAX_SPOTLIGHT_SLOTS) # " games). Try again when a slot opens up.");
-    };
     if (boostPurchaseInFlight.get(caller) != null) return #err("A boost purchase is already in progress");
     boostPurchaseInFlight.put(caller, true);
     let price = boostPriceE8s;

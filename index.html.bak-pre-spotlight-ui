@@ -6106,7 +6106,6 @@ function backendIdl({IDL}){
     daoStats:IDL.Func([],[IDL.Record({proposals:IDL.Nat,activeProposals:IDL.Nat,badgeHolders:IDL.Nat,forumThreads:IDL.Nat})],['query']),
     getActiveBoosts:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,expiresAt:IDL.Int}))],['query']),
     getBoostPrice:IDL.Func([],[IDL.Nat],['query']),
-    getSpotlightSlots:IDL.Func([],[IDL.Record({used:IDL.Nat,max:IDL.Nat})],['query']),
     adminSetBoostPrice:IDL.Func([IDL.Nat],[ResultNat],[]),
     getBoostTreasuryBalance:IDL.Func([],[ResultNat],[]),
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
@@ -9758,12 +9757,11 @@ async function renderDevDashAsync(){
   setT('devSumTicket',ticket.length); setT('devSumNonTicket',nonTicket.length); setT('devSumBack',back.length);
   root.innerHTML='<div style="color:var(--cyan);font-size:.75rem;padding:8px">Loading your games…</div>';
   const be=await getBackendActor(false);
-  const [rawArr,backedArr,highs,holes,boosts,boostPrice,slots]=await Promise.all([
+  const [rawArr,backedArr,highs,holes,boosts,boostPrice]=await Promise.all([
     be.getAllGameRawTicketPools().catch(()=>[]), be.getAllGameBackedTicketPools().catch(()=>[]),
     Promise.all(mine.map(s=>be.getHighScore(s.id).catch(()=>[]))),
     be.getMyHoleSubmissions(S.principal).catch(()=>[]),
-    be.getActiveBoosts().catch(()=>[]), be.getBoostPrice().catch(()=>200000000n),
-    be.getSpotlightSlots().catch(()=>({used:0n,max:10n}))
+    be.getActiveBoosts().catch(()=>[]), be.getBoostPrice().catch(()=>200000000n)
   ]);
   const holesSorted=[...holes].sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
   setT('devSumHole',holesSorted.length);
@@ -9772,7 +9770,6 @@ async function renderDevDashAsync(){
   const raw=new Map(rawArr.map(p=>[p.gameId,Number(p.rawTicketPool)])), backed=new Map(backedArr.map(p=>[p.gameId,Number(p.backedTicketPool)]));
   const hiOf=new Map(mine.map((s,i)=>[s.id,highs[i]&&highs[i][0]]));
   const boostOf=new Map(boosts.map(b=>[b.gameId,Number(b.expiresAt)/1e6])); _devBoostPriceE8s=BigInt(boostPrice);
-  const spotUsed=Number(slots.used), spotMax=Number(slots.max), spotFull=spotUsed>=spotMax;
   const statusColor={live:'#22c55e',active:'#22c55e',removed:'#ef4444',deleted:'#ef4444',suspended:'#fbbf24','removal-requested':'#f97316'};
   const statusTag=st=>`<div style="font-size:.66rem;font-weight:700;color:${statusColor[st]||'#5a7a9a'};text-transform:uppercase;letter-spacing:1px">${st==='removal-requested'?'REMOVAL PENDING':escHtml(st||'')}</div>`;
   const thumb=s=>s.thumb?`<img src="${escHtml(s.thumb)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0"/>`:'<div style="width:56px;height:56px;background:#1a2548;border-radius:8px;display:grid;place-items:center;flex-shrink:0">🎮</div>';
@@ -9783,8 +9780,7 @@ async function renderDevDashAsync(){
     <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">${hsLine(s)}${extra||''}</div>
     <div style="font-size:.58rem;color:#3d6090;margin-top:2px">ID: ${escHtml(s.id)}</div></div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${statusTag(s.status)}
-    ${isShow(s)&&s.status==='live'&&spotFull&&!((boostOf.get(s.id)||0)>Date.now())?'<span style="font-size:.55rem;color:#5a7a9a">⚡ Spotlight full</span>':''}
-    ${isShow(s)&&s.status==='live'&&(!spotFull||(boostOf.get(s.id)||0)>Date.now())?`<button onclick='devBoostGame(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.45);border-radius:5px;color:#ffd700;cursor:pointer">⚡ Boost</button>`:''}
+    ${isShow(s)&&s.status==='live'?`<button onclick='devBoostGame(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.45);border-radius:5px;color:#ffd700;cursor:pointer">⚡ Boost</button>`:''}
     <button onclick='openDevGameDetails(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(0,170,255,.1);border:1px solid rgba(0,170,255,.4);border-radius:5px;color:#00aaff;cursor:pointer">Details</button>
     ${s.status==='live'?`<button onclick='devRequestRemoval(${JSON.stringify(s.id)})' style="font-size:.55rem;padding:2px 7px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer">Request Removal</button>`:''}</div>
   </div>`;
@@ -9798,7 +9794,7 @@ async function renderDevDashAsync(){
       <div style="font-size:.66rem;color:#5a7a9a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(h.url)}</div>
       <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">👍 ${v.likes.toLocaleString()} · 👎 ${v.dislikes.toLocaleString()} · submitted ${escHtml(d)}</div></div>
       ${statusTag(h.status)}</div>`;};
-  root.innerHTML=`<div style="font-size:.72rem;color:${spotFull?'#fbbf24':'#ffd700'};margin:0 0 12px 2px">⚡ Spotlight: <b>${spotUsed}/${spotMax}</b> slots in use${spotFull?' — full. Boost reopens when a slot frees up.':''}</div>`+
+  root.innerHTML=
     section('🎟️ SHOWROOM · TICKET GAMES','#39ff14',ticket.length,ticket.map(s=>gameRow(s,ticketExtra(s))).join(''),'No Ticket games yet')+
     section('🪙 SHOWROOM · NON-TICKET GAMES','#8bb4ff',nonTicket.length,nonTicket.map(s=>gameRow(s)).join(''),'No Non-Ticket games yet')+
     section('🎮 THE BACK','#c084fc',back.length,back.map(s=>gameRow(s)).join(''),'No games in The Back yet')+
