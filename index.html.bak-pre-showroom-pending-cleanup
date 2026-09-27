@@ -5979,6 +5979,9 @@ function backendIdl({IDL}){
     getGxpLevel:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getDvpLevel:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getPlayerLevels:IDL.Func([IDL.Principal],[IDL.Record({gxp:IDL.Nat,gxpLevel:IDL.Nat,gxpPercentile:IDL.Nat,dvp:IDL.Nat,dvpLevel:IDL.Nat,dvpPercentile:IDL.Nat,lifetimeSpent:IDL.Nat,achievements:IDL.Vec(IDL.Text)})],['query']),
+    applyGameShowroom:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
+    approveGameShowroom:IDL.Func([IDL.Text],[Result],[]),
+    rejectGameShowroom:IDL.Func([IDL.Text],[Result],[]),
     promoteGameToJaysPicks:IDL.Func([IDL.Text],[Result],[]),
     removeGameSubmission:IDL.Func([IDL.Text],[Result],[]),
     adminSuspendGame:IDL.Func([IDL.Text],[Result],[]),
@@ -8780,6 +8783,7 @@ function renderInlineGameAdminTools(gameId){
   return `<div style='display:grid;gap:10px'>
     <div style='font-size:.68rem;color:#9fb0d6'>Admin tools for <b style='color:#fff'>${escHtml(sub.name||gameId)}</b></div>
     <div style='display:flex;gap:6px;flex-wrap:wrap'>
+      ${gt==='showroom-pending'?`<button class='btn' onclick='approveGameShowroom("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--green);color:var(--green)'>Approve Showroom</button><button class='btn' onclick='rejectGameShowroom("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--red);color:var(--red)'>Reject Showroom</button>`:''}
       <button class='btn' onclick='openAdminGameUpdateFromDetails("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#22c55e;color:#22c55e'>Update Files</button>
       ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff44aa;color:#ff44aa'>Promote to DAO Favourites</button>`:`<button class='btn' onclick='demoteGameFromPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--muted);color:var(--muted)'>Demote</button>`}
       ${(sub.paysTickets&&gt!=='backroom')?`<button class='btn' onclick='adminRetireBreaker("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#a855f7;color:#a855f7'>Retire Breaker</button>`:''}
@@ -9647,7 +9651,7 @@ function renderDevDash(){
 
   // Your submitted games
   const subs=getSubmissions().filter(s=>s.principal===S.principalText);
-  const statusColor={live:'#22c55e',removed:'#ef4444','removal-requested':'#f97316'};
+  const statusColor={live:'#22c55e',removed:'#ef4444','showroom-pending':'#ffd700','removal-requested':'#f97316'};
   if(subs.length){
     qs('devGamesList').innerHTML=subs.map(s=>{
       const tier=s.gameTier||s.tier||'backroom';
@@ -13020,6 +13024,11 @@ async function renderPendingSubmissionsByTier(){
       const entry={game,items,stage:'zip'};
       if(game.gameTier==='backroom') backItems.push(entry); else showItems.push(entry);
     });
+    // Stage 2: Showroom games already zip-published but still awaiting the separate content
+    // review (no pending uploads left for these, so they'd never show up in the loop above).
+    games.filter(g=>g.gameTier==='showroom-pending'&&!byGame[g.id]).forEach(game=>{
+      showItems.push({game,items:[],stage:'content'});
+    });
 
     backEl.innerHTML=backItems.length?backItems.map(renderPendingSubmissionRow).join(''):'<span style="color:#5a7a9a">No pending submissions.</span>';
     showEl.innerHTML=showItems.length?showItems.map(renderPendingSubmissionRow).join(''):'<span style="color:#5a7a9a">No pending submissions.</span>';
@@ -13045,10 +13054,10 @@ function renderPendingSubmissionRow({game,items,stage}){
     :`<div style="width:44px;height:44px;background:#1a2548;border-radius:6px;display:grid;place-items:center;flex-shrink:0">🎮</div>`;
   const acceptOnclick=stage==='zip'
     ?`approveSubmission(${JSON.stringify(game.id)},${JSON.stringify(zipItem?zipItem.id:'')},${JSON.stringify(thumbItem?thumbItem.id:'')},${JSON.stringify(thumbItem?Number(thumbItem.chunkCount):0)})`
-    :''; // legacy stage-2 review removed (session #3)
+    :`acceptShowroomContentReview(${JSON.stringify(game.id)})`;
   const rejectOnclick=stage==='zip'
     ?`promptRejectSubmission(${JSON.stringify(game.id)},${JSON.stringify(zipItem?zipItem.id:(thumbItem?thumbItem.id:''))})`
-    :''; // legacy stage-2 review removed (session #3)
+    :`rejectShowroomContentReview(${JSON.stringify(game.id)})`;
   const clickAttr=stage==='zip'?` onclick='openPendingSubmissionDetail(${JSON.stringify(game.id)})'`:'';
   const cursorStyle=stage==='zip'?'cursor:pointer;':'';
   return `<div${clickAttr} style='${cursorStyle}display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)'>
@@ -13062,6 +13071,28 @@ function renderPendingSubmissionRow({game,items,stage}){
   </div>`;
 }
 
+/// Stage-2 accept/reject: the game's zip is already live (published in stage 1), this is purely
+/// the separate Showroom content-review decision using the existing backend functions.
+async function acceptShowroomContentReview(gameId){
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.approveGameShowroom(gameId);
+    if(r.err) throw new Error(r.err);
+    renderPendingSubmissionsByTier();
+  }catch(e){
+    alert('Accept failed: '+safeUserErrorMessage(e,'approve showroom game'));
+  }
+}
+async function rejectShowroomContentReview(gameId){
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.rejectGameShowroom(gameId);
+    if(r.err) throw new Error(r.err);
+    renderPendingSubmissionsByTier();
+  }catch(e){
+    alert('Reject failed: '+safeUserErrorMessage(e,'reject showroom game'));
+  }
+}
 
 async function openPendingSubmissionDetail(gameId){
   const games=window._pendingSubmissionGamesCache||[];
@@ -13428,6 +13459,19 @@ async function promoteGameToJaysPicks(id){
 async function demoteGameFromPicks(id){
   alert('Demotion not yet supported on-chain. Use Remove and have creator re-submit.');
 }
+async function approveGameShowroom(id){
+  try{const be=await getBackendActor(true);const r=await be.approveGameShowroom(id);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    invalidateGameCache(); await refreshGameCache(); renderGameAdminList();
+  }catch(e){alert(safeUserErrorMessage(e,'wallet action'));}
+}
+async function rejectGameShowroom(id){
+  try{const be=await getBackendActor(true);const r=await be.rejectGameShowroom(id);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    alert('Rejected. No refund issued.');
+    invalidateGameCache(); await refreshGameCache(); renderGameAdminList();
+  }catch(e){alert(safeUserErrorMessage(e,'wallet action'));}
+}
 async function adminSetGameCategoryUi(gameId,category){
   try{
     const be=await getBackendActor(true);
@@ -13486,8 +13530,8 @@ async function renderGameAdminList(){
     });
   }
   if(!subs.length){el.innerHTML='<div class="tiny" style="color:var(--muted)">No games match this filter.</div>';return;}
-  const TIER_LABELS={backroom:'The Back',showroom:'Showroom','jays-picks':"DAO Favourites"};
-  const TIER_COLORS={backroom:'var(--muted)',showroom:'var(--gold)','jays-picks':'#ff44aa'};
+  const TIER_LABELS={backroom:'The Back',showroom:'Showroom','showroom-pending':'Pending Review','jays-picks':"DAO Favourites"};
+  const TIER_COLORS={backroom:'var(--muted)',showroom:'var(--gold)','showroom-pending':'var(--cyan)','jays-picks':'#ff44aa'};
   el.innerHTML=subs.map(s=>{
     const gt=s.gameTier||'backroom';
     const isBackroom=gt==='backroom';
@@ -13500,6 +13544,7 @@ async function renderGameAdminList(){
     <span class='tiny' style='color:var(--muted)'>${s.url?.substring(0,40)}...</span>
     </div>
     <div style='display:flex;gap:4px;flex-wrap:wrap'>
+    ${gt==='showroom-pending'?`<button class='btn' onclick='approveGameShowroom("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--green);color:var(--green)'>✅</button><button class='btn' onclick='rejectGameShowroom("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--red);color:var(--red)'>❌</button>`:''}
     ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>👑</button>`:`<button class='btn' onclick='demoteGameFromPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--muted);color:var(--muted)'>↓</button>`}
     ${gt!=='backroom'?(isGameBoosted(s.id)?`<button class='btn' onclick='adminRemoveBoost("${s.id}");renderGameAdminList()' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Unbst</button>`:`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Boost</button>`):''}
     ${s.status==='suspended'
@@ -15699,7 +15744,7 @@ function closeNftDetail(){
   ['openGame',openGame],['closeGame',closeGame],['arcadeButtonHit',arcadeButtonHit],['renderPayoutLadder',renderPayoutLadder],['loadPayoutConfig',loadPayoutConfig],['hydratePayoutConfigAdmin',hydratePayoutConfigAdmin],['saveGamePayoutConfig',saveGamePayoutConfig],['saveGameTicketJackpotConfig',saveGameTicketJackpotConfig],['insertCoin',insertCoin],['buyGame',buyGame],['tryGameDemo',tryGameDemo],['showGameOverOverlay',showGameOverOverlay],['submitLatestScoreAndClose',submitLatestScoreAndClose],['forceCloseArcadeSession',forceCloseArcadeSession],['openCategoryPage',openCategoryPage],['checkFreePlay',checkFreePlay],['useFreePlay',useFreePlay],
 
   ['dismissJackpot',dismissJackpot],
-  ['approvalColor',approvalColor],['approvalPctBadge',approvalPctBadge],['approvalButtons',approvalButtons],['castApprovalVote',castApprovalVote],['toggleSubmitMode',toggleSubmitMode],['handleHostedThumbnailUpload',handleHostedThumbnailUpload],['handleSubmissionThumbUpload',handleSubmissionThumbUpload],['refreshBackSubmissionFeeDisplay',refreshBackSubmissionFeeDisplay],['handleSubmissionZipSelect',handleSubmissionZipSelect],['renderPendingSubmissionsByTier',renderPendingSubmissionsByTier],['downloadPendingZipUpload',downloadPendingZipUpload],['approveSubmission',approveSubmission],['deleteAllPendingUploadsForGame',deleteAllPendingUploadsForGame],['submitBackGame',submitBackGame],['submitShowroomGame',submitShowroomGame],['fetchHoleSubmissions',fetchHoleSubmissions],['fetchNewestHoleSubmissions',fetchNewestHoleSubmissions],['fetchTopHoleSubmissions',fetchTopHoleSubmissions],['fetchLegendaryHoleSubmissions',fetchLegendaryHoleSubmissions],['fetchHoleSubmission',fetchHoleSubmission],['fetchMyHoleSubmissions',fetchMyHoleSubmissions],['submitHoleLink',submitHoleLink],['deleteHoleSubmission',deleteHoleSubmission],['upvoteHoleSubmission',upvoteHoleSubmission],['setHoleLegendary',setHoleLegendary],['canModerateHoleSubmission',canModerateHoleSubmission],['normalizeHoleSubmission',normalizeHoleSubmission],['renderHole',renderHole],['renderHoleCard',renderHoleCard],['handleHoleSubmit',handleHoleSubmit],['closeBlackholeAdminPanel',closeBlackholeAdminPanel],['openBlackholeAdminPanel',openBlackholeAdminPanel],['handleBlackholeOpen',handleBlackholeOpen],['handleHoleUpvote',handleHoleUpvote],['handleHoleVote',handleHoleVote],['handleHoleDelete',handleHoleDelete],['handleHoleLegendaryToggle',handleHoleLegendaryToggle],['openBackroomGame',openBackroomGame],['openGameDetails',openGameDetails],['openTipModal',openTipModal],['setTokenTipAmount',setTokenTipAmount],['confirmTokenTip',confirmTokenTip],['galleryNav',galleryNav],['galleryGoTo',galleryGoTo],['renderBackroom',renderBackroom],['renderShowroom',renderShowroom],['renderDevDash',renderDevDash],['renderRoyaltiesDash',renderRoyaltiesDash],['claimCreatorEarnings',claimCreatorEarnings],['claimTipEarningsUi',claimTipEarningsUi],['showRoyaltyTab',showRoyaltyTab],['loadDaoDashboard',loadDaoDashboard],['exportDevCsv',exportDevCsv],['devRequestRemoval',devRequestRemoval],['devSaveSessionConfig',devSaveSessionConfig],['getGameApprovals',getGameApprovals],['getMyVote',getMyVote],['refreshGameVoteCache',refreshGameVoteCache],['doIILogin',doIILogin],['closeGameModal',closeGameModal],['closeArcadeSessionWindowOrModal',closeArcadeSessionWindowOrModal],['hideGameChrome',hideGameChrome],['showGameChrome',showGameChrome],['startGamepadForwarding',startGamepadForwarding],['stopGamepadForwarding',stopGamepadForwarding],['getKeyMap',getKeyMap],['saveKeyMap',saveKeyMap],['openInputConfig',openInputConfig],['showCfgTab',showCfgTab],['startKeyBind',startKeyBind],['startPadBind',startPadBind],['resetInputConfig',resetInputConfig],['toggleFaq',toggleFaq],['filterFaq',filterFaq],['openArcadeBot',openArcadeBot],['arcadeBotAsk',arcadeBotAsk],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['loadModeratorsFromChain',loadModeratorsFromChain],
+  ['approvalColor',approvalColor],['approvalPctBadge',approvalPctBadge],['approvalButtons',approvalButtons],['castApprovalVote',castApprovalVote],['toggleSubmitMode',toggleSubmitMode],['handleHostedThumbnailUpload',handleHostedThumbnailUpload],['handleSubmissionThumbUpload',handleSubmissionThumbUpload],['refreshBackSubmissionFeeDisplay',refreshBackSubmissionFeeDisplay],['handleSubmissionZipSelect',handleSubmissionZipSelect],['renderPendingSubmissionsByTier',renderPendingSubmissionsByTier],['acceptShowroomContentReview',acceptShowroomContentReview],['rejectShowroomContentReview',rejectShowroomContentReview],['downloadPendingZipUpload',downloadPendingZipUpload],['approveSubmission',approveSubmission],['deleteAllPendingUploadsForGame',deleteAllPendingUploadsForGame],['submitBackGame',submitBackGame],['submitShowroomGame',submitShowroomGame],['fetchHoleSubmissions',fetchHoleSubmissions],['fetchNewestHoleSubmissions',fetchNewestHoleSubmissions],['fetchTopHoleSubmissions',fetchTopHoleSubmissions],['fetchLegendaryHoleSubmissions',fetchLegendaryHoleSubmissions],['fetchHoleSubmission',fetchHoleSubmission],['fetchMyHoleSubmissions',fetchMyHoleSubmissions],['submitHoleLink',submitHoleLink],['deleteHoleSubmission',deleteHoleSubmission],['upvoteHoleSubmission',upvoteHoleSubmission],['setHoleLegendary',setHoleLegendary],['canModerateHoleSubmission',canModerateHoleSubmission],['normalizeHoleSubmission',normalizeHoleSubmission],['renderHole',renderHole],['renderHoleCard',renderHoleCard],['handleHoleSubmit',handleHoleSubmit],['closeBlackholeAdminPanel',closeBlackholeAdminPanel],['openBlackholeAdminPanel',openBlackholeAdminPanel],['handleBlackholeOpen',handleBlackholeOpen],['handleHoleUpvote',handleHoleUpvote],['handleHoleVote',handleHoleVote],['handleHoleDelete',handleHoleDelete],['handleHoleLegendaryToggle',handleHoleLegendaryToggle],['openBackroomGame',openBackroomGame],['openGameDetails',openGameDetails],['openTipModal',openTipModal],['setTokenTipAmount',setTokenTipAmount],['confirmTokenTip',confirmTokenTip],['galleryNav',galleryNav],['galleryGoTo',galleryGoTo],['renderBackroom',renderBackroom],['renderShowroom',renderShowroom],['renderDevDash',renderDevDash],['renderRoyaltiesDash',renderRoyaltiesDash],['claimCreatorEarnings',claimCreatorEarnings],['claimTipEarningsUi',claimTipEarningsUi],['showRoyaltyTab',showRoyaltyTab],['loadDaoDashboard',loadDaoDashboard],['exportDevCsv',exportDevCsv],['devRequestRemoval',devRequestRemoval],['devSaveSessionConfig',devSaveSessionConfig],['getGameApprovals',getGameApprovals],['getMyVote',getMyVote],['refreshGameVoteCache',refreshGameVoteCache],['doIILogin',doIILogin],['closeGameModal',closeGameModal],['closeArcadeSessionWindowOrModal',closeArcadeSessionWindowOrModal],['hideGameChrome',hideGameChrome],['showGameChrome',showGameChrome],['startGamepadForwarding',startGamepadForwarding],['stopGamepadForwarding',stopGamepadForwarding],['getKeyMap',getKeyMap],['saveKeyMap',saveKeyMap],['openInputConfig',openInputConfig],['showCfgTab',showCfgTab],['startKeyBind',startKeyBind],['startPadBind',startPadBind],['resetInputConfig',resetInputConfig],['toggleFaq',toggleFaq],['filterFaq',filterFaq],['openArcadeBot',openArcadeBot],['arcadeBotAsk',arcadeBotAsk],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['loadModeratorsFromChain',loadModeratorsFromChain],
   ['showTab',showTab],['renderNftShop',renderNftShop],['renderCollection',renderCollection],['renderCollectionPage',()=>window.renderCollectionPage&&window.renderCollectionPage()],['showCollectionNftDetail',showCollectionNftDetail],['setProfilePfpFromCollectionNft',setProfilePfpFromCollectionNft],['openQuickListNftPopup',openQuickListNftPopup],['quickListOwnedNft',quickListOwnedNft],['redeemNft',redeemNft],['withdrawNft',withdrawNft],
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['pickAvatarEmoji',pickAvatarEmoji],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
@@ -15710,7 +15755,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['demoteGameFromPicks',demoteGameFromPicks],['approveGameShowroom',approveGameShowroom],['rejectGameShowroom',rejectGameShowroom],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],

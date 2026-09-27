@@ -177,7 +177,7 @@ persistent actor ArcadeBackend {
     description : Text;
     compatibility : Text; // "both", "mobile", "desktop"
     creator : Principal;
-    gameTier : Text; // "backroom", "showroom", "jays-picks" (legacy "showroom-pending" tier removed in session #3)
+    gameTier : Text; // "backroom", "showroom", "showroom-pending", "jays-picks"
     status : Text; // "live", "removed"
     feePaid : Nat; // in e8s
     showroomFeePaid : Nat; // in e8s
@@ -1329,6 +1329,11 @@ persistent actor ArcadeBackend {
     } else {
       switch (findPrincipalNat(refundEntries, creator)) { case null 0; case (?v) v };
     };
+  };
+
+  func creditRefundE8s(creator : Principal, amountE8s : Nat) {
+    let current = getRefundBalance(creator);
+    refundsE8s.put(creator, current + amountE8s);
   };
 
   func restoreRefundBalance(creator : Principal, amountE8s : Nat) {
@@ -3498,8 +3503,8 @@ persistent actor ArcadeBackend {
   /// with a 12-argument call that never matched that function's real 7-parameter signature (the
   /// same Candid mismatch found and fixed for The Back). Showroom is now zip-upload-only too — url
   /// starts empty. Status starts at "showroom-zip-pending" (waiting for admin to host the zip);
-  /// once admin hosts it via Upload Game to Chain and clicks Accept, adminPublishZipGame makes it
-  /// live directly (one-step publish, session #3 - no separate content-review stage).
+  /// once adminPublishZipGame hosts it, it moves to the existing "showroom-pending" content-review
+  /// state, preserving Showroom's separate hosting-then-approval two-stage flow.
   public shared(msg) func submitShowroomGameWithPayment(
     name : Text,
     developer : Text,
@@ -4180,6 +4185,8 @@ persistent actor ArcadeBackend {
     let normalizedTier =
       if (gameTier == "showroom") {
         "showroom";
+      } else if (gameTier == "showroom-pending") {
+        "showroom-pending";
       } else if (gameTier == "jays-picks") {
         "jays-picks";
       } else {
@@ -4219,6 +4226,82 @@ persistent actor ArcadeBackend {
     if (not isAdmin(msg.caller)) return [];
     hydrateRuntimeStateIfNeeded();
     Iter.toArray(gameSubmissions.vals());
+  };
+
+  /// Apply for Game Showroom (100 ICP escrow)
+  public shared(msg) func applyGameShowroom(gameId : Text, feeTxId : Nat) : async Result.Result<Text, Text> {
+    let caller = msg.caller;
+    hydrateRuntimeStateIfNeeded();
+    switch (gameSubmissions.get(gameId)) {
+      case null { return #err("Game not found") };
+      case (?game) {
+        if (not Principal.equal(game.creator, caller) and not isAdmin(caller)) return #err("Not the game owner");
+        if (game.gameTier == "showroom" or game.gameTier == "jays-picks") return #err("Already in Showroom or Jay's Picks");
+
+        let updated : GameSubmission = {
+          id = game.id; name = game.name; developer = game.developer;
+          url = game.url; thumbnailUrl = game.thumbnailUrl; description = game.description;
+          compatibility = game.compatibility; creator = game.creator;
+          gameTier = "showroom-pending"; status = game.status;
+          feePaid = game.feePaid; showroomFeePaid = 100_000_000_000; // 100 ICP
+          txId = game.txId; createdAt = game.createdAt;
+        };
+        gameSubmissions.put(gameId, updated);
+        #ok("Showroom application submitted! Awaiting admin approval.");
+      };
+    };
+  };
+
+  /// Admin: approve game showroom
+  public shared(msg) func approveGameShowroom(gameId : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    hydrateRuntimeStateIfNeeded();
+    switch (gameSubmissions.get(gameId)) {
+      case null { return #err("Game not found") };
+      case (?game) {
+        if (game.gameTier != "showroom-pending") return #err("Not pending showroom approval");
+        let updated : GameSubmission = {
+          id = game.id; name = game.name; developer = game.developer;
+          url = game.url; thumbnailUrl = game.thumbnailUrl; description = game.description;
+          compatibility = game.compatibility; creator = game.creator;
+          gameTier = "showroom"; status = game.status;
+          feePaid = game.feePaid; showroomFeePaid = game.showroomFeePaid;
+          txId = game.txId; createdAt = game.createdAt;
+        };
+        gameSubmissions.put(gameId, updated);
+        logRevenue("game-showroom", game.showroomFeePaid, game.creator, 5);
+        createNotification(game.creator, "Game Published!", "\"" # game.name # "\" is now live in Showroom.", gameId);
+        #ok("Game approved for Showroom!");
+      };
+    };
+  };
+
+  /// Admin: reject a game's Showroom content approval (after it's already been hosted). Was
+  /// previously hardcoded to refund 97.5 ICP / keep 2.5 ICP — calibrated to a much older ~100 ICP
+  /// fee scheme that no longer matches the real 25 ICP Showroom fee at all, which would have
+  /// refunded submitters nearly 4x what they actually paid. Fixed to a genuine 90% refund / 10%
+  /// kept, calculated off the game's own real showroomFeePaid rather than a stale absolute number.
+  public shared(msg) func rejectGameShowroom(gameId : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    hydrateRuntimeStateIfNeeded();
+    switch (gameSubmissions.get(gameId)) {
+      case null { return #err("Game not found") };
+      case (?game) {
+        if (game.gameTier != "showroom-pending") return #err("Not pending showroom approval");
+        let updated : GameSubmission = {
+          id = game.id; name = game.name; developer = game.developer;
+          url = game.url; thumbnailUrl = game.thumbnailUrl; description = game.description;
+          compatibility = game.compatibility; creator = game.creator;
+          gameTier = "backroom"; status = game.status;
+          feePaid = game.feePaid; showroomFeePaid = 0;
+          txId = game.txId; createdAt = game.createdAt;
+        };
+        gameSubmissions.put(gameId, updated);
+        logRevenue("game-showroom", game.showroomFeePaid, game.creator, 5);
+        createNotification(game.creator, "Showroom Application Rejected", "\"" # game.name # "\" was not approved for Showroom.", gameId);
+        #ok("Game showroom application rejected. No refund issued.");
+      };
+    };
   };
 
   /// Admin: promote game to Jay's Picks
