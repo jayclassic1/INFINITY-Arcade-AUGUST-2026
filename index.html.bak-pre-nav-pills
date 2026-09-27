@@ -2516,7 +2516,7 @@ function update(){
     if(qs('walletPrincipal')) qs('walletPrincipal').textContent=S.principalText;
     if(qs('nftListPrincipalDisplay')) qs('nftListPrincipalDisplay').textContent=S.principalText;
     if(qs('walletDeposit')) qs('walletDeposit').textContent=S.depositAddress||'Generating...';
-    if(qs('walletBalance')) qs('walletBalance').textContent=(Number(S.icpBalanceE8s)/1e8).toFixed(4);
+    if(qs('walletBalance')) qs('walletBalance').textContent=(Number(S.icpBalanceE8s)/1e8).toFixed(2);
     if(qs('walletTokens')) qs('walletTokens').textContent=Math.floor(S.quarters).toLocaleString();
     if(qs('walletTickets')) qs('walletTickets').textContent=Math.floor(S.tickets).toLocaleString();
     if(qs('copyDepositBtn')) qs('copyDepositBtn').disabled=!S.depositAddress;

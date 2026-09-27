@@ -2183,9 +2183,9 @@ window.addEventListener('message', (e) => {
 </div><!-- end .app -->
 
 <div class='wallet-modal' id='walletModal' onclick='walletBackdrop(event)'><div class='wallet-panel'><div class='wallet-head'><h2 style='margin:0'>Wallet</h2><div style='display:flex;gap:8px'><button class='btn' id='walletScanBtn' onclick='scanWalletBtn()' style='font-size:.8rem;padding:5px 12px;border-color:var(--cyan);color:var(--cyan)'>Scan</button><button class='btn' onclick='closeWalletPanel()'>Close</button></div></div>
-<!-- Balances row: ICP | Tokens | Tickets -->
-<div class='wallet-sec'><div style='display:flex;gap:8px;justify-content:space-between'>
-<div style='flex:1.5;text-align:center;background:rgba(0,102,255,.08);border:1px solid #0066ff44;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>ICP Balance</div><div id='walletBalance' style='font-size:1.1rem;font-weight:800;color:#00aaff'>-</div></div>
+<!-- Balances: ICP (full width, 4 decimals) on top; Tokens | Tickets underneath -->
+<div class='wallet-sec'><div style='display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between'>
+<div style='flex:1 1 100%;text-align:center;background:rgba(0,102,255,.08);border:1px solid #0066ff44;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>ICP Balance</div><div id='walletBalance' style='font-size:1.1rem;font-weight:800;color:#00aaff'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tokens</div><div id='walletTokens' style='font-size:1.1rem;font-weight:800;color:var(--gold)'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(139,92,246,.08);border:1px solid #8b5cf644;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tickets</div><div id='walletTickets' style='font-size:1.1rem;font-weight:800;color:#c084fc'>-</div></div>
 </div></div>
