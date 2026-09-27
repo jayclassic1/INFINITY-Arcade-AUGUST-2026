@@ -2042,8 +2042,6 @@ window.addEventListener('message', (e) => {
 </div>
 </div>
 
-</div>
-
 <!-- Action buttons -->
 <div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>
 <button id='uploadGameActionBtn' class='btn' onclick='uploadGameToChain()' style='font-size:.7rem;padding:4px 14px;border-color:#22c55e;color:#22c55e'>Upload to Chain</button>
