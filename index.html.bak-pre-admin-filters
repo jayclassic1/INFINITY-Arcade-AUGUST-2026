@@ -2139,9 +2139,10 @@ window.addEventListener('message', (e) => {
 <div style='font-size:.78rem;font-weight:800;color:#8bb4ff;letter-spacing:1px;margin-bottom:8px'>🎮 LIVE GAMES MANAGEMENT</div>
 <div style='display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap'>
 <button class='btn tiny' onclick='filterAdminGames("all")' style='font-size:.7rem;padding:3px 8px'>All</button>
-<button class='btn tiny' onclick='filterAdminGames("showroom-ticket")' style='font-size:.7rem;padding:3px 8px'>🎟️ Showroom Ticket</button>
-<button class='btn tiny' onclick='filterAdminGames("showroom-nonticket")' style='font-size:.7rem;padding:3px 8px'>🪙 Showroom Non-Ticket</button>
-<button class='btn tiny' onclick='filterAdminGames("backroom")' style='font-size:.7rem;padding:3px 8px'>🎮 The Back</button>
+<button class='btn tiny' onclick='filterAdminGames("backroom")' style='font-size:.7rem;padding:3px 8px'>The Back</button>
+<button class='btn tiny' onclick='filterAdminGames("showroom-pending")' style='font-size:.7rem;padding:3px 8px'>⏳ Pending</button>
+<button class='btn tiny' onclick='filterAdminGames("showroom")' style='font-size:.7rem;padding:3px 8px'>⭐ Showroom</button>
+<button class='btn tiny' onclick='filterAdminGames("jays-picks")' style='font-size:.7rem;padding:3px 8px'>👑 Picks</button>
 </div>
 <div id='gameAdminList' class='tiny'>No games submitted yet.</div>
 </div>
@@ -13502,19 +13503,7 @@ async function renderGameAdminList(){
     subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
   }catch(_e){el.innerHTML=renderBackendSlicePending('Game admin list is temporarily unavailable. Backend admin game-list support is pending.');return;}
-  // Session #3: 3 admin categories. Ticket vs non-ticket comes from the creator's monetization
-  // choice (s.paysTickets, via getAllGameMonetization) - the same source the Showroom rows use.
-  // DAO Favourites (jays-picks) games are still Showroom games, grouped by their monetization.
-  if(adminGameFilter!=='all'){
-    const isShowroomTier=t=>t==='showroom'||t==='jays-picks';
-    subs=subs.filter(s=>{
-      const t=s.gameTier||'backroom';
-      if(adminGameFilter==='showroom-ticket') return isShowroomTier(t)&&!!s.paysTickets;
-      if(adminGameFilter==='showroom-nonticket') return isShowroomTier(t)&&!s.paysTickets;
-      if(adminGameFilter==='backroom') return t==='backroom';
-      return t===adminGameFilter;
-    });
-  }
+  if(adminGameFilter!=='all') subs=subs.filter(s=>(s.gameTier||'backroom')===adminGameFilter);
   if(!subs.length){el.innerHTML='<div class="tiny" style="color:var(--muted)">No games match this filter.</div>';return;}
   const TIER_LABELS={backroom:'The Back',showroom:'Showroom','showroom-pending':'Pending Review','jays-picks':"DAO Favourites"};
   const TIER_COLORS={backroom:'var(--muted)',showroom:'var(--gold)','showroom-pending':'var(--cyan)','jays-picks':'#ff44aa'};
