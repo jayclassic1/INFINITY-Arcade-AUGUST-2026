@@ -6107,7 +6107,6 @@ function backendIdl({IDL}){
     getActiveBoosts:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,expiresAt:IDL.Int}))],['query']),
     getBoostPrice:IDL.Func([],[IDL.Nat],['query']),
     getSpotlightSlots:IDL.Func([],[IDL.Record({used:IDL.Nat,max:IDL.Nat})],['query']),
-    fundGameTickets:IDL.Func([IDL.Text,IDL.Nat],[ResultNat],[]),
     adminSetBoostPrice:IDL.Func([IDL.Nat],[ResultNat],[]),
     getBoostTreasuryBalance:IDL.Func([],[ResultNat],[]),
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
@@ -9747,25 +9746,6 @@ async function devBoostGame(gameId){
     renderDevDash();
   }catch(e){ arcadeAlert('Boost failed',escHtml(safeUserErrorMessage(e,'game boost'))); }
 }
-// Session #3 phase 4: charitable ticket funding (1 ICP = 1,000 tickets, min 0.1 ICP, donor pays the fee).
-async function devFundTickets(gameId){
-  const s=getSubmissions().find(g=>g.id===gameId); if(!s) return;
-  const input=prompt('Fund tickets for '+s.name+'\n\nAmount of ICP to donate (minimum 0.1). 1 ICP = 1,000 tickets.','0.1');
-  if(input===null) return;
-  const n=Number(String(input).trim());
-  if(!isFinite(n)||n<0.1){ return arcadeAlert('Invalid amount','Minimum ticket funding is 0.1 ICP.'); }
-  const e8s=BigInt(Math.round(n*1e8)); const tickets=e8s/100000n; const used=tickets*100000n;
-  const usedIcp=(Number(used)/1e8).toFixed(4);
-  if(!await arcadeConfirm('Fund Tickets','Donate <b>'+usedIcp+' ICP</b> to add <b>'+tickets.toLocaleString()+' tickets</b> to <b>'+escHtml(s.name)+'</b>\'s prize pool?<br><br><b>Ledger fee:</b> 0.0001 ICP, paid by you, from your arcade wallet.<br>Donations are final and non-refundable.')) return;
-  try{
-    const be=await getBackendActor(true);
-    const r=await be.fundGameTickets(gameId,used);
-    if(r.err!==undefined) throw new Error(r.err);
-    await arcadeAlert('Tickets funded!','Added '+Number(r.ok).toLocaleString()+' tickets to '+escHtml(s.name)+'\'s pool. Thank you!');
-    try{ await refreshWalletBalance(); }catch(_){}
-    renderDevDash();
-  }catch(e){ arcadeAlert('Funding failed',escHtml(safeUserErrorMessage(e,'ticket funding'))); }
-}
 async function renderDevDashAsync(){
   if(!S.connected||!S.principalText) return;
   if(!_gameSubsCache){ try{ await refreshGameCache(); }catch(_){ } }
@@ -9805,7 +9785,6 @@ async function renderDevDashAsync(){
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${statusTag(s.status)}
     ${isShow(s)&&s.status==='live'&&spotFull&&!((boostOf.get(s.id)||0)>Date.now())?'<span style="font-size:.55rem;color:#5a7a9a">⚡ Spotlight full</span>':''}
     ${isShow(s)&&s.status==='live'&&(!spotFull||(boostOf.get(s.id)||0)>Date.now())?`<button onclick='devBoostGame(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.45);border-radius:5px;color:#ffd700;cursor:pointer">⚡ Boost</button>`:''}
-    ${isShow(s)&&s.paysTickets&&s.status==='live'?`<button onclick='devFundTickets(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(57,255,20,.08);border:1px solid rgba(57,255,20,.4);border-radius:5px;color:#39ff14;cursor:pointer">🎟️ Fund Tickets</button>`:''}
     <button onclick='openDevGameDetails(${JSON.stringify(s.id)})' style="font-size:.6rem;padding:3px 10px;background:rgba(0,170,255,.1);border:1px solid rgba(0,170,255,.4);border-radius:5px;color:#00aaff;cursor:pointer">Details</button>
     ${s.status==='live'?`<button onclick='devRequestRemoval(${JSON.stringify(s.id)})' style="font-size:.55rem;padding:2px 7px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer">Request Removal</button>`:''}</div>
   </div>`;
@@ -15871,7 +15850,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],

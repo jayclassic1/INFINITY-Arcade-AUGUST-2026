@@ -3633,66 +3633,6 @@ persistent actor ArcadeBackend {
     }
   };
 
-  // ============================================
-  // === CHARITABLE TICKET FUNDING (session #3) ===
-  // Creator (or admin) donates ICP to back extra tickets in their live Showroom Ticket game's pool at the
-  // published 1 ICP = 1,000 tickets. ICP moves from the donor's arcade deposit subaccount into general
-  // custody (the same backing as play-funded tickets); the donor pays the ledger fee. The amount is
-  // rounded down to whole tickets BEFORE paying, so the donor is only charged for tickets they get.
-  // ============================================
-  transient let TICKET_FUND_MIN_E8S : Nat = 10_000_000; // 0.1 ICP
-  transient let E8S_PER_TICKET : Nat = 100_000;         // 1 ICP = 1,000 tickets
-  transient var ticketFundInFlight = HashMap.HashMap<Principal, Bool>(8, Principal.equal, Principal.hash);
-
-  public shared(msg) func fundGameTickets(gameId : Text, amountE8s : Nat) : async Result.Result<Nat, Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (not Principal.equal(game.creator, caller) and not isAdmin(caller)) return #err("Only the game's creator can fund its tickets");
-    if (game.gameTier != "showroom" and game.gameTier != "jays-picks") return #err("Only Showroom Ticket games can be funded");
-    if (not isTicketGameSubmission(game)) return #err("Only Ticket games have a ticket pool to fund");
-    if (game.status != "live") return #err("Only live games can be funded");
-    if (amountE8s < TICKET_FUND_MIN_E8S) return #err("Minimum ticket funding is 0.1 ICP");
-    let ticketCount = amountE8s / E8S_PER_TICKET;
-    let usedE8s = ticketCount * E8S_PER_TICKET;
-    if (ticketFundInFlight.get(caller) != null) return #err("A ticket funding is already in progress");
-    ticketFundInFlight.put(caller, true);
-    let fromSub = principalToSubaccount(caller);
-    let selfPrincipal = Principal.fromActor(ArcadeBackend);
-    try {
-      let bal = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?fromSub });
-      if (bal < usedE8s + ICP_LEDGER_FEE_E8S) {
-        ticketFundInFlight.delete(caller);
-        return #err("Not enough ICP in your arcade wallet. Funding " # Nat.toText(ticketCount) # " tickets costs " # Nat.toText(usedE8s) # " e8s plus the " # Nat.toText(ICP_LEDGER_FEE_E8S) # " e8s ledger fee; available " # Nat.toText(bal) # " e8s.");
-      };
-      let result = await ICP_LEDGER.icrc1_transfer({
-        to = { owner = selfPrincipal; subaccount = null };
-        fee = ?ICP_LEDGER_FEE_E8S;
-        memo = null;
-        from_subaccount = ?fromSub;
-        created_at_time = null;
-        amount = usedE8s;
-      });
-      ticketFundInFlight.delete(caller);
-      switch (result) {
-        case (#Ok(_blockIndex)) {
-          addToGameRawTicketPool(gameId, ticketCount);
-          addToGameBackedTicketPool(gameId, ticketCount);
-          clampBackedPoolToRaw(gameId);
-          #ok(ticketCount)
-        };
-        case (#Err(e)) { #err(icpTransferErrorText("Ticket funding payment", e)) };
-      }
-    } catch (e) {
-      ticketFundInFlight.delete(caller);
-      #err("Ticket funding transfer error: " # Error.message(e))
-    }
-  };
-
   /// Real implementation — was previously declared in the frontend IDL and called by
   /// refreshBackSubmissionFeeDisplay, but never existed on the backend, so the call always
   /// silently failed and the UI fell back to stale hardcoded fee text.
