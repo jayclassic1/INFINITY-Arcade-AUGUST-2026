@@ -746,13 +746,23 @@ new MutationObserver(mutations=>{
 </div>
 
 <!-- Game Summary (session #3: game metrics only - money lives on Creator Earnings) -->
-<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px'>
-<div style='background:rgba(0,0,0,.4);border:1px solid #39ff1433;border-radius:12px;padding:14px;text-align:center'><div style='font-size:1.8rem;font-weight:900;color:#39ff14' id='devSumTicket'>0</div><div style='font-size:.62rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>🎟️ SHOWROOM TICKET</div></div>
-<div style='background:rgba(0,0,0,.4);border:1px solid #8bb4ff33;border-radius:12px;padding:14px;text-align:center'><div style='font-size:1.8rem;font-weight:900;color:#8bb4ff' id='devSumNonTicket'>0</div><div style='font-size:.62rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>🪙 SHOWROOM NON-TICKET</div></div>
-<div style='background:rgba(0,0,0,.4);border:1px solid #c084fc33;border-radius:12px;padding:14px;text-align:center'><div style='font-size:1.8rem;font-weight:900;color:#c084fc' id='devSumBack'>0</div><div style='font-size:.62rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>🎮 THE BACK</div></div>
-<div style='background:rgba(0,0,0,.4);border:1px solid #ff44aa33;border-radius:12px;padding:14px;text-align:center'><div style='font-size:1.8rem;font-weight:900;color:#ff44aa' id='devSumHole'>0</div><div style='font-size:.62rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>🕳️ BLACKHOLE</div></div>
+<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px'>
+<div style='background:rgba(0,0,0,.4);border:1px solid #ffd70033;border-radius:12px;padding:16px;text-align:center'><div style='font-size:2rem;font-weight:900;color:#ffd700' id='devSumGames'>0</div><div style='font-size:.7rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>YOUR GAMES</div></div>
+<div style='background:rgba(0,0,0,.4);border:1px solid #22c55e33;border-radius:12px;padding:16px;text-align:center'><div style='font-size:2rem;font-weight:900;color:#22c55e' id='devSumLive'>0</div><div style='font-size:.7rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>LIVE</div></div>
+<div style='background:rgba(0,0,0,.4);border:1px solid #c084fc33;border-radius:12px;padding:16px;text-align:center'><div style='font-size:2rem;font-weight:900;color:#c084fc' id='devSumTicket'>0</div><div style='font-size:.7rem;color:#5a7a9a;letter-spacing:1px;margin-top:4px'>TICKET GAMES</div></div>
 </div>
-<div id='devSections'></div>
+
+<!-- Your Games -->
+<div style='background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;margin-bottom:16px'>
+<div style='font-weight:800;font-size:.85rem;color:#ffd700;letter-spacing:2px;margin-bottom:12px'>YOUR GAMES</div>
+<div id='devGamesList'></div>
+</div>
+
+<!-- Game Performance -->
+<div style='background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;margin-bottom:16px'>
+<div style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:2px;margin-bottom:12px'>GAME PERFORMANCE</div>
+<div id='devPerfList'></div>
+</div>
 
 <!-- Technical Developer Guide -->
 <div style='margin-top:20px'>
@@ -9683,53 +9693,47 @@ function renderDevDash(){ renderDevDashAsync().catch(e=>console.warn('Dev dashbo
 async function renderDevDashAsync(){
   if(!S.connected||!S.principalText) return;
   if(!_gameSubsCache){ try{ await refreshGameCache(); }catch(_){ } }
-  const root=qs('devSections'); if(!root) return;
   const mine=getSubmissions().filter(s=>s.principal===S.principalText);
-  const tierOf=s=>s.gameTier||s.tier||'backroom';
-  const isShow=s=>{const t=tierOf(s); return t==='showroom'||t==='jays-picks';};
-  const ticket=mine.filter(s=>isShow(s)&&s.paysTickets), nonTicket=mine.filter(s=>isShow(s)&&!s.paysTickets), back=mine.filter(s=>tierOf(s)==='backroom');
   const setT=(id,v)=>{const el=qs(id); if(el) el.textContent=v;};
-  setT('devSumTicket',ticket.length); setT('devSumNonTicket',nonTicket.length); setT('devSumBack',back.length);
-  root.innerHTML='<div style="color:var(--cyan);font-size:.75rem;padding:8px">Loading your games…</div>';
-  const be=await getBackendActor(false);
-  const [rawArr,backedArr,highs,holes]=await Promise.all([
-    be.getAllGameRawTicketPools().catch(()=>[]), be.getAllGameBackedTicketPools().catch(()=>[]),
-    Promise.all(mine.map(s=>be.getHighScore(s.id).catch(()=>[]))),
-    be.getMyHoleSubmissions(S.principal).catch(()=>[])
-  ]);
-  const holesSorted=[...holes].sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
-  setT('devSumHole',holesSorted.length);
-  let votes=new Map();
-  if(holesSorted.length){ try{ (await be.getHoleVoteSummary(holesSorted.map(h=>h.id),S.principal)).forEach(v=>votes.set(v[0],{likes:Number(v[1]),dislikes:Number(v[2])})); }catch(_){ } }
-  const raw=new Map(rawArr.map(p=>[p.gameId,Number(p.rawTicketPool)])), backed=new Map(backedArr.map(p=>[p.gameId,Number(p.backedTicketPool)]));
-  const hiOf=new Map(mine.map((s,i)=>[s.id,highs[i]&&highs[i][0]]));
-  const statusColor={live:'#22c55e',active:'#22c55e',removed:'#ef4444',deleted:'#ef4444',suspended:'#fbbf24','removal-requested':'#f97316'};
-  const statusTag=st=>`<div style="font-size:.66rem;font-weight:700;color:${statusColor[st]||'#5a7a9a'};text-transform:uppercase;letter-spacing:1px">${st==='removal-requested'?'REMOVAL PENDING':escHtml(st||'')}</div>`;
-  const thumb=s=>s.thumb?`<img src="${escHtml(s.thumb)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0"/>`:'<div style="width:56px;height:56px;background:#1a2548;border-radius:8px;display:grid;place-items:center;flex-shrink:0">🎮</div>';
-  const hsLine=s=>{const h=hiOf.get(s.id); return h?`🏆 High score <b style="color:#ffd700">${Number(h.score).toLocaleString()}</b> <span style="color:#5a7a9a">by ${escHtml(h.player.toText().slice(0,11))}…</span>`:'🏆 <span style="color:#5a7a9a">No scores yet</span>';};
-  const gameRow=(s,extra)=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-    ${thumb(s)}
-    <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;color:#e0e6f0">${escHtml(s.name)}${s.wantsPurchasable&&!s.paysTickets&&isShow(s)?' <span style="font-size:.6rem;color:#86efac">💰 Purchasable</span>':''}</div>
-    <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">${hsLine(s)}${extra||''}</div>
-    <div style="font-size:.58rem;color:#3d6090;margin-top:2px">ID: ${escHtml(s.id)}</div></div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${statusTag(s.status)}
-    ${s.status==='live'?`<button onclick='devRequestRemoval(${JSON.stringify(s.id)})' style="font-size:.55rem;padding:2px 7px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer">Request Removal</button>`:''}</div>
-  </div>`;
-  const ticketExtra=s=>{const r=raw.get(s.id)||0,b=backed.get(s.id)||0; return ` · 🎟️ Paid out to players <b style="color:#39ff14">${Math.max(0,r-b).toLocaleString()}</b> · In pool <b style="color:#c084fc">${b.toLocaleString()}</b>`;};
-  const section=(title,color,count,body,empty)=>`<div style="background:rgba(0,0,0,.3);border:1px solid ${color}22;border-radius:12px;padding:14px 16px;margin-bottom:14px">
-    <div style="font-weight:800;font-size:.8rem;color:${color};letter-spacing:2px;margin-bottom:6px">${title} <span style="color:#5a7a9a;font-weight:600">(${count})</span></div>
-    ${count?body:`<div style="color:#3d6090;font-size:.75rem;padding:8px 0">${empty}</div>`}</div>`;
-  const holeRow=h=>{const v=votes.get(h.id)||{likes:Number(h.upvotes||0),dislikes:0}; const d=new Date(Number(h.createdAt)/1e6).toLocaleDateString();
-    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;gap:10px;align-items:center">
-      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.82rem;color:#e0e6f0">${escHtml(h.title)}${h.isLegendary?' <span style="font-size:.6rem;color:#ffd700">⭐ Legendary</span>':''}</div>
-      <div style="font-size:.66rem;color:#5a7a9a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(h.url)}</div>
-      <div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">👍 ${v.likes.toLocaleString()} · 👎 ${v.dislikes.toLocaleString()} · submitted ${escHtml(d)}</div></div>
-      ${statusTag(h.status)}</div>`;};
-  root.innerHTML=
-    section('🎟️ SHOWROOM · TICKET GAMES','#39ff14',ticket.length,ticket.map(s=>gameRow(s,ticketExtra(s))).join(''),'No Ticket games yet')+
-    section('🪙 SHOWROOM · NON-TICKET GAMES','#8bb4ff',nonTicket.length,nonTicket.map(s=>gameRow(s)).join(''),'No Non-Ticket games yet')+
-    section('🎮 THE BACK','#c084fc',back.length,back.map(s=>gameRow(s)).join(''),'No games in The Back yet')+
-    section('🕳️ BLACKHOLE','#ff44aa',holesSorted.length,holesSorted.map(holeRow).join(''),'No Blackhole links yet');
+  setT('devSumGames',mine.length); setT('devSumLive',mine.filter(s=>s.status==='live').length);
+  setT('devSumTicket',mine.filter(s=>s.paysTickets&&(s.gameTier||s.tier)!=='backroom').length);
+  const tierLabel=t=>({backroom:'The Back',showroom:'Showroom','jays-picks':'DAO Favourites'})[t]||t;
+  const statusColor={live:'#22c55e',removed:'#ef4444',suspended:'#fbbf24','removal-requested':'#f97316'};
+  const typeBadge=s=>{
+    if((s.gameTier||s.tier)==='backroom') return '<span style="font-size:.6rem;color:#a0b0c0">🎮 Free</span>';
+    if(s.paysTickets) return '<span style="font-size:.6rem;color:#39ff14">🎟️ Ticket</span>';
+    return s.wantsPurchasable?'<span style="font-size:.6rem;color:#86efac">💰 Purchasable</span>':'<span style="font-size:.6rem;color:#8bb4ff">🪙 Non-Ticket</span>';
+  };
+  const list=qs('devGamesList');
+  if(list) list.innerHTML=mine.length?mine.map(s=>{
+    const canReq=s.status==='live';
+    return `<div style='display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)'>
+      <div style='flex:1;min-width:0'><div style='font-weight:700;font-size:.85rem;color:#e0e6f0'>${escHtml(s.name)}</div>
+      <div style='font-size:.6rem;color:#3d6090;margin-top:2px'>${escHtml(tierLabel(s.gameTier||s.tier||'backroom'))} · ${typeBadge(s)} · ID: ${escHtml(s.id)}</div></div>
+      <div style='display:flex;align-items:center;gap:8px'>
+        <div style='font-size:.7rem;font-weight:700;color:${statusColor[s.status]||'#5a7a9a'};text-transform:uppercase;letter-spacing:1px'>${s.status==='removal-requested'?'REMOVAL PENDING':escHtml(s.status)}</div>
+        ${canReq?`<button onclick='devRequestRemoval(${JSON.stringify(s.id)})' style='font-size:.55rem;padding:2px 7px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer'>Request Removal</button>`:''}
+      </div></div>`;
+  }).join(''):'<div style="color:#3d6090;font-size:.8rem;padding:12px;text-align:center">No games submitted yet</div>';
+  const perf=qs('devPerfList'); if(!perf) return;
+  if(!mine.length){ perf.innerHTML='<div style="color:#3d6090;font-size:.8rem;padding:12px;text-align:center">No games yet</div>'; return; }
+  perf.innerHTML='<div style="color:var(--cyan);font-size:.75rem">Loading…</div>';
+  try{
+    const be=await getBackendActor(false);
+    const [rawArr,backedArr,highs]=await Promise.all([
+      be.getAllGameRawTicketPools().catch(()=>[]), be.getAllGameBackedTicketPools().catch(()=>[]),
+      Promise.all(mine.map(s=>be.getHighScore(s.id).catch(()=>[])))
+    ]);
+    const raw=new Map(rawArr.map(p=>[p.gameId,Number(p.rawTicketPool)])), backed=new Map(backedArr.map(p=>[p.gameId,Number(p.backedTicketPool)]));
+    perf.innerHTML=mine.map((s,i)=>{
+      const h=highs[i]&&highs[i][0];
+      const hs=h?`<b style="color:#ffd700">${Number(h.score).toLocaleString()}</b> <span style="color:#5a7a9a">by ${escHtml(h.player.toText().slice(0,11))}…</span>`:'<span style="color:#5a7a9a">No scores yet</span>';
+      const isTicket=s.paysTickets&&(s.gameTier||s.tier)!=='backroom';
+      const r=raw.get(s.id)||0, b=backed.get(s.id)||0;
+      const tk=isTicket?`<div style="font-size:.7rem;color:#a0b0c0;margin-top:3px">🎟️ Tickets paid out to players: <b style="color:#39ff14">${Math.max(0,r-b).toLocaleString()}</b> · still in pool: <b style="color:#c084fc">${b.toLocaleString()}</b></div>`:'';
+      return `<div style='padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)'><div style='font-weight:700;font-size:.85rem;color:#e0e6f0'>${escHtml(s.name)}</div><div style='font-size:.72rem;margin-top:3px'>🏆 High score: ${hs}</div>${tk}</div>`;
+    }).join('');
+  }catch(e){ perf.innerHTML='<span style="color:#ef4444;font-size:.75rem">'+escHtml(safeUserErrorMessage(e,'game performance'))+'</span>'; }
 }
 
 async function devSaveSessionConfig(gameId){
