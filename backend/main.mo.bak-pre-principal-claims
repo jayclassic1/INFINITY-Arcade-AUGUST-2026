@@ -4636,9 +4636,11 @@ persistent actor ArcadeBackend {
     nftSellerEarningsE8s.put(caller, 0);
     refundsE8s.put(caller, 0);
 
+    let callerSub = principalToSubaccount(caller);
+    let selfPrincipal = Principal.fromActor(ArcadeBackend);
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
-        to = { owner = caller; subaccount = null }; // session #3: creator's own principal account (managed on Creator Earnings)
+        to = { owner = selfPrincipal; subaccount = ?callerSub };
         fee = ?ICP_LEDGER_FEE_E8S;
         memo = null;
         from_subaccount = null;
@@ -4725,9 +4727,11 @@ persistent actor ArcadeBackend {
       );
     };
     tipEarnings.put(caller, 0);
+    let callerSub = principalToSubaccount(caller);
+    let selfPrincipal = Principal.fromActor(ArcadeBackend);
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
-        to = { owner = caller; subaccount = null }; // session #3: creator's own principal account (managed on Creator Earnings)
+        to = { owner = selfPrincipal; subaccount = ?callerSub };
         fee = ?ICP_LEDGER_FEE_E8S;
         memo = null;
         from_subaccount = null;

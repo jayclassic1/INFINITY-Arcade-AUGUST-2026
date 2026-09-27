@@ -1500,20 +1500,6 @@ window.addEventListener('message', (e) => {
 </div>
 
 <!-- History tabs -->
-<div id='principalAccountCard' style='background:rgba(244,114,182,.05);border:1px solid rgba(244,114,182,.25);border-radius:12px;padding:14px;margin-bottom:16px'>
-<div style='font-size:.75rem;font-weight:800;color:#f472b6;letter-spacing:2px;margin-bottom:6px'>PRINCIPAL ACCOUNT — YOUR CLAIMED REVENUE</div>
-<div style='font-size:.66rem;color:var(--muted);margin-bottom:10px'>Claims land here: an ICP ledger account owned directly by your login, separate from your arcade wallet. Every transfer is signed by you and costs the 0.0001 ICP ledger fee.</div>
-<div id='principalAcctInfo' style='font-size:.72rem;color:#f9c2ff;margin-bottom:10px'>Loading…</div>
-<input type='text' id='principalAcctDest' placeholder='Destination: 64-character ICP account ID or a principal' autocomplete='off' spellcheck='false' style='width:100%;padding:6px 10px;margin-bottom:6px;background:rgba(0,0,0,.3);border:1px solid rgba(244,114,182,.25);border-radius:6px;color:#fff;font-size:.72rem;box-sizing:border-box'/>
-<div style='display:flex;gap:6px;flex-wrap:wrap;align-items:center'>
-<input type='number' id='principalAcctAmt' placeholder='Amount in ICP' step='0.0001' min='0.0001' style='width:130px;padding:6px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(244,114,182,.25);border-radius:6px;color:#fff;font-size:.72rem'/>
-<button class='btn' onclick='principalAcctMax()' style='font-size:.66rem;padding:4px 8px'>Max</button>
-<button class='btn' onclick='principalAcctSend()' style='font-size:.66rem;padding:4px 10px;border-color:#f472b6;color:#f472b6'>Send</button>
-<button class='btn' onclick='principalAcctToArcade()' style='font-size:.66rem;padding:4px 10px;border-color:var(--cyan);color:var(--cyan)'>Move to my arcade wallet</button>
-<button class='btn' onclick='loadPrincipalAccount()' style='font-size:.66rem;padding:4px 8px'>Refresh</button>
-</div>
-<div id='principalAcctStatus' style='font-size:.7rem;margin-top:6px'></div>
-</div>
 <div style='display:flex;gap:8px;margin-bottom:16px' id='royaltyTabBtns'>
 <button onclick='showRoyaltyTab("gamedev")' id='rtab-gamedev' style='padding:6px 16px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;background:rgba(244,114,182,.15);border:1px solid #f472b6;color:#f472b6'>Creator ICP</button>
 <button onclick='showRoyaltyTab("artist")' id='rtab-artist' style='padding:6px 16px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;background:rgba(0,0,0,.2);border:1px solid #333;color:#666'>Seller ICP</button>
@@ -9268,70 +9254,8 @@ function trackWin(gameId,tickets){
 // ── Royalties Dashboard ──────────────────────────────────────
 let _royaltyTab = 'gamedev';
 
-// Session #3: creator Principal Account card - claims land in the creator's own ledger account;
-// every transfer from it is signed by the creator's login (S.identity), directly on the ICP ledger.
-const PRINCIPAL_ACCT_FEE_E8S=10000n;
-let _principalAcctBalE8s=0n;
-async function principalLedgerActor(){
-  const agent=new HttpAgent({host:icpHost(),identity:S.identity});
-  await fetchRootKeyIfLocal(agent);
-  return Actor.createActor(ledgerIdl,{agent,canisterId:LEDGER_CANISTER_ID});
-}
-async function loadPrincipalAccount(){
-  const el=document.getElementById('principalAcctInfo'); if(!el||!S.connected||!S.principalText) return;
-  const acct=principalToAccountHex(S.principalText);
-  try{
-    _principalAcctBalE8s=BigInt(await getIcpAccountBalanceE8s(acct));
-    const max=_principalAcctBalE8s>PRINCIPAL_ACCT_FEE_E8S?_principalAcctBalE8s-PRINCIPAL_ACCT_FEE_E8S:0n;
-    el.innerHTML='<div><b style="color:#fff">Balance: '+e8sToIcpInput(_principalAcctBalE8s)+' ICP</b> <span style="color:var(--muted)">(max transferable '+e8sToIcpInput(max)+')</span></div>'+
-      '<div style="font-size:.62rem;color:var(--muted);margin-top:4px;word-break:break-all">Account ID: '+escHtml(acct)+'</div>';
-  }catch(e){ el.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'principal account balance'))+'</span>'; }
-}
-function principalAcctMax(){
-  const max=_principalAcctBalE8s>PRINCIPAL_ACCT_FEE_E8S?_principalAcctBalE8s-PRINCIPAL_ACCT_FEE_E8S:0n;
-  const i=document.getElementById('principalAcctAmt'); if(i) i.value=e8sToIcpInput(max);
-}
-function principalAcctReadAmount(statusEl){
-  const str=(document.getElementById('principalAcctAmt')?.value||'').trim(); const n=Number(str);
-  if(!str||isNaN(n)||n<0.0001){ statusEl.innerHTML='<span style="color:#ef4444">Enter an amount of at least 0.0001 ICP.</span>'; return null; }
-  const e8s=BigInt(Math.round(n*1e8));
-  if(e8s+PRINCIPAL_ACCT_FEE_E8S>_principalAcctBalE8s){ statusEl.innerHTML='<span style="color:#ef4444">Amount plus the 0.0001 ICP fee exceeds your balance.</span>'; return null; }
-  return {str,e8s};
-}
-async function principalAcctSend(){
-  const st=document.getElementById('principalAcctStatus'); if(!st) return;
-  const amt=principalAcctReadAmount(st); if(!amt) return;
-  const dest=(document.getElementById('principalAcctDest')?.value||'').trim();
-  const isAcctId=/^[0-9a-fA-F]{64}$/.test(dest); let owner=null;
-  if(!isAcctId){ try{ owner=Principal.fromText(dest); }catch(_){ st.innerHTML='<span style="color:#ef4444">Enter a 64-character account ID or a valid principal.</span>'; return; } }
-  if(!await arcadeConfirm('Send ICP from Principal Account','<b>To ('+(isAcctId?'account ID':'principal')+'):</b><br><code style="word-break:break-all;color:#88ccff;font-size:.75rem">'+escHtml(dest)+'</code><br><br><b>Amount:</b> '+escHtml(amt.str)+' ICP<br><b>Fee:</b> 0.0001 ICP, paid by you.')) return;
-  st.innerHTML='<span style="color:var(--cyan)">Sending…</span>';
-  try{
-    const led=await principalLedgerActor(); let r;
-    if(isAcctId) r=await led.transfer({to:Array.from(hexToBytes(dest)),fee:{e8s:PRINCIPAL_ACCT_FEE_E8S},memo:0n,from_subaccount:[],created_at_time:[],amount:{e8s:amt.e8s}});
-    else r=await led.icrc1_transfer({to:{owner,subaccount:[]},fee:[PRINCIPAL_ACCT_FEE_E8S],memo:[],from_subaccount:[],created_at_time:[],amount:amt.e8s});
-    if(r.Err) throw new Error('Ledger error: '+Object.keys(r.Err)[0]);
-    st.innerHTML='<span style="color:#22c55e">Sent '+escHtml(amt.str)+' ICP (ledger block '+escHtml(String(r.Ok))+').</span>';
-  }catch(e){ st.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'principal account send'))+'</span>'; }
-  loadPrincipalAccount();
-}
-async function principalAcctToArcade(){
-  const st=document.getElementById('principalAcctStatus'); if(!st) return;
-  const amt=principalAcctReadAmount(st); if(!amt) return;
-  if(!await arcadeConfirm('Move to Arcade Wallet','Move <b>'+escHtml(amt.str)+' ICP</b> from your Principal Account into your arcade wallet?<br><b>Fee:</b> 0.0001 ICP, paid by you.')) return;
-  st.innerHTML='<span style="color:var(--cyan)">Moving…</span>';
-  try{
-    const led=await principalLedgerActor();
-    const r=await led.icrc1_transfer({to:{owner:Principal.fromText(ARCADE_CANISTER_ID),subaccount:[Array.from(principalToSubaccountBytes(S.principalText))]},fee:[PRINCIPAL_ACCT_FEE_E8S],memo:[],from_subaccount:[],created_at_time:[],amount:amt.e8s});
-    if(r.Err) throw new Error('Ledger error: '+Object.keys(r.Err)[0]);
-    st.innerHTML='<span style="color:#22c55e">Moved '+escHtml(amt.str)+' ICP to your arcade wallet (ledger block '+escHtml(String(r.Ok))+').</span>';
-    try{ await refreshWalletBalance(); }catch(_){}
-  }catch(e){ st.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'move to arcade wallet'))+'</span>'; }
-  loadPrincipalAccount();
-}
 async function renderRoyaltiesDash(){
   if(!S.connected){ return; }
-  loadPrincipalAccount();
   const be = await getBackendActor();
   const fmt = v => (Number(v)/1e8).toFixed(4) + ' ICP';
   try{
@@ -9373,7 +9297,7 @@ async function claimTipEarningsUi(){
   try{
     const res = await be.claimTipEarnings();
     if(res.ok !== undefined){
-      await arcadeAlert('Claim submitted', `Claimed ${(Number(res.ok)/1e8).toFixed(4)} ICP from Token tip earnings — sent to your Principal Account (top of this page).`);
+      await arcadeAlert('Claim submitted', `Claimed ${(Number(res.ok)/1e8).toFixed(4)} ICP from Token tip earnings.`);
       renderRoyaltiesDash();
     } else {
       await arcadeAlert('Claim unavailable', escHtml(safeUserErrorMessage(res.err || 'Unable to claim right now.','tip earnings claim')));
@@ -9392,7 +9316,7 @@ async function claimCreatorEarnings(){
   try{
     const res = await be.claimRoyalties();
     if(res.ok !== undefined){
-      await arcadeAlert('Claim submitted', `Claimed ${(Number(res.ok)/1e8).toFixed(4)} ICP from claimable creator / seller earnings — sent to your Principal Account (top of this page).`);
+      await arcadeAlert('Claim submitted', `Claimed ${(Number(res.ok)/1e8).toFixed(4)} ICP from claimable creator / seller earnings and refunds.`);
       renderRoyaltiesDash();
     } else {
       await arcadeAlert('Claim unavailable', escHtml(safeUserErrorMessage(res.err || 'Unable to claim right now.','creator / seller claim')));
@@ -15846,7 +15770,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],
