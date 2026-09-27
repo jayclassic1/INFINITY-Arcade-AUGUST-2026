@@ -843,9 +843,7 @@ persistent actor ArcadeBackend {
 
   // ICP ledger fee-sized floor: claiming less than this creates dust-level
   // payouts that are not worth moving before real volume starts.
-  transient let ROYALTY_CLAIM_MIN_E8S : Nat = 20_000; // must exceed the ledger fee so a minimum claim still nets ICP
-  // Session #3: users/claimants pay every ledger fee on ICP paid out of general custody - the platform
-  // never absorbs it. Set explicitly (not fee = null) so a ledger fee change fails loudly with BadFee.
+  transient let ROYALTY_CLAIM_MIN_E8S : Nat = 10_000;
   transient let ICP_LEDGER_FEE_E8S : Nat = 10_000;
   transient let ICP_TIP_MIN_E8S : Nat = 10_000;
   transient var operatingTreasuryWithdrawalInFlight = false;
@@ -3658,16 +3656,14 @@ persistent actor ArcadeBackend {
   /// a plain internal counter against the canister's general ICP balance, not a dedicated subaccount).
   public shared(msg) func adminWithdrawShowroomTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
-    let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
-    if (totalDebit > showroomTicketArcadeShareE8s) {
-      return #err("Showroom ticket arcade share has insufficient balance: " # Nat.toText(showroomTicketArcadeShareE8s) # " e8s available (needs amount + " # Nat.toText(ICP_LEDGER_FEE_E8S) # " e8s ledger fee)");
+    if (amountE8s > showroomTicketArcadeShareE8s) {
+      return #err("Showroom ticket arcade share has insufficient balance: " # Nat.toText(showroomTicketArcadeShareE8s) # " e8s available");
     };
-    showroomTicketArcadeShareE8s -= totalDebit;
+    showroomTicketArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
-        fee = ?ICP_LEDGER_FEE_E8S;
+        fee = null;
         memo = null;
         from_subaccount = null;
         created_at_time = null;
@@ -3676,12 +3672,12 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomTicketArcadeShareE8s += totalDebit;
+          showroomTicketArcadeShareE8s += amountE8s;
           #err(icpTransferErrorText("Showroom ticket arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomTicketArcadeShareE8s += totalDebit;
+      showroomTicketArcadeShareE8s += amountE8s;
       #err("Showroom ticket arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
@@ -3689,16 +3685,14 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the Showroom non-ticket per-play arcade-share accumulator.
   public shared(msg) func adminWithdrawShowroomNonTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
-    let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
-    if (totalDebit > showroomNonTicketArcadeShareE8s) {
-      return #err("Showroom non-ticket arcade share has insufficient balance: " # Nat.toText(showroomNonTicketArcadeShareE8s) # " e8s available (needs amount + " # Nat.toText(ICP_LEDGER_FEE_E8S) # " e8s ledger fee)");
+    if (amountE8s > showroomNonTicketArcadeShareE8s) {
+      return #err("Showroom non-ticket arcade share has insufficient balance: " # Nat.toText(showroomNonTicketArcadeShareE8s) # " e8s available");
     };
-    showroomNonTicketArcadeShareE8s -= totalDebit;
+    showroomNonTicketArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
-        fee = ?ICP_LEDGER_FEE_E8S;
+        fee = null;
         memo = null;
         from_subaccount = null;
         created_at_time = null;
@@ -3707,12 +3701,12 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomNonTicketArcadeShareE8s += totalDebit;
+          showroomNonTicketArcadeShareE8s += amountE8s;
           #err(icpTransferErrorText("Showroom non-ticket arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomNonTicketArcadeShareE8s += totalDebit;
+      showroomNonTicketArcadeShareE8s += amountE8s;
       #err("Showroom non-ticket arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
@@ -3720,16 +3714,14 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the Showroom full-game-purchase arcade-share accumulator.
   public shared(msg) func adminWithdrawShowroomPurchaseArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
-    let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
-    if (totalDebit > showroomPurchaseArcadeShareE8s) {
-      return #err("Showroom purchase arcade share has insufficient balance: " # Nat.toText(showroomPurchaseArcadeShareE8s) # " e8s available (needs amount + " # Nat.toText(ICP_LEDGER_FEE_E8S) # " e8s ledger fee)");
+    if (amountE8s > showroomPurchaseArcadeShareE8s) {
+      return #err("Showroom purchase arcade share has insufficient balance: " # Nat.toText(showroomPurchaseArcadeShareE8s) # " e8s available");
     };
-    showroomPurchaseArcadeShareE8s -= totalDebit;
+    showroomPurchaseArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
-        fee = ?ICP_LEDGER_FEE_E8S;
+        fee = null;
         memo = null;
         from_subaccount = null;
         created_at_time = null;
@@ -3738,12 +3730,12 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomPurchaseArcadeShareE8s += totalDebit;
+          showroomPurchaseArcadeShareE8s += amountE8s;
           #err(icpTransferErrorText("Showroom purchase arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomPurchaseArcadeShareE8s += totalDebit;
+      showroomPurchaseArcadeShareE8s += amountE8s;
       #err("Showroom purchase arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
@@ -4724,15 +4716,15 @@ persistent actor ArcadeBackend {
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = { owner = selfPrincipal; subaccount = ?callerSub };
-        fee = ?ICP_LEDGER_FEE_E8S;
+        fee = null;
         memo = null;
         from_subaccount = null;
         created_at_time = null;
-        amount = balance - ICP_LEDGER_FEE_E8S; // claimant pays the ledger fee
+        amount = balance;
       });
       switch (result) {
         case (#Ok(_blockIndex)) {
-          #ok(balance - ICP_LEDGER_FEE_E8S);
+          #ok(balance);
         };
         case (#Err(e)) {
           restoreGameCreatorEarningsBalance(caller, gameCreatorEarningsBalance);
@@ -4815,14 +4807,14 @@ persistent actor ArcadeBackend {
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = { owner = selfPrincipal; subaccount = ?callerSub };
-        fee = ?ICP_LEDGER_FEE_E8S;
+        fee = null;
         memo = null;
         from_subaccount = null;
         created_at_time = null;
-        amount = balance - ICP_LEDGER_FEE_E8S; // claimant pays the ledger fee
+        amount = balance;
       });
       switch (result) {
-        case (#Ok(_blockIndex)) { #ok(balance - ICP_LEDGER_FEE_E8S) };
+        case (#Ok(_blockIndex)) { #ok(balance) };
         case (#Err(e)) {
           restoreTipEarningsBalance(caller, balance);
           switch (e) {
