@@ -561,7 +561,7 @@ persistent actor ArcadeBackend {
   // === REVENUE SPLIT CONSTANTS (Economy v6) ===
   // Showroom ticket games: 70% to game's ticket pool, 15% to game dev, 10% arcade, 5% DAO.
   // Supersedes the old, never-wired "5% burn" concept - that 10% is now an explicit, tracked
-  // arcade-share accumulator (see showroomTicketArcadeShareE8s) rather than an untracked remainder.
+  // arcade-share accumulator (see showroomArcadeShareE8s) rather than an untracked remainder.
   transient let TICKET_GAME_CREATOR_SHARE : Nat = 15; // percent
   transient let TICKET_GAME_DAO_SHARE : Nat = 5; // percent
   transient let TICKET_GAME_ARCADE_SHARE : Nat = 10; // percent
@@ -1778,9 +1778,9 @@ persistent actor ArcadeBackend {
         let currentRoyalty = getRoyaltyBalance(game.creator);
         royalties.put(game.creator, currentRoyalty + creatorShareE8s);
         if (isTicketGame) {
-          showroomTicketArcadeShareE8s += arcadeShareE8s;
+          showroomArcadeShareE8s += arcadeShareE8s;
         } else {
-          showroomNonTicketArcadeShareE8s += arcadeShareE8s;
+          backArcadeShareE8s += arcadeShareE8s;
         };
         daoTreasuryE8s += daoShareE8s;
 
@@ -1818,10 +1818,10 @@ persistent actor ArcadeBackend {
   /// available for a game the creator explicitly marked Purchasable (wantsPurchasable), never a
   /// ticket game - enforced here server-side regardless of what the frontend allows, same as
   /// setGameMonetization's own reject rule. Once purchased, ownership is permanent (no revoke
-  /// path) and checkable via hasGameAccess, so the frontend can skip the coin gate on
-  /// future visits. Applies the same 50/30/20 creator/arcade/DAO split as non-ticket per-play
-  /// spend (creator to royalties, DAO to daoTreasuryE8s), but credits the arcade share to its own
-  /// dedicated showroomPurchaseArcadeShareE8s accumulator, separate from per-play revenue.
+  /// path) and checkable via hasPurchasedGame below, so the frontend can skip the coin gate on
+  /// future visits. Applies the 70/20/10 creator/arcade/DAO split into the same accumulators
+  /// spendTokensOnGame uses for regular non-ticket play - backArcadeShareE8s was already built for
+  /// exactly this purpose but never wired until now.
   public shared(msg) func purchaseGame(gameId : Text) : async Result.Result<{ tokenBalance : Nat }, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
@@ -1852,7 +1852,7 @@ persistent actor ArcadeBackend {
     let daoShareE8s : Nat = (icpValueE8s * REGULAR_GAME_DAO_SHARE) / 100;
     let currentRoyalty = getRoyaltyBalance(game.creator);
     royalties.put(game.creator, currentRoyalty + creatorShareE8s);
-    showroomPurchaseArcadeShareE8s += arcadeShareE8s;
+    backPurchaseArcadeShareE8s += arcadeShareE8s;
     daoTreasuryE8s += daoShareE8s;
 
     logRevenue("game-purchase", icpValueE8s, caller, 6);
@@ -1902,7 +1902,7 @@ persistent actor ArcadeBackend {
     let daoShareE8s : Nat = (icpValueE8s * REGULAR_GAME_DAO_SHARE) / 100;
     let currentRoyalty = getRoyaltyBalance(game.creator);
     royalties.put(game.creator, currentRoyalty + creatorShareE8s);
-    showroomNonTicketArcadeShareE8s += arcadeShareE8s;
+    backArcadeShareE8s += arcadeShareE8s;
     daoTreasuryE8s += daoShareE8s;
 
     let priorSpend = switch (gameTokenSpend.get(key)) { case (?s) s; case null 0 };
@@ -3637,29 +3637,24 @@ persistent actor ArcadeBackend {
   // withdraw function at all anywhere in this file - Jay was explicit that no one, including admin,
   // should ever be able to withdraw from it. It stays inert until the future DAO lottery system
   // mints real Tokens from it (see dao-treasury-build memory notes for the full design).
-  // Retired names, kept ONLY so upgrades stay memory-compatible (enhanced orthogonal persistence
-  // refuses to drop stable vars). Never read or written. Remove before mainnet (fresh install).
   stable var showroomArcadeShareE8s : Nat = 0;
   stable var backArcadeShareE8s : Nat = 0;
   stable var backPurchaseArcadeShareE8s : Nat = 0;
-  stable var showroomTicketArcadeShareE8s : Nat = 0;
-  stable var showroomNonTicketArcadeShareE8s : Nat = 0;
-  stable var showroomPurchaseArcadeShareE8s : Nat = 0;
   stable var daoTreasuryE8s : Nat = 0;
 
-  public query func getShowroomTicketArcadeShareBalance() : async Nat { showroomTicketArcadeShareE8s };
-  public query func getShowroomNonTicketArcadeShareBalance() : async Nat { showroomNonTicketArcadeShareE8s };
-  public query func getShowroomPurchaseArcadeShareBalance() : async Nat { showroomPurchaseArcadeShareE8s };
+  public query func getShowroomArcadeShareBalance() : async Nat { showroomArcadeShareE8s };
+  public query func getBackArcadeShareBalance() : async Nat { backArcadeShareE8s };
+  public query func getBackPurchaseArcadeShareBalance() : async Nat { backPurchaseArcadeShareE8s };
   public query func getDaoTreasuryBalance() : async Nat { daoTreasuryE8s };
 
-  /// Admin-only withdrawal from the Showroom ticket-game arcade-share accumulator (from_subaccount=null: this is
+  /// Admin-only withdrawal from Showroom's arcade-share accumulator (from_subaccount=null: this is
   /// a plain internal counter against the canister's general ICP balance, not a dedicated subaccount).
-  public shared(msg) func adminWithdrawShowroomTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+  public shared(msg) func adminWithdrawShowroomArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    if (amountE8s > showroomTicketArcadeShareE8s) {
-      return #err("Showroom ticket arcade share has insufficient balance: " # Nat.toText(showroomTicketArcadeShareE8s) # " e8s available");
+    if (amountE8s > showroomArcadeShareE8s) {
+      return #err("Showroom arcade share has insufficient balance: " # Nat.toText(showroomArcadeShareE8s) # " e8s available");
     };
-    showroomTicketArcadeShareE8s -= amountE8s;
+    showroomArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
@@ -3672,23 +3667,23 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomTicketArcadeShareE8s += amountE8s;
-          #err(icpTransferErrorText("Showroom ticket arcade share withdrawal", e))
+          showroomArcadeShareE8s += amountE8s;
+          #err(icpTransferErrorText("Showroom arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomTicketArcadeShareE8s += amountE8s;
-      #err("Showroom ticket arcade share withdrawal transfer error: " # Error.message(e))
+      showroomArcadeShareE8s += amountE8s;
+      #err("Showroom arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
 
-  /// Admin-only withdrawal from the Showroom non-ticket per-play arcade-share accumulator.
-  public shared(msg) func adminWithdrawShowroomNonTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+  /// Admin-only withdrawal from The Back's (regular per-play games) arcade-share accumulator.
+  public shared(msg) func adminWithdrawBackArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    if (amountE8s > showroomNonTicketArcadeShareE8s) {
-      return #err("Showroom non-ticket arcade share has insufficient balance: " # Nat.toText(showroomNonTicketArcadeShareE8s) # " e8s available");
+    if (amountE8s > backArcadeShareE8s) {
+      return #err("The Back arcade share has insufficient balance: " # Nat.toText(backArcadeShareE8s) # " e8s available");
     };
-    showroomNonTicketArcadeShareE8s -= amountE8s;
+    backArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
@@ -3701,23 +3696,23 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomNonTicketArcadeShareE8s += amountE8s;
-          #err(icpTransferErrorText("Showroom non-ticket arcade share withdrawal", e))
+          backArcadeShareE8s += amountE8s;
+          #err(icpTransferErrorText("The Back arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomNonTicketArcadeShareE8s += amountE8s;
-      #err("Showroom non-ticket arcade share withdrawal transfer error: " # Error.message(e))
+      backArcadeShareE8s += amountE8s;
+      #err("The Back arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
 
-  /// Admin-only withdrawal from the Showroom full-game-purchase arcade-share accumulator.
-  public shared(msg) func adminWithdrawShowroomPurchaseArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+  /// Admin-only withdrawal from The Back's full-game-purchase arcade-share accumulator.
+  public shared(msg) func adminWithdrawBackPurchaseArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
-    if (amountE8s > showroomPurchaseArcadeShareE8s) {
-      return #err("Showroom purchase arcade share has insufficient balance: " # Nat.toText(showroomPurchaseArcadeShareE8s) # " e8s available");
+    if (amountE8s > backPurchaseArcadeShareE8s) {
+      return #err("The Back purchase arcade share has insufficient balance: " # Nat.toText(backPurchaseArcadeShareE8s) # " e8s available");
     };
-    showroomPurchaseArcadeShareE8s -= amountE8s;
+    backPurchaseArcadeShareE8s -= amountE8s;
     try {
       let result = await ICP_LEDGER.icrc1_transfer({
         to = destination;
@@ -3730,13 +3725,13 @@ persistent actor ArcadeBackend {
       switch (result) {
         case (#Ok(blockIndex)) { #ok(blockIndex) };
         case (#Err(e)) {
-          showroomPurchaseArcadeShareE8s += amountE8s;
-          #err(icpTransferErrorText("Showroom purchase arcade share withdrawal", e))
+          backPurchaseArcadeShareE8s += amountE8s;
+          #err(icpTransferErrorText("The Back purchase arcade share withdrawal", e))
         };
       }
     } catch (e) {
-      showroomPurchaseArcadeShareE8s += amountE8s;
-      #err("Showroom purchase arcade share withdrawal transfer error: " # Error.message(e))
+      backPurchaseArcadeShareE8s += amountE8s;
+      #err("The Back purchase arcade share withdrawal transfer error: " # Error.message(e))
     }
   };
 

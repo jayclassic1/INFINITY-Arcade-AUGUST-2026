@@ -358,7 +358,7 @@ new MutationObserver(mutations=>{
 })();
 </script>
 
-<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← RETURN</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Scan</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
+<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← RETURN</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Scan</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
 <button id='playerManualBtn' onclick='openPlayerManual()' style='position:fixed;bottom:16px;left:14px;z-index:80;display:none;padding:6px 16px;background:rgba(4,8,20,.85);border:1px solid rgba(0,170,255,.3);border-radius:8px;color:#00aaff;font-size:.72rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.borderColor="rgba(0,170,255,.7)";this.style.color="#fff"' onmouseleave='this.style.borderColor="rgba(0,170,255,.3)";this.style.color="#00aaff"'>Player Manual</button>
 <div id='legalFooterBtn' style='position:fixed;top:72px;left:14px;z-index:80;display:flex;gap:8px'>
 <button onclick="showView('legal-tos')" style='padding:5px 12px;background:rgba(4,8,20,.75);border:1px solid #1a2848;border-radius:7px;color:#3d6090;font-size:.65rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.color="#00aaff";this.style.borderColor="#0066ff44"' onmouseleave='this.style.color="#3d6090";this.style.borderColor="#1a2848"'>Terms</button>
@@ -388,7 +388,7 @@ new MutationObserver(mutations=>{
 <button onclick="openDaoView()" style='position:absolute;z-index:5;left:80%;top:12%;width:20%;height:80%;background:transparent;border:none;outline:none;border-radius:12px;cursor:pointer'>
 </button>
 </section>
-<section class='view' id='view-arcade' style='position:relative;overflow-y:auto;overflow-x:hidden;padding:0;height:100vh;max-height:100vh;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.25) transparent'>
+<section class='view' id='view-arcade' style='position:relative;overflow:hidden;padding:0;height:100vh;max-height:100vh'>
 <!-- Arcade Corridor Background Image -->
 <div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:url(showroom-v3.jpg) center top/cover no-repeat'></div>
 <div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,transparent 40%,rgba(3,5,15,.5) 70%,rgba(3,5,15,.85) 100%)'></div>
@@ -405,7 +405,7 @@ new MutationObserver(mutations=>{
 </div>
 
 <!-- Game Rolodex Rows -->
-<div id='showroomRowsWrap' style='display:flex;flex-direction:column;gap:6px;padding:6px 20px 72px;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.22) transparent'>
+<div id='showroomRowsWrap' style='display:flex;flex-direction:column;gap:6px;padding:6px 20px 140px'>
 
 <!-- Spotlight -->
 <div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(0,170,255,.2);border-radius:10px;padding:8px 12px'>
@@ -425,6 +425,18 @@ new MutationObserver(mutations=>{
 <div id='rowTicketGames' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(57,255,20,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
+<!-- Optional Purchase (non-ticket, token-per-play games the creator marked Purchasable) -->
+<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(134,239,172,.2);border-radius:10px;padding:8px 12px'>
+<div onclick='openCategoryPage("showroom","purchasable")' style='font-size:.7rem;font-weight:800;color:#86efac;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(134,239,172,.4);cursor:pointer'>OPTIONAL PURCHASE <span style='font-size:.55rem;opacity:.5'>View All</span></div>
+<div id='rowPurchasable' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(134,239,172,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
+</div>
+
+<!-- Non-Ticket Games (any game the creator marked as not paying tickets - token-per-play, with or without a purchase option) -->
+<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(139,180,255,.2);border-radius:10px;padding:8px 12px'>
+<div onclick='openCategoryPage("showroom","non-ticket")' style='font-size:.7rem;font-weight:800;color:#8bb4ff;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(139,180,255,.4);cursor:pointer'>NON-TICKET GAMES <span style='font-size:.55rem;opacity:.5'>View All</span></div>
+<div id='rowNonTicket' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(139,180,255,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
+</div>
+
 <!-- Local Multiplayer -->
 <div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:8px 12px'>
 <div onclick='openCategoryPage("showroom","local-multiplayer")' style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(168,85,247,.4);cursor:pointer'>LOCAL MULTIPLAYER <span style='font-size:.55rem;opacity:.5'>View All</span></div>
@@ -442,7 +454,7 @@ new MutationObserver(mutations=>{
 <div id='games' style='display:none'></div>
 
 <div style='position:absolute;bottom:12px;left:20px;z-index:10'>
-<button class='btn' onclick="showView('showroom-submit')" style='font-size:.7rem;padding:5px 14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</button>
+
 </div>
 </div></section><section class='view' id='view-prizes' style='position:relative;padding:0;height:100vh;overflow-y:auto;overflow-x:hidden;background:linear-gradient(rgba(3,5,15,.7),rgba(3,5,15,.7)),url(prizebooth.jpg) center 15%/cover no-repeat;background-attachment:fixed;scrollbar-width:thin;scrollbar-color:rgba(0,102,255,.3) transparent'>
 <span id='prT' class='hidden'>10</span>
@@ -540,6 +552,7 @@ new MutationObserver(mutations=>{
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>PLATFORM</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='desktop' checked style='margin-right:6px'/>Desktop</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='mobile' style='margin-right:6px'/>Mobile</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME CATEGORY</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='independent' checked style='margin-right:6px'/>Independent</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='studio' style='margin-right:6px'/>Studio</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubMadeWithAi'/>Made with AI</label></div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>MONETIZATION</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.25);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubPaysTickets' onchange='updateShowSubMonetizationUi()'/>🎟️ Ticket Game</label><label id='showSubWantsPurchasableLabel' style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubWantsPurchasable'/>💰 Purchasable (buy outright)</label></div><div id='showSubPurchasableHint' style='display:none;font-size:.65rem;color:#5a7baa;margin-top:4px'>Ticket games can't be purchasable</div></div>
 </div>
 <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
 
@@ -626,7 +639,7 @@ new MutationObserver(mutations=>{
 </div>
 </div></section>
 
-<section class='view' id='view-backroom' style='position:relative;overflow-y:auto;overflow-x:hidden;height:100vh;max-height:100vh;scrollbar-width:thin;scrollbar-color:rgba(170,0,255,.25) transparent'><div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:url(/backroom-bg.jpg) center center/cover no-repeat;opacity:.35'></div><div style='position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden'>
+<section class='view' id='view-backroom' style='position:relative;overflow:hidden;height:100vh;max-height:100vh'><div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:url(/backroom-bg.jpg) center center/cover no-repeat;opacity:.35'></div><div style='position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden'>
 <div style='text-align:center;padding:10px 0 4px'>
 <h1 style='margin:0 0 4px;font-size:3rem;text-transform:uppercase;letter-spacing:12px;background:linear-gradient(90deg,#ff00ff,#00ffff,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 4s linear infinite;text-shadow:none;filter:drop-shadow(0 0 20px rgba(255,0,255,.4)) drop-shadow(0 0 40px rgba(0,255,255,.2))'>THE BACK</h1>
 <p style='margin:0;font-size:.7rem;letter-spacing:3px;text-transform:uppercase;color:#fff;text-shadow:0 0 12px rgba(0,255,255,.8),0 0 24px rgba(255,0,255,.4)'>Community-built · Free to play · No tokens needed</p>
@@ -664,7 +677,7 @@ new MutationObserver(mutations=>{
 <div id='backroomEmpty' style='display:none'></div>
 
 <div style='position:absolute;bottom:12px;left:20px;z-index:10'>
-<button class='btn' onclick="showView('back-submit')" style='font-size:.7rem;padding:5px 12px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</button>
+
 </div>
 </div></section>
 
@@ -1965,7 +1978,7 @@ window.addEventListener('message', (e) => {
 <div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>THUMBNAIL</div>
 <div style='display:grid;gap:6px'>
 <label style='padding:6px 10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-weight:700;font-size:.7rem;cursor:pointer;text-align:center'>Upload Image<input type='file' id='uploadGameThumbFile' accept='image/*' style='display:none' onchange='handleHostedThumbnailUpload(this,"uploadGameThumb","uploadGameThumbPreview","admin-game-thumb")'/></label>
-<input type='text' id='uploadGameThumb' placeholder='Hosted thumbnail URL' style='width:100%;padding:6px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.75rem;box-sizing:border-box' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/>
+<input type='text' id='uploadGameThumb' placeholder='Hosted thumbnail URL' oninput='updateUploadGameActionBtnVisibility()' style='width:100%;padding:6px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.75rem;box-sizing:border-box' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/>
 <div id='uploadGameThumbPreview' style='display:none;padding:6px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:8px;text-align:center'></div>
 </div>
 </div>
@@ -2029,36 +2042,10 @@ window.addEventListener('message', (e) => {
 </div>
 </div>
 
-<!-- Row 8: Numeric settings (Showroom only) -->
-<div id='uploadGameShowroomOnlyRow' style='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px'>
-<div>
-<div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>TICKET PAYOUT</div>
-<select id='uploadGamePaysTickets' style='width:100%;padding:6px 8px;background:rgba(0,0,0,.4);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.7rem;box-sizing:border-box'>
-<option value='yes'>Yes</option>
-<option value='no'>No (GXP only)</option>
-</select>
-</div>
-<div>
-<div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>TOKEN COST</div>
-<input type='number' id='uploadGameTokenCost' min='1' max='20' value='1' style='width:100%;padding:6px 8px;background:rgba(0,0,0,.4);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.75rem;box-sizing:border-box'/>
-</div>
-<div>
-<div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>SCORING</div>
-<select id='uploadGameScoring' style='width:100%;padding:6px 8px;background:rgba(0,0,0,.4);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.7rem;box-sizing:border-box'>
-<option value='best-of'>Best of N</option>
-<option value='cumulative'>Cumulative</option>
-</select>
-</div>
-<div>
-<div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>PURCHASE PRICE</div>
-<input type='number' id='uploadGamePurchasePrice' min='0' max='1000' value='0' style='width:100%;padding:6px 8px;background:rgba(0,0,0,.4);border:1px solid rgba(34,197,94,.2);border-radius:6px;color:#fff;font-size:.75rem;box-sizing:border-box'/>
-</div>
-</div>
-</div>
-
 <!-- Action buttons -->
 <div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>
 <button id='uploadGameActionBtn' class='btn' onclick='uploadGameToChain()' style='font-size:.7rem;padding:4px 14px;border-color:#22c55e;color:#22c55e'>Upload to Chain</button>
+<span id='uploadGameNeedsThumbHint' style='display:none;font-size:.65rem;color:#fbbf24'>⚠️ Set a hosted thumbnail first (Upload Image, or Use This Thumbnail above)</span>
 </div>
 
 <div id='uploadGameStatus' style='font-size:.65rem;color:#3d6090;margin-top:6px'></div>
@@ -5899,6 +5886,10 @@ function backendIdl({IDL}){
     getGameCategory:IDL.Func([IDL.Text],[IDL.Text],['query']),
     setGameAccessibility:IDL.Func([IDL.Text,IDL.Bool,IDL.Bool,IDL.Bool,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
     getGameAccessibility:IDL.Func([IDL.Text],[IDL.Record({keyboardOnly:IDL.Bool,keyboardAndMouse:IDL.Bool,controllerReady:IDL.Bool,madeWithAi:IDL.Bool})],['query']),
+    setGameMonetization:IDL.Func([IDL.Text,IDL.Bool,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
+    getGameMonetization:IDL.Func([IDL.Text],[IDL.Record({paysTickets:IDL.Bool,wantsPurchasable:IDL.Bool})],['query']),
+    getAllGameMonetization:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Tuple(IDL.Bool,IDL.Bool)))],['query']),
+    getAllGamePricing:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Tuple(IDL.Nat,IDL.Nat)))],['query']),
     adminSetGamePricing:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
     getGamePricing:IDL.Func([IDL.Text],[IDL.Record({tokenCost:IDL.Opt(IDL.Nat),purchasePrice:IDL.Opt(IDL.Nat)})],['query']),
     getAllGameCategories:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),
@@ -5986,6 +5977,9 @@ function backendIdl({IDL}){
     rejectGameShowroom:IDL.Func([IDL.Text],[Result],[]),
     promoteGameToJaysPicks:IDL.Func([IDL.Text],[Result],[]),
     removeGameSubmission:IDL.Func([IDL.Text],[Result],[]),
+    adminSuspendGame:IDL.Func([IDL.Text],[Result],[]),
+    adminRelistGame:IDL.Func([IDL.Text],[Result],[]),
+    adminDeleteGamePermanently:IDL.Func([IDL.Text],[Result],[]),
     requestGameRemoval:IDL.Func([IDL.Text],[Result],[]),
     getGameSubmissions:IDL.Func([],[IDL.Vec(GameSubmission)],['query']),
     adminGetAllGames:IDL.Func([],[IDL.Vec(GameSubmission)],[]),
@@ -7760,8 +7754,19 @@ async function getSubmissionsAsync(){
   if(_gameSubsCache && Date.now()-_gameSubsCacheTime<5000) return _gameSubsCache;
   try{
     const be=await getBackendActor();
-    const games=await be.getGameSubmissions();
-    _gameSubsCache=games.map(normalizeGameSubmission);
+    // Monetization/pricing live in separate maps, not on GameSubmission itself (see
+    // setGameMonetization/adminSetGamePricing) - batch-fetched here in parallel so every game's
+    // real paysTickets/tokenCost actually reaches the player-facing cache, not just admin's own
+    // views of it. Previously these were silently absent everywhere, so every game always fell
+    // back to hardcoded defaults (ticket-game, 1 token/play) regardless of what was actually set.
+    const [games,monEntries,pricingEntries]=await Promise.all([
+      be.getGameSubmissions(),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[]),
+    ]);
+    const monMap=new Map(monEntries.map(([id,v])=>[id,v]));
+    const pricingMap=new Map(pricingEntries.map(([id,v])=>[id,v]));
+    _gameSubsCache=games.map(g=>normalizeGameSubmission(g,monMap,pricingMap));
     _gameSubsCacheTime=Date.now();
     return _gameSubsCache;
   }catch(e){console.error('Failed to fetch game submissions:',e); return _gameSubsCache||[];}
@@ -7769,15 +7774,25 @@ async function getSubmissionsAsync(){
 function getSubmissions(){return _gameSubsCache||[];}
 function invalidateGameCache(){_gameSubsCache=null;_gameSubsCacheTime=0;}
 async function refreshGameCache(){await getSubmissionsAsync();}
-function normalizeGameSubmission(g){
+function normalizeGameSubmission(g,monMap,pricingMap){
+  // paysTickets/wantsPurchasable/tokenCost/purchasePrice: real values from the separate
+  // gameMonetization/gamePricing maps when present (monMap/pricingMap, batch-fetched by
+  // getSubmissionsAsync above), otherwise a game with no entry defaults to not-ticket-backed,
+  // 1 token/play, no purchase - matching each map's own backend-side default.
+  const mon=monMap?.get(g.id);
+  const pricing=pricingMap?.get(g.id);
+  const paysTickets=mon?mon[0]:false;
+  const wantsPurchasable=mon?mon[1]:false;
+  const tokenCost=pricing?Number(pricing[0])||1:1;
+  const purchasePrice=pricing?Number(pricing[1])||0:0;
   return {
     id:g.id, name:g.name, dev:g.developer, url:g.url, thumb:g.thumbnailUrl,
     desc:g.description, compat:g.compatibility, principal:g.creator.toText(),
     gameTier:g.gameTier, status:g.status, feePaid:Number(g.feePaid)/1e8,
     txId:Number(g.txId), date:new Date(Number(g.createdAt)/1e6).toISOString(),
-    tier:g.gameTier, gameCategory:g.category||'', paysTickets:g.paysTickets!==false,
+    tier:g.gameTier, gameCategory:g.category||'', paysTickets, wantsPurchasable,
     screenshots:Array.isArray(g.screenshots)?g.screenshots:[],
-    tokenCost:Number(g.tokenCost)||1,
+    tokenCost, purchasePrice,
     scoringMode:g.scoringMode||'best-of',
   };
 }
@@ -7854,7 +7869,7 @@ function safeAssetCanisterErrorMessage(e,action){
   if(/too large|max|exceed|oversized/i.test(raw)&&!looksLikeRawBackendDump(raw)){
     return raw.slice(0,180);
   }
-  if(looksLikeRawBackendDump(raw)||/certificate|request.?id|body|canister|candid|reject|IC0\d{3}|blob|nat8|byte|payload/i.test(raw)){
+  if(looksLikeRawBackendDump(raw)||/certificate|request.?id|body|canister|candid|reject\s*(code|text)|canister_reject|IC0\d{3}|blob|nat8|byte|payload/i.test(raw)){
     return `${label} failed on the game asset canister. The raw IC response was logged to the console for developers.`;
   }
   return raw&&!looksLikeRawBackendDump(raw)?raw.slice(0,180):`${label} failed. Check the browser console for details.`;
@@ -7866,7 +7881,7 @@ function safeUserErrorMessage(e,context){
   if(/payment|deposit|withdraw|transfer|mint|redeem|claim|purchase|token|ticket|score|session|ledger|game/i.test(label)){
     return safeGamePaymentErrorMessage(e,context);
   }
-  if(looksLikeRawBackendDump(raw)||/backend|canister|candid|reject|IC0\d{3}|Call context|certificate|request.?id|body|blob|nat8|byte|payload|stack|trace|variant|record|principal/i.test(raw)){
+  if(looksLikeRawBackendDump(raw)||/backend|canister|candid|reject\s*(code|text)|canister_reject|IC0\d{3}|Call context|certificate|request.?id|body|blob|nat8|byte|payload|stack|trace|variant|record|principal/i.test(raw)){
     console.warn('Raw arcade error hidden from player:',raw);
     return 'The arcade could not complete that action cleanly. Refresh and try again.';
   }
@@ -7889,7 +7904,7 @@ function safeGamePaymentErrorMessage(e,context){
   if(/connect|wallet|login|anonymous|auth|unauth|not connected/i.test(normalized)){
     return 'Connect your wallet before playing.';
   }
-  if(looksLikeRawBackendDump(raw)||/backend|canister|candid|reject|IC0\d{3}|Call context|certificate|request.?id|body|blob|nat8|byte|payload|stack|trace|no update method|variant|record|principal/i.test(raw)){
+  if(looksLikeRawBackendDump(raw)||/backend|canister|candid|reject\s*(code|text)|canister_reject|IC0\d{3}|Call context|certificate|request.?id|body|blob|nat8|byte|payload|stack|trace|no update method|variant|record|principal/i.test(raw)){
     console.warn('Raw arcade game/payment error hidden from player:',raw);
     return 'The arcade could not start or finish that session cleanly. Try again after refreshing; your game upload is safe.';
   }
@@ -8043,6 +8058,41 @@ async function refreshBackSubmissionFeeDisplay(){
   }
 }
 
+/// Clears a submission form back to its defaults after a successful submit, so a creator coming
+/// back later to submit a second game never sees the previous one's leftover data. prefix is
+/// 'backSub'/'showSub' (the form field id prefix); tierKey is 'back'/'showroom' (the key used in
+/// window._pendingSubmissionZip/Thumb).
+function resetSubmissionForm(prefix,tierKey){
+  const set=(id,value)=>{const el=document.getElementById(id);if(el)el.value=value||'';};
+  set(prefix+'Name','');
+  set(prefix+'Dev','');
+  set(prefix+'Desc','');
+  set(prefix+'ZipFile','');
+  set(prefix+'ThumbFile','');
+  set(prefix+'Thumb','');
+  [prefix+'KeyboardOnly',prefix+'KeyboardMouse',prefix+'ControllerReady',prefix+'MadeWithAi',prefix+'Hopeful',prefix+'PaysTickets',prefix+'WantsPurchasable'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.checked=false;
+  });
+  const zipInfo=document.getElementById(prefix+'ZipInfo');
+  if(zipInfo) zipInfo.innerHTML='';
+  const thumbPreview=document.getElementById(prefix+'ThumbPreview');
+  if(thumbPreview){thumbPreview.style.display='none';thumbPreview.innerHTML='';}
+  document.querySelectorAll(`input[name='${prefix}GameCategory']`).forEach(r=>{r.checked=(r.value==='independent');});
+  document.querySelectorAll(`input[name='${prefix}Compat']`).forEach(r=>{r.checked=(r.value==='desktop');});
+  if(window._pendingSubmissionZip) window._pendingSubmissionZip[tierKey]=null;
+  if(window._pendingSubmissionThumb) window._pendingSubmissionThumb[tierKey]=null;
+  if(prefix==='showSub') updateShowSubMonetizationUi();
+}
+
+/// Routes the shared top-bar "Submit a Game" button to the correct tier's form based on
+/// whichever of Showroom/Back the player is currently on (the button itself is only ever visible
+/// on those two pages - see showViewHooked's visibility rule).
+function submitGameNavigate(){
+  if(S.view==='arcade') showView('showroom-submit');
+  else if(S.view==='backroom') showView('back-submit');
+}
+
 async function submitBackGame(){
   const resId='backSubRes';
   const name=qs('backSubName').value.trim();
@@ -8072,11 +8122,32 @@ async function submitBackGame(){
     await chunkedUploadFile(gameId,'thumbnail',thumbFile,()=>{});
     invalidateGameCache();
     await syncOnChainTickets();
-    qs(resId).innerHTML='<span style="color:var(--green)">Submitted! Your game is pending admin review before it goes live in The Back.</span>';
+    qs(resId).innerHTML='<span style="color:var(--green)">Submitted! Your game is pending admin review before it goes live in The Back. Returning to home...</span>';
+    resetSubmissionForm('backSub','back');
+    setTimeout(()=>showView('landing'),1500);
   }catch(e){
     console.error('Game submission failed:',e);
     qs(resId).innerHTML='<span style="color:var(--red)">'+escHtml(safeUserErrorMessage(e,'game submission'))+'</span>';
   }
+}
+
+/// Ticket games can never be purchasable (server-enforced too, in setGameMonetization) - when
+/// "Ticket Game" is checked, disable and uncheck "Purchasable" and show why; when unchecked,
+/// re-enable it.
+function updateShowSubMonetizationUi(){
+  const paysTickets=document.getElementById('showSubPaysTickets')?.checked||false;
+  const purchasableCb=document.getElementById('showSubWantsPurchasable');
+  const purchasableLabel=document.getElementById('showSubWantsPurchasableLabel');
+  const hint=document.getElementById('showSubPurchasableHint');
+  if(purchasableCb){
+    purchasableCb.disabled=paysTickets;
+    if(paysTickets) purchasableCb.checked=false;
+  }
+  if(purchasableLabel){
+    purchasableLabel.style.opacity=paysTickets?'.5':'1';
+    purchasableLabel.style.cursor=paysTickets?'not-allowed':'pointer';
+  }
+  if(hint) hint.style.display=paysTickets?'':'none';
 }
 
 async function submitShowroomGame(){
@@ -8101,6 +8172,7 @@ async function submitShowroomGame(){
     const gameId=gameResult.ok;
     be.setGameCategory(gameId,category).catch(e=>console.warn('Category save failed:',e));
     be.setGameAccessibility(gameId,document.getElementById('showSubKeyboardOnly')?.checked||false,document.getElementById('showSubKeyboardMouse')?.checked||false,document.getElementById('showSubControllerReady')?.checked||false,document.getElementById('showSubMadeWithAi')?.checked||false).catch(e=>console.warn('Accessibility tags save failed:',e));
+    be.setGameMonetization(gameId,document.getElementById('showSubPaysTickets')?.checked||false,document.getElementById('showSubWantsPurchasable')?.checked||false).catch(e=>console.warn('Monetization save failed:',e));
     qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip...</span>';
     await chunkedUploadFile(gameId,'zip',zipFile,(done,total)=>{
       qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip... ('+done+'/'+total+')</span>';
@@ -8109,7 +8181,9 @@ async function submitShowroomGame(){
     await chunkedUploadFile(gameId,'thumbnail',thumbFile,()=>{});
     invalidateGameCache();
     await syncOnChainTickets();
-    qs(resId).innerHTML='<span style="color:var(--green)">Submitted! Your game is pending admin review before it goes live in Showroom.</span>';
+    qs(resId).innerHTML='<span style="color:var(--green)">Submitted! Your game is pending admin review before it goes live in Showroom. Returning to home...</span>';
+    resetSubmissionForm('showSub','showroom');
+    setTimeout(()=>showView('landing'),1500);
   }catch(e){
     console.error('Showroom submission failed:',e);
     qs(resId).innerHTML='<span style="color:var(--red)">'+escHtml(safeUserErrorMessage(e,'game submission'))+'</span>';
@@ -8157,11 +8231,20 @@ async function renderShowroom(){
   const mRow=qs('rowMultiplayer');
   const ticketGames=allGames.filter(s=>s.paysTickets!==false);
   const tRow=qs('rowTicketGames');
+  // Non-ticket games the creator marked Purchasable (see game-monetization-types.md) - only ever
+  // true for non-ticket games (setGameMonetization rejects paysTickets+wantsPurchasable together),
+  // so no need to also exclude ticket games here.
+  const purchasableGames=allGames.filter(s=>s.wantsPurchasable);
+  const pRow=qs('rowPurchasable');
+  const nonTicketGames=allGames.filter(s=>s.paysTickets===false);
+  const nRow=qs('rowNonTicket');
 
   bRow.innerHTML=boosted.length?boosted.map(s=>gameCard(s,'',true)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No spotlight games yet</div>';
   jRow.innerHTML=jaysPicks.length?jaysPicks.map(s=>gameCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No DAO Favourites yet</div>';
   mRow.innerHTML=multiplayer.length?multiplayer.map(s=>gameCard(s,'#a855f7',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No local multiplayer games yet</div>';
   if(tRow) tRow.innerHTML=ticketGames.length?ticketGames.map(s=>gameCard(s,'#39ff14',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No ticket games yet</div>';
+  if(pRow) pRow.innerHTML=purchasableGames.length?purchasableGames.map(s=>gameCard(s,'#86efac',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No purchasable games yet</div>';
+  if(nRow) nRow.innerHTML=nonTicketGames.length?nonTicketGames.map(s=>gameCard(s,'#8bb4ff',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No non-ticket games yet</div>';
   fRow.innerHTML=fullList.length?fullList.map(s=>gameCard(s,'rgba(255,255,255,.15)',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No games yet - submit yours!</div>';
   hydrateGameCardStats(allGames);
 }
@@ -8688,7 +8771,10 @@ function renderInlineGameAdminTools(gameId){
       <button class='btn' onclick='openAdminGameUpdateFromDetails("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#22c55e;color:#22c55e'>Update Files</button>
       ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff44aa;color:#ff44aa'>Promote to DAO Favourites</button>`:`<button class='btn' onclick='demoteGameFromPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--muted);color:var(--muted)'>Demote</button>`}
       ${(sub.paysTickets&&gt!=='backroom')?`<button class='btn' onclick='adminRetireBreaker("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#a855f7;color:#a855f7'>Retire Breaker</button>`:''}
-      <button class='btn' onclick='removeGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--red);color:var(--red)'>Remove Game</button>
+      ${sub.status==='suspended'
+        ?`<button class='btn' onclick='adminRelistGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
+        :`<button class='btn' onclick='adminSuspendGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#fbbf24;color:#fbbf24'>⏸️ Suspend</button>`}
+      <button class='btn' onclick='adminDeleteGamePermanently("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--red);color:var(--red)'>🗑️ Delete Permanently</button>
       ${gt!=='backroom'?(isGameBoosted(gameId)?`<button class='btn' onclick='adminRemoveBoost("${gameId}");renderGameAdminList()' style='font-size:.68rem;padding:5px 8px;border-color:#ff8800;color:#ff8800'>Remove Boost</button>`:`<button class='btn' onclick='quickBoostGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff8800;color:#ff8800'>Boost</button>`):''}
     </div>
     ${(sub.paysTickets!==false&&gt!=='backroom')?`<div id='payoutAdmin_${payoutDomId(gameId)}'>${renderPayoutConfigAdmin(gameId,null)}</div><div id='jackpotAdmin_${payoutDomId(gameId)}'>${renderTicketJackpotAdmin(gameId,null)}</div>`:''}
@@ -8960,6 +9046,8 @@ async function openCategoryPage(room,category){
     else if(category==='dao-approved'){title="DAO Favourites";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.tier==='jays-picks'||s.gameTier==='jays-picks');}
     else if(category==='local-multiplayer'){title='Local Multiplayer';titleColor='#a855f7';borderColor='#a855f7';games=pool.filter(s=>s.compat==='local-multiplayer'||s.compatibility==='local-multiplayer'||s.tags?.includes('multiplayer'));}
     else if(category==='ticket-games'){title='Ticket Games';titleColor='#39ff14';borderColor='#39ff14';games=pool.filter(s=>s.paysTickets!==false);}
+    else if(category==='purchasable'){title='Optional Purchase';titleColor='#86efac';borderColor='#86efac';games=pool.filter(s=>s.wantsPurchasable);}
+    else if(category==='non-ticket'){title='Non-Ticket Games';titleColor='#8bb4ff';borderColor='#8bb4ff';games=pool.filter(s=>s.paysTickets===false);}
     else if(category==='popular'){title='Most Popular';titleColor='#00ff66';borderColor='#00ff66';games=[...pool].sort((a,b)=>(stats[b.id]?.plays||0)-(stats[a.id]?.plays||0)).filter(s=>(stats[s.id]?.plays||0)>0);}
     else{title='All Showroom Games';games=pool;}
   } else {
@@ -10374,7 +10462,7 @@ function renderModList(){
 }
 
 // === GAME UPLOAD TO CHAIN ===
-const GAME_ASSET_CANISTER='4xhad-gd777-77775-aaacq-cai';
+const GAME_ASSET_CANISTER='4qggx-l3777-77775-aaaca-cai';
 const MAX_GAME_ZIP_BYTES=10*1024*1024; // 10MB
 const CHUNK_SIZE=1900000; // ~1.9MB chunks (under 2MB limit)
 const MAX_THUMB_BYTES=2*1024*1024;
@@ -10479,6 +10567,7 @@ async function handleHostedThumbnailUpload(input,targetId,previewId,scope='thumb
       }
       _adminUploadThumbPreviousKey=newKey;
       _adminUploadThumbSetForGameId=document.getElementById('adminPendingSubmissionSelect')?.value||null;
+      updateUploadGameActionBtnVisibility();
     }
     return url;
   }catch(e){
@@ -10838,9 +10927,6 @@ function fillAdminGameUploadFormFromTarget(target){
   set('uploadGameCompat',target.compat||'desktop');
   set('uploadGameCategory',target.gameCategory||'independent');
   set('uploadGameTier',target.gameTier||target.tier||'showroom');
-  set('uploadGamePaysTickets',target.paysTickets===false?'no':'yes');
-  set('uploadGameTokenCost',target.tokenCost||1);
-  set('uploadGameScoring',target.scoringMode||'best-of');
   const screenshotBox=document.getElementById('uploadGameScreenshots');
   if(screenshotBox) screenshotBox.value=(target.screenshots||[]).join('\n');
   renderGameScreenshotPreview(target.screenshots||[]);
@@ -10859,13 +10945,17 @@ async function refreshAdminPendingSubmissionSelect(){
   const current=select.value;
   try{
     const be=await getBackendActor(true);
-    const [uploadResult,allGamesRaw]=await Promise.all([
+    const [uploadResult,allGamesRaw,monEntries1,pricingEntries1]=await Promise.all([
       be.adminGetPendingZipUploads(),
-      be.adminGetAllGames()
+      be.adminGetAllGames(),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[])
     ]);
     if(uploadResult.err) return;
     const uploads=uploadResult.ok||[];
-    const games=allGamesRaw.map(normalizeGameSubmission);
+    const monMap1=new Map(monEntries1.map(([id,v])=>[id,v]));
+    const pricingMap1=new Map(pricingEntries1.map(([id,v])=>[id,v]));
+    const games=allGamesRaw.map(g=>normalizeGameSubmission(g,monMap1,pricingMap1));
     const byGame={};
     uploads.forEach(u=>{ (byGame[u.gameId]=byGame[u.gameId]||[]).push(u); });
     _adminPendingSubmissionTargets=Object.entries(byGame).map(([gameId,items])=>{
@@ -10882,10 +10972,52 @@ async function refreshAdminPendingSubmissionSelect(){
   }
 }
 
+/// Shared helper: reconstructs a pending upload's chunks (zip or thumbnail) into a real File
+/// object. Extracted from loadAdminPendingSubmissionTarget so approveSubmission can reuse the
+/// exact same logic to auto-host a submission's original thumbnail with no dependency on admin
+/// having visited Upload Game to Chain for this submission first.
+async function fetchChunksAsFile(uploadId,chunkCount,filename,mimeType){
+  const be=await getBackendActor(true);
+  const parts=[];
+  for(let i=0;i<chunkCount;i++){
+    const result=await be.adminGetZipChunk(uploadId,BigInt(i));
+    if(result.err) throw new Error(result.err);
+    parts.push(new Uint8Array(result.ok));
+  }
+  return new File(parts,filename,{type:mimeType});
+}
+
+/// Sets a non-ticket pending submission's token cost (and purchase price, if the creator
+/// requested Purchasable) via the existing adminSetGamePricing backend function, which previously
+/// had no UI calling it at all.
+async function adminSetPendingGamePricing(gameId){
+  if(!isAdmin()) return;
+  const tokenCostEl=document.getElementById('adminPendingTokenCost_'+gameId);
+  const purchasePriceEl=document.getElementById('adminPendingPurchasePrice_'+gameId);
+  const tokenCost=Math.max(0,Math.floor(Number(tokenCostEl?.value)||0));
+  const purchasePrice=Math.max(0,Math.floor(Number(purchasePriceEl?.value)||0));
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminSetGamePricing(gameId,BigInt(tokenCost),BigInt(purchasePrice));
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    alert('Pricing set: '+tokenCost+' tokens/play'+(purchasePrice>0?', '+purchasePrice+' to purchase outright':''));
+  }catch(e){alert(safeUserErrorMessage(e,'admin action'));}
+}
+
 async function loadAdminPendingSubmissionTarget(){
   const id=document.getElementById('adminPendingSubmissionSelect')?.value||'';
   const preview=document.getElementById('adminPendingSubmissionPreview');
   _adminUploadThumbPreviousKey=null;
+  // Clear any thumbnail URL staged from a *different* prior context (an existing-game load, or a
+  // different pending submission entirely) before loading this one - without this, switching
+  // straight from "Existing Game/Update Target" (or a different submission) into this picker left
+  // that unrelated URL sitting in the field, which could get silently published against the wrong
+  // game. _adminUploadThumbSetForGameId is cleared too so a stale match can't slip past
+  // approveSubmission's own game-id check either.
+  const thumbField=document.getElementById('uploadGameThumb');
+  if(thumbField) thumbField.value='';
+  _adminUploadThumbSetForGameId=null;
+  updateUploadGameActionBtnVisibility();
   if(!id){ if(preview){preview.style.display='none';preview.innerHTML='';} return; }
   const found=_adminPendingSubmissionTargets.find(({game})=>game.id===id);
   if(!found) return;
@@ -10909,11 +11041,36 @@ async function loadAdminPendingSubmissionTarget(){
   const zipItem=items.find(u=>parseZipUploadFilename(u.filename).purpose==='zip');
   const thumbItem=items.find(u=>parseZipUploadFilename(u.filename).purpose==='thumbnail');
   _adminPendingActiveThumbId=thumbItem?thumbItem.id:null;
+  // Creator's declared monetization choice - the real, authoritative source of ticket-pool
+  // eligibility (see backend's setGameMonetization/isTicketGameSubmission). wantsPurchasable is
+  // just the creator's request; admin still sets a real price via Ticket Reserve Funding's pricing
+  // tool (adminSetGamePricing) if honoring it.
+  let monetizationRow='';
+  let pricingRow='';
+  try{
+    const be2=await getBackendActor(false);
+    const mon=await be2.getGameMonetization(game.id);
+    monetizationRow=mon.paysTickets
+      ?`<div style='margin-bottom:6px;color:#ffd700'>🎟️ Ticket Game (creator's choice)</div>`
+      :mon.wantsPurchasable
+      ?`<div style='margin-bottom:6px;color:#86efac'>💰 Token-per-play + Purchasable requested</div>`
+      :`<div style='margin-bottom:6px;color:#8bb4ff'>🪙 Token-per-play only (creator's choice)</div>`;
+    // Pricing only applies to non-ticket games at all (ticket games use the payout ladder instead,
+    // via setGamePayoutConfig). The Purchase Price field specifically is only ever shown/enabled
+    // when the creator requested Purchasable - never for a ticket game, and never for a plain
+    // token-per-play game that didn't ask for it, per Jay's explicit rule.
+    if(!mon.paysTickets){
+      const purchaseInput=mon.wantsPurchasable
+        ?`<input type='number' id='adminPendingPurchasePrice_${game.id}' placeholder='Purchase price' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(134,239,172,.3);border-radius:6px;color:#fff;font-size:.7rem'/>`
+        :`<input type='number' disabled placeholder='Not purchasable' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#5a7baa;font-size:.7rem'/>`;
+      pricingRow=`<div style='display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap'><input type='number' id='adminPendingTokenCost_${game.id}' placeholder='Token cost/play' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(139,180,255,.3);border-radius:6px;color:#fff;font-size:.7rem'/>${purchaseInput}<button class='btn tiny' onclick='adminSetPendingGamePricing("${game.id}")' style='font-size:.65rem;padding:4px 10px'>Set Pricing</button></div>`;
+    }
+  }catch(_){}
   if(preview){
     preview.style.display='block';
     const zipRow=zipItem?`<div style='margin-bottom:6px'>📦 <b>${escHtml(parseZipUploadFilename(zipItem.filename).filename)}</b> (${(Number(zipItem.totalBytes)/1024).toFixed(0)}KB) <button class='btn tiny' onclick='downloadPendingZipUpload("${zipItem.id}","${escHtml(parseZipUploadFilename(zipItem.filename).filename)}",${zipItem.chunkCount})' style='font-size:.62rem;padding:3px 8px;margin-left:6px'>Download Zip</button> <span id='pendingZipAutoFillStatus' style='font-size:.62rem;color:#5a7a9a;margin-left:6px'>Loading into Choose ZIP…</span></div>`:'<div style="color:var(--red);margin-bottom:6px">No zip uploaded for this submission</div>';
     const thumbRow=thumbItem?`<div style='display:flex;align-items:center;gap:8px'><div id='adminPendingThumbPreview_${thumbItem.id}' style='width:80px;height:80px;background:#1a2548;border-radius:6px;overflow:hidden;flex-shrink:0'>🖼️</div><div style='display:flex;flex-direction:column;gap:4px'><button id='pendingThumbUseBtn' onclick='useAdminPendingThumbnail()' class='btn tiny' style='font-size:.62rem;padding:4px 10px' disabled>Loading…</button><button onclick='swapAdminPendingThumbnail()' class='btn tiny' style='font-size:.62rem;padding:4px 10px;border-color:#8b5cf6;color:#c084fc'>Swap Thumbnail</button></div><input type='file' id='adminPendingThumbSwapFile' accept='image/*' style='display:none' onchange='handleAdminPendingThumbnailSwap(this)'/></div>`:'<div style="color:var(--red)">No thumbnail uploaded</div>';
-    preview.innerHTML=`${zipRow}${thumbRow}`;
+    preview.innerHTML=`${monetizationRow}${pricingRow}${zipRow}${thumbRow}`;
     if(thumbItem) loadPendingThumbnailPreview(thumbItem.id,thumbItem.chunkCount,'width:100%;height:100%;object-fit:cover;display:block','adminPendingThumbPreview_'+thumbItem.id);
   }
 
@@ -10925,16 +11082,6 @@ async function loadAdminPendingSubmissionTarget(){
   // dropdown click would silently re-host a thumbnail for every submission admin merely browses.
   // So the thumbnail file is pre-filled but left for admin to explicitly click "Use This Thumbnail"
   // when actually ready, via the button above.
-  const fetchChunksAsFile=async(uploadId,chunkCount,filename,mimeType)=>{
-    const be=await getBackendActor(true);
-    const parts=[];
-    for(let i=0;i<chunkCount;i++){
-      const result=await be.adminGetZipChunk(uploadId,BigInt(i));
-      if(result.err) throw new Error(result.err);
-      parts.push(new Uint8Array(result.ok));
-    }
-    return new File(parts,filename,{type:mimeType});
-  };
   if(zipItem){
     try{
       const {filename}=parseZipUploadFilename(zipItem.filename);
@@ -11035,6 +11182,7 @@ function clearAdminPendingSubmissionPicker(){
   const preview=document.getElementById('adminPendingSubmissionPreview');
   if(preview){preview.style.display='none';preview.innerHTML='';}
   _adminUploadThumbPreviousKey=null;
+  updateUploadGameActionBtnVisibility();
 }
 
 async function refreshAdminGameUpdateSelect(){
@@ -11044,8 +11192,14 @@ async function refreshAdminGameUpdateSelect(){
   try{
     const be=await getBackendActor(true);
     if(!backendMethodAvailable(be,'adminGetAllGames')) return;
-    const games=await be.adminGetAllGames();
-    _adminGameUpdateTargets=(games||[]).map(normalizeGameSubmission)
+    const [games,monEntries2,pricingEntries2]=await Promise.all([
+      be.adminGetAllGames(),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[])
+    ]);
+    const monMap2=new Map(monEntries2.map(([id,v])=>[id,v]));
+    const pricingMap2=new Map(pricingEntries2.map(([id,v])=>[id,v]));
+    _adminGameUpdateTargets=(games||[]).map(g=>normalizeGameSubmission(g,monMap2,pricingMap2))
       .filter(g=>g.status!=='removed'&&gameAssetSlugFromUrl(g.url))
       .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
     select.innerHTML='<option value="">New game upload</option>'+_adminGameUpdateTargets.map(g=>{
@@ -11062,6 +11216,7 @@ function loadAdminGameUpdateTarget(){
   const target=getSelectedAdminGameUpdateTarget();
   if(target) fillAdminGameUploadFormFromTarget(target);
   else setAdminGameUpdateMode(null);
+  updateUploadGameActionBtnVisibility();
 }
 async function selectAdminGameUpdateTarget(id){
   if(!_adminGameUpdateTargets.length) await refreshAdminGameUpdateSelect();
@@ -11081,6 +11236,20 @@ function findAdminGameUpdateTargetForSlug(gameId){
 /// shared set of element ids, just showing/hiding the Showroom-only fields (ticket payout, token
 /// cost, scoring, purchase price — none of which apply to The Back, which is permanently free)
 /// and flipping the underlying (now-hidden) tier select that every existing helper already reads.
+/// Shows/hides the Upload to Chain button based on whether a real hosted thumbnail URL is
+/// currently staged in #uploadGameThumb - per Jay's explicit choice not to keep chasing why a
+/// thumbnail sometimes doesn't carry over to the live game card, this makes it structurally
+/// impossible to publish a game without one in the first place. Called after every place that can
+/// change that field's value (an upload succeeding, loading an existing/pending target, clearing
+/// the picker, switching tier) plus a live 'input' listener for admin manually typing/pasting a URL.
+function updateUploadGameActionBtnVisibility(){
+  const hasThumb=!!document.getElementById('uploadGameThumb')?.value?.trim();
+  const btn=document.getElementById('uploadGameActionBtn');
+  const hint=document.getElementById('uploadGameNeedsThumbHint');
+  if(btn) btn.style.display=hasThumb?'':'none';
+  if(hint) hint.style.display=hasThumb?'none':'';
+}
+
 function setUploadGameTier(tier){
   const sel=document.getElementById('uploadGameTier');
   if(sel) sel.value=tier;
@@ -11106,6 +11275,7 @@ function setUploadGameTier(tier){
     section.classList.add('tier-'+tier);
   }
   refreshAdminPendingSubmissionSelect();
+  updateUploadGameActionBtnVisibility();
 }
 
 function getAdminGameFields(){
@@ -11120,10 +11290,15 @@ function getAdminGameFields(){
   const compat=document.getElementById('uploadGameCompat')?.value||'desktop';
   const category=document.getElementById('uploadGameCategory')?.value||'independent';
   const tier=document.getElementById('uploadGameTier')?.value||'showroom';
-  const paysTickets=document.getElementById('uploadGamePaysTickets')?.value!=='no';
-  const tokenCost=Math.max(1,Math.min(20,parseInt(document.getElementById('uploadGameTokenCost')?.value)||1));
-  const scoring=document.getElementById('uploadGameScoring')?.value||'best-of';
-  const purchasePrice=Math.max(0,Math.min(1000,parseInt(document.getElementById('uploadGamePurchasePrice')?.value)||0));
+  // paysTickets/tokenCost/scoring/purchasePrice: adminAddGame's backend implementation ignores
+  // all four of these parameters entirely (confirmed - they're accepted only for call-signature
+  // compatibility), so these are just harmless constants to satisfy that signature, not real admin
+  // input. Real monetization now comes from the creator's own Ticket Game/Purchasable checkboxes
+  // (setGameMonetization) and the pending-submission picker's pricing row (adminSetGamePricing).
+  const paysTickets=true;
+  const tokenCost=1;
+  const scoring='best-of';
+  const purchasePrice=0;
   return {name,dev,thumb,desc,principal,screenshots,compat,category,tier,paysTickets,tokenCost,scoring,purchasePrice};
 }
 
@@ -11159,27 +11334,111 @@ async function deleteGameFromChain(){
     const assetActor=Actor.createActor(assetIdl,{agent,canisterId:GAME_ASSET_CANISTER});
 
     status.innerHTML='<span style="color:#ffd700">Listing assets...</span>';
-    const allAssets=await assetActor.list({});
-    const gamePrefix='/games/'+gameId+'/';
-    const toDelete=allAssets.filter(a=>a.key.startsWith(gamePrefix));
+    const deletedCount=await deleteAllGameFilesFromAssetCanister(assetActor,gameId);
 
-    if(toDelete.length===0){
+    if(deletedCount===0){
       status.innerHTML='<span style="color:#ef4444">No files found for "'+gameId+'".</span>';
       return;
     }
 
-    // Use batch delete for atomicity
-    status.innerHTML='<span style="color:#ffd700">Deleting '+toDelete.length+' files...</span>';
-    const {batch_id}=await assetActor.create_batch({});
-    const ops=toDelete.map(a=>({DeleteAsset:{key:a.key}}));
-    await assetActor.commit_batch({batch_id,operations:ops});
-
-    status.innerHTML='<span style="color:#22c55e">Deleted '+toDelete.length+' files for "'+gameId+'".</span>';
+    status.innerHTML='<span style="color:#22c55e">Deleted '+deletedCount+' files for "'+gameId+'".</span>';
     document.getElementById('deleteGameId').value='';
   }catch(e){
     console.error('Delete error:',e);
     status.innerHTML='<span style="color:#ef4444">Delete failed: '+escHtml(safeAssetCanisterErrorMessage(e,'game delete'))+'</span>';
   }
+}
+
+/// Shared helper: given an already-created asset-canister actor, deletes every hosted file under
+/// /games/<gameId>/ in one atomic batch. Returns the number of files deleted (0 if none existed).
+/// Extracted from deleteGameFromChain so adminDeleteGamePermanently can reuse the exact same logic.
+async function deleteAllGameFilesFromAssetCanister(assetActor,gameId){
+  const allAssets=await assetActor.list({});
+  const gamePrefix='/games/'+gameId+'/';
+  const toDelete=allAssets.filter(a=>a.key.startsWith(gamePrefix));
+  if(toDelete.length===0) return 0;
+  const {batch_id}=await assetActor.create_batch({});
+  const ops=toDelete.map(a=>({DeleteAsset:{key:a.key}}));
+  await assetActor.commit_batch({batch_id,operations:ops});
+  return toDelete.length;
+}
+
+/// Builds a ready-to-use asset-canister actor with the admin's own connected identity, using the
+/// same minimal IDL subset deleteGameFromChain already relies on.
+async function getAdminAssetActor(){
+  const agent=new HttpAgent({host:icpHost(),identity:S.identity});
+  await fetchRootKeyIfLocal(agent);
+  const assetIdl=({IDL:I})=>{
+    return I.Service({
+      'list':I.Func([I.Record({})],[I.Vec(I.Record({'key':I.Text,'content_type':I.Text,'encodings':I.Vec(I.Record({})),'headers':I.Opt(I.Vec(I.Tuple(I.Text,I.Text))),'is_aliased':I.Opt(I.Bool),'allow_raw_access':I.Opt(I.Bool),'max_age':I.Opt(I.Nat64)}))],['query']),
+      'delete_asset':I.Func([I.Record({'key':I.Text})],[],[]),
+      'create_batch':I.Func([I.Record({})],[I.Record({'batch_id':I.Nat})],[]),
+      'commit_batch':I.Func([I.Record({
+        'batch_id':I.Nat,
+        'operations':I.Vec(I.Variant({
+          'CreateAsset':I.Record({'key':I.Text,'content_type':I.Text,'max_age':I.Opt(I.Nat64),'headers':I.Opt(I.Vec(I.Tuple(I.Text,I.Text))),'enable_aliasing':I.Opt(I.Bool),'allow_raw_access':I.Opt(I.Bool)}),
+          'SetAssetContent':I.Record({'key':I.Text,'content_encoding':I.Text,'chunk_ids':I.Vec(I.Nat),'sha256':I.Opt(I.Vec(I.Nat8))}),
+          'UnsetAssetContent':I.Record({'key':I.Text,'content_encoding':I.Text}),
+          'DeleteAsset':I.Record({'key':I.Text}),
+          'Clear':I.Record({}),
+        }))
+      })],[],[]),
+    });
+  };
+  return Actor.createActor(assetIdl,{agent,canisterId:GAME_ASSET_CANISTER});
+}
+
+/// Admin: suspend a live game so it disappears from public listings while keeping its record and
+/// hosted files fully intact - for "needs work, will come back." Fully reversible via Relist.
+async function adminSuspendGame(gameId){
+  if(!isAdmin()) return;
+  if(!await arcadeConfirm('Suspend Game','Suspend this game? It will disappear from public listings until relisted. Nothing is deleted.')) return;
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminSuspendGame(gameId);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); renderBackroom(); renderShowroom();
+  }catch(e){alert(safeUserErrorMessage(e,'admin action'));}
+}
+
+/// Admin: relist a suspended game back to live, at no cost.
+async function adminRelistGame(gameId){
+  if(!isAdmin()) return;
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminRelistGame(gameId);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); renderBackroom(); renderShowroom();
+  }catch(e){alert(safeUserErrorMessage(e,'admin action'));}
+}
+
+/// Admin: permanently delete a game - both its backend record (adminDeleteGamePermanently) and its
+/// hosted files on the asset canister (reusing deleteAllGameFilesFromAssetCanister), as one combined
+/// irreversible action. Reports both outcomes clearly since they're two independent calls.
+async function adminDeleteGamePermanently(gameId){
+  if(!isAdmin()) return;
+  if(!await arcadeConfirm('Permanently Delete Game','Permanently delete this game\'s listing AND all its hosted files? This cannot be undone.')) return;
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminDeleteGamePermanently(gameId);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
+    let fileMsg='Listing deleted.';
+    try{
+      const assetActor=await getAdminAssetActor();
+      const deletedCount=await deleteAllGameFilesFromAssetCanister(assetActor,gameId);
+      fileMsg=deletedCount>0?`Listing deleted and ${deletedCount} hosted file(s) removed.`:'Listing deleted. No hosted files were found to remove.';
+    }catch(fileErr){
+      console.error('Hosted file cleanup failed:',fileErr);
+      fileMsg='Listing deleted, but hosted file cleanup failed: '+safeAssetCanisterErrorMessage(fileErr,'game delete')+' You may need to clean up remaining files manually from Upload Game to Chain.';
+    }
+    alert(fileMsg);
+    invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); renderBackroom(); renderShowroom();
+    // Close the game details popup if that's where this was triggered from - otherwise it keeps
+    // showing the now-deleted game, which reads as if nothing happened. Uses the modal's own
+    // proper close path (clears any demo interval, restores nav chrome) rather than a bare
+    // .remove(), matching what its own Close button already does.
+    if(document.getElementById('m-backroom-game')) closeGameModalImmediate();
+  }catch(e){alert(safeUserErrorMessage(e,'admin action'));}
 }
 
 // adminGiveTokens REMOVED - Tokens only created via ICP deposit
@@ -12500,11 +12759,15 @@ async function loadTicketReserveFundingAdmin(){
       renderTicketFundingPreview();
       return;
     }
-    const [games,auditMap]=await Promise.all([
+    const [games,auditMap,monEntries3,pricingEntries3]=await Promise.all([
       be.adminGetAllGames(),
-      getAdminTicketPoolAuditMap(be)
+      getAdminTicketPoolAuditMap(be),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[])
     ]);
-    _ticketFundingAdminGames=(games||[]).map(normalizeGameSubmission).filter(g=>g&&g.paysTickets&&g.status==='live').sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+    const monMap3=new Map(monEntries3.map(([id,v])=>[id,v]));
+    const pricingMap3=new Map(pricingEntries3.map(([id,v])=>[id,v]));
+    _ticketFundingAdminGames=(games||[]).map(g=>normalizeGameSubmission(g,monMap3,pricingMap3)).filter(g=>g&&g.paysTickets&&g.status==='live').sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
     _ticketFundingReserveStatus=null;
     if(selectEl){
       const current=selectEl.value;
@@ -12690,14 +12953,18 @@ async function renderPendingSubmissionsByTier(){
   backEl.innerHTML='Loading...'; showEl.innerHTML='Loading...';
   try{
     const be=await getBackendActor(true);
-    const [uploadResult,allGamesRaw]=await Promise.all([
+    const [uploadResult,allGamesRaw,monEntries4,pricingEntries4]=await Promise.all([
       be.adminGetPendingZipUploads(),
-      be.adminGetAllGames()
+      be.adminGetAllGames(),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[])
     ]);
     if(uploadResult.err){backEl.innerHTML=showEl.innerHTML='<span style="color:var(--red)">'+escHtml(uploadResult.err)+'</span>'; return;}
     const uploads=uploadResult.ok||[];
     _pendingZipUploadsCache=uploads;
-    const games=allGamesRaw.map(normalizeGameSubmission);
+    const monMap4=new Map(monEntries4.map(([id,v])=>[id,v]));
+    const pricingMap4=new Map(pricingEntries4.map(([id,v])=>[id,v]));
+    const games=allGamesRaw.map(g=>normalizeGameSubmission(g,monMap4,pricingMap4));
     // Pending games are never "live", so they're never in getSubmissions()'s public cache —
     // openPendingSubmissionDetail needs its own lookup source for these.
     window._pendingSubmissionGamesCache=games;
@@ -12742,7 +13009,7 @@ function renderPendingSubmissionRow({game,items,stage}){
     ?`<div id='pendingThumbPreview_${thumbItem.id}' style="width:44px;height:44px;background:#1a2548;border-radius:6px;display:grid;place-items:center;flex-shrink:0;overflow:hidden;font-size:1.1rem">🎮</div>`
     :`<div style="width:44px;height:44px;background:#1a2548;border-radius:6px;display:grid;place-items:center;flex-shrink:0">🎮</div>`;
   const acceptOnclick=stage==='zip'
-    ?`approveSubmission(${JSON.stringify(game.id)},${JSON.stringify(zipItem?zipItem.id:'')},${JSON.stringify(thumbItem?thumbItem.id:'')})`
+    ?`approveSubmission(${JSON.stringify(game.id)},${JSON.stringify(zipItem?zipItem.id:'')},${JSON.stringify(thumbItem?thumbItem.id:'')},${JSON.stringify(thumbItem?Number(thumbItem.chunkCount):0)})`
     :`acceptShowroomContentReview(${JSON.stringify(game.id)})`;
   const rejectOnclick=stage==='zip'
     ?`promptRejectSubmission(${JSON.stringify(game.id)},${JSON.stringify(zipItem?zipItem.id:(thumbItem?thumbItem.id:''))})`
@@ -12831,7 +13098,7 @@ async function openPendingSubmissionDetail(gameId){
     </div>
     ${rowsHtml}
     <div style='display:flex;gap:10px;margin-top:16px'>
-      <button class='btn' onclick='approveSubmission("${escHtml(gameId)}","${zipItem?zipItem.id:''}","${thumbItem?thumbItem.id:''}")' style='flex:1;font-size:.85rem;font-weight:800;padding:10px 12px;border-color:#39ff88;color:#39ff88;background:rgba(57,255,136,.08)'>✅ Approve</button>
+      <button class='btn' onclick='approveSubmission("${escHtml(gameId)}","${zipItem?zipItem.id:''}","${thumbItem?thumbItem.id:''}",${thumbItem?Number(thumbItem.chunkCount):0})' style='flex:1;font-size:.85rem;font-weight:800;padding:10px 12px;border-color:#39ff88;color:#39ff88;background:rgba(57,255,136,.08)'>✅ Approve</button>
       <button class='btn' onclick='promptRejectSubmission("${escHtml(gameId)}","${zipItem?zipItem.id:(thumbItem?thumbItem.id:'')}")' style='flex:1;font-size:.85rem;font-weight:800;padding:10px 12px;border-color:var(--red);color:var(--red);background:rgba(255,68,68,.08)'>❌ Reject</button>
     </div>
   </div>`;
@@ -12876,7 +13143,39 @@ async function loadPendingThumbnailPreview(uploadId,chunkCount,imgStyle,targetEl
 /// Combines the two manual publish steps (game zip + thumbnail) into one clear "Approve" action,
 /// since a submission always needs both before it's genuinely live. Each step still assumes admin
 /// has already hosted the corresponding file via the existing separate admin tools.
-async function approveSubmission(gameId,zipUploadId,thumbUploadId){
+/// Fully resets the Upload Game to Chain panel after a pending submission is approved, so stale
+/// data from the just-approved game doesn't linger for the next one.
+function resetUploadGameForm(){
+  const set=(id,value)=>{const el=document.getElementById(id);if(el)el.value=value||'';};
+  set('uploadGameId','');
+  set('uploadGameName','');
+  set('uploadGameDev','');
+  set('uploadGameDesc','');
+  set('uploadGamePrincipal','');
+  set('uploadGameThumb','');
+  set('uploadGameFile','');
+  set('uploadGameThumbFile','');
+  set('uploadGamePayoutAddress','');
+  const categoryEl=document.getElementById('uploadGameCategory'); if(categoryEl) categoryEl.value='independent';
+  const compatEl=document.getElementById('uploadGameCompat'); if(compatEl) compatEl.value='desktop';
+  ['uploadGameControllerReady','uploadGameMouseNeeded'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.checked=false;
+  });
+  const thumbPreview=document.getElementById('uploadGameThumbPreview');
+  if(thumbPreview){thumbPreview.style.display='none';thumbPreview.innerHTML='';}
+  const fileMeta=document.getElementById('uploadGameFileMeta');
+  if(fileMeta){fileMeta.style.display='none';fileMeta.innerHTML='';}
+  const status=document.getElementById('uploadGameStatus');
+  if(status) status.innerHTML='';
+  const progress=document.getElementById('uploadGameProgress');
+  if(progress) progress.style.display='none';
+  _adminUploadThumbSetForGameId=null;
+  clearAdminPendingSubmissionPicker();
+  updateUploadGameActionBtnVisibility();
+}
+
+async function approveSubmission(gameId,zipUploadId,thumbUploadId,thumbChunkCount){
   try{
     if(zipUploadId){
       const hostedUrl=assetCanisterUrl(GAME_ASSET_CANISTER)+'/games/'+gameId+'/';
@@ -12888,16 +13187,45 @@ async function approveSubmission(gameId,zipUploadId,thumbUploadId){
     }
     if(thumbUploadId){
       // If admin already staged a real hosted thumbnail for this exact game via the pending-
-      // submission picker's "Use This Thumbnail"/Swap flow, use it directly rather than asking
-      // again - only ever auto-uses it when _adminUploadThumbSetForGameId confirms it genuinely
-      // belongs to this game, never a stale value left over from a different one.
+      // submission picker's "Use This Thumbnail"/Swap flow, use it directly - only ever auto-uses
+      // it when _adminUploadThumbSetForGameId confirms it genuinely belongs to this game, never a
+      // stale value left over from a different one.
       const stagedUrl=document.getElementById('uploadGameThumb')?.value||'';
-      const url=(stagedUrl&&_adminUploadThumbSetForGameId===gameId)
-        ? stagedUrl
-        : prompt('Paste the hosted thumbnail URL (after you upload the downloaded image via your own admin thumbnail tool):');
+      let url=(stagedUrl&&_adminUploadThumbSetForGameId===gameId) ? stagedUrl : '';
+      if(!url){
+        // Not yet explicitly confirmed via "Use This Thumbnail", but if the picker auto-loaded
+        // this exact submission's thumbnail file into the form, upload it now automatically
+        // rather than making admin go back and click a separate button they may not realize is
+        // required. Verified via _adminPendingActiveThumbId matching this specific thumbUploadId,
+        // so a file left over from loading a *different* submission is never used here.
+        const thumbInput=document.getElementById('uploadGameThumbFile');
+        if(thumbInput?.files?.[0]&&_adminPendingActiveThumbId===thumbUploadId){
+          const autoUrl=await handleHostedThumbnailUpload(thumbInput,'uploadGameThumb','uploadGameThumbPreview','admin-game-thumb');
+          if(autoUrl) url=autoUrl;
+        }
+      }
+      if(!url&&thumbChunkCount>0){
+        // Admin never touched Upload Game to Chain for this submission at all (no file staged in
+        // the form either way above) - the creator's own originally-submitted thumbnail should
+        // still be used automatically by default, per Jay's explicit design: it only ever needs a
+        // manual step if admin actively chooses to swap it first via that panel's Swap button.
+        // Fetch the original thumbnail's chunks directly and host it right here, with zero
+        // dependency on any prior admin interaction with a different tool.
+        try{
+          const thumbFile=await fetchChunksAsFile(thumbUploadId,thumbChunkCount,'thumbnail.jpg','image/jpeg');
+          const autoUrl=await uploadImageFileToGameAssets(thumbFile,'admin-game-thumb');
+          if(autoUrl) url=autoUrl;
+        }catch(autoErr){
+          console.warn('Auto-hosting the submitted thumbnail failed, falling back to manual prompt:',autoErr);
+        }
+      }
+      if(!url){
+        url=prompt('Paste the hosted thumbnail URL (after you upload the downloaded image via your own admin thumbnail tool):');
+      }
       if(!url){
         invalidateGameCache(); await refreshGameCache();
         renderPendingSubmissionsByTier(); renderGameAdminList();
+        resetUploadGameForm();
         alert('Game published, but no thumbnail URL was set — you can set it later from this same submission.');
         return;
       }
@@ -12908,6 +13236,7 @@ async function approveSubmission(gameId,zipUploadId,thumbUploadId){
     document.getElementById('m-submission-detail')?.remove();
     invalidateGameCache(); await refreshGameCache();
     renderPendingSubmissionsByTier(); renderGameAdminList();
+    resetUploadGameForm();
     alert('Submission approved.');
   }catch(e){
     alert('Approve failed: '+safeUserErrorMessage(e,'approve submission'));
@@ -13128,14 +13457,18 @@ async function renderGameAdminList(){
       el.innerHTML=renderBackendSlicePending('Game admin list is disabled because adminGetAllGames is not installed on this backend slice yet.');
       return;
     }
-    const [raw,auditMap,catPairs]=await Promise.all([
+    const [raw,auditMap,catPairs,monEntries5,pricingEntries5]=await Promise.all([
       be.adminGetAllGames(),
       getAdminTicketPoolAuditMap(be).catch(()=>new Map()),
-      be.getAllGameCategories().catch(()=>[])
+      be.getAllGameCategories().catch(()=>[]),
+      be.getAllGameMonetization().catch(()=>[]),
+      be.getAllGamePricing().catch(()=>[])
     ]);
     ticketPoolAudit=auditMap;
     categoryMap=new Map(catPairs);
-    subs=raw.map(normalizeGameSubmission).filter(s=>s.status!=='removed');
+    const monMap5=new Map(monEntries5.map(([id,v])=>[id,v]));
+    const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
+    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
   }catch(_e){el.innerHTML=renderBackendSlicePending('Game admin list is temporarily unavailable. Backend admin game-list support is pending.');return;}
   if(adminGameFilter!=='all') subs=subs.filter(s=>(s.gameTier||'backroom')===adminGameFilter);
@@ -13157,7 +13490,10 @@ async function renderGameAdminList(){
     ${gt==='showroom-pending'?`<button class='btn' onclick='approveGameShowroom("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--green);color:var(--green)'>✅</button><button class='btn' onclick='rejectGameShowroom("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--red);color:var(--red)'>❌</button>`:''}
     ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>👑</button>`:`<button class='btn' onclick='demoteGameFromPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--muted);color:var(--muted)'>↓</button>`}
     ${gt!=='backroom'?(isGameBoosted(s.id)?`<button class='btn' onclick='adminRemoveBoost("${s.id}");renderGameAdminList()' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Unbst</button>`:`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Boost</button>`):''}
-    <button class='btn' onclick='removeGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--red);color:var(--red)'>🗑️</button>
+    ${s.status==='suspended'
+      ?`<button class='btn' onclick='adminRelistGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
+      :`<button class='btn' onclick='adminSuspendGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#fbbf24;color:#fbbf24'>⏸️ Suspend</button>`}
+    <button class='btn' onclick='adminDeleteGamePermanently("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--red);color:var(--red)'>🗑️ Delete</button>
     ${(s.paysTickets&&!isBackroom)?`<button class='btn' onclick='adminRetireBreaker("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#a855f7;color:#a855f7'>Retire</button>`:''}
     <select onchange='adminSetGameCategoryUi("${s.id}",this.value)' style='font-size:.6rem;padding:2px 4px;background:#0a1428;border:1px solid #3456aa;color:#8bb4ff;border-radius:4px;cursor:pointer'>
       <option value='' ${!s.gameCategory?'selected':''}>No Category</option>
@@ -15356,7 +15692,7 @@ function closeNftDetail(){
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['pickAvatarEmoji',pickAvatarEmoji],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
   ['openPlayerPortal',openPlayerPortal],['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['scanWalletBtn',scanWalletBtn],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['openShowroomEdit',openShowroomEdit],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['showBanOverlay',showBanOverlay],['adminBanUser',adminBanUser],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['toggleReplies',toggleReplies],['showReplyForm',showReplyForm],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['adminRemoveBoost',adminRemoveBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
-  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleGrail',adminToggleGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminSetCollectionTag',adminSetCollectionTag],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
+  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleGrail',adminToggleGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminSetCollectionTag',adminSetCollectionTag],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
   ['runTreasuryScan',runTreasuryScan],
   ['showNftDetail',showNftDetail],['closeNftDetail',closeNftDetail],
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
@@ -15391,7 +15727,7 @@ function showViewHooked(v){
   const legalBtn=document.getElementById('legalFooterBtn'); if(legalBtn) legalBtn.style.display=v==='landing'?'flex':'none';
   const pmBtn=document.getElementById('playerManualBtn'); if(pmBtn) pmBtn.style.display=v==='landing'?'block':'none';
   const mBtn=document.getElementById('manifestoBtn'); if(mBtn) mBtn.style.display=(v==='landing')?'block':'none';
-  const mcBtn=document.getElementById('myCollectionBtn'); if(mcBtn) mcBtn.style.display=(S.connected&&v!=='prizes'&&v!=='arcade'&&v!=='backroom')?'block':'none';
+  const mcBtn=document.getElementById('myCollectionBtn'); if(mcBtn) mcBtn.style.display=(S.connected&&v!=='prizes'&&v!=='arcade'&&v!=='backroom'&&v!=='hole')?'block':'none';
   const pbBtns=document.getElementById('prizeBoothBtns'); if(pbBtns) pbBtns.style.display=v==='prizes'?'flex':'none';
 
   const pbu=document.getElementById('prizeBoothUploadBtn'); if(pbu) pbu.style.display=v==='prizes'?'block':'none';
@@ -15411,6 +15747,9 @@ function showViewHooked(v){
   if(gameNavShowroomBtn) gameNavShowroomBtn.style.display=(isGameNavPage&&v!=='arcade')?'block':'none';
   if(gameNavBackBtn) gameNavBackBtn.style.display=(isGameNavPage&&v!=='backroom')?'block':'none';
   if(gameNavHoleBtn) gameNavHoleBtn.style.display=(isGameNavPage&&v!=='hole')?'block':'none';
+  // Shared "Submit a Game" - Blackhole has no game submissions, so only Showroom/Back show it.
+  const submitGameBtnEl=document.getElementById('submitGameBtn');
+  if(submitGameBtnEl) submitGameBtnEl.style.display=(v==='arcade'||v==='backroom')?'block':'none';
   if(v==='arcade'){renderShowroom();}
   if(v==='backroom') renderBackroom();
   if(v==='hole') renderHole();
