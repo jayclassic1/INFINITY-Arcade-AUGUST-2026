@@ -2766,14 +2766,15 @@ function renderProfileView(){
   // Show Developer Dashboard button only if this user has submitted games (or is admin)
   const devBtn=document.getElementById('profileDevDashBtn');
   if(devBtn){
-    userHasSubmittedGames().then(hasGames=>{ devBtn.style.display=hasGames?'block':'none'; }).catch(()=>{});
+    const hasGames=isAdmin()||getSubmissions().some(s=>s.principal===S.principalText);
+    devBtn.style.display=hasGames?'block':'none';
   }
   // Show Creator Earnings button if user has games, or is artist contributor, or admin
   const royBtn=document.getElementById('profileRoyaltiesBtn');
   if(royBtn){
-    Promise.all([getUserBadgeTypes().catch(()=>[]),userHasSubmittedGames()]).then(([badgeTypes,hasGames])=>{
+    getUserBadgeTypes().then(badgeTypes=>{
       const bt=Array.isArray(badgeTypes)?badgeTypes:[];
-      const hasRoyaltyRole=hasGames||bt.includes('artist-contributor')||bt.includes('dev-contributor');
+      const hasRoyaltyRole=isAdmin()||getSubmissions().some(s=>s.principal===S.principalText)||bt.includes('artist-contributor')||bt.includes('dev-contributor');
       royBtn.style.display=hasRoyaltyRole?'block':'none';
     }).catch(()=>{});
   }
@@ -3655,13 +3656,14 @@ function openWalletPanel(){
   // Show dev dashboard link only if user has submitted games or is admin
   const devSection=document.getElementById('walletDevDashSection');
   if(devSection){
-    userHasSubmittedGames().then(hasGames=>{ devSection.style.display=hasGames?'block':'none'; }).catch(()=>{});
+    const hasGames=isAdmin()||getSubmissions().some(s=>s.principal===S.principalText);
+    devSection.style.display=hasGames?'block':'none';
   }
   const roySection=document.getElementById('walletRoyaltiesSection');
   if(roySection){
-    Promise.all([getUserBadgeTypes().catch(()=>[]),userHasSubmittedGames()]).then(([badgeTypes,hasGames])=>{
+    getUserBadgeTypes().then(badgeTypes=>{
       const bt=Array.isArray(badgeTypes)?badgeTypes:[];
-      const hasRoyaltyRole=hasGames||bt.includes('artist-contributor')||bt.includes('dev-contributor');
+      const hasRoyaltyRole=isAdmin()||getSubmissions().some(s=>s.principal===S.principalText)||bt.includes('artist-contributor')||bt.includes('dev-contributor');
       roySection.style.display=hasRoyaltyRole?'block':'none';
     }).catch(()=>{});
   }
@@ -7774,15 +7776,6 @@ async function getSubmissionsAsync(){
 function getSubmissions(){return _gameSubsCache||[];}
 function invalidateGameCache(){_gameSubsCache=null;_gameSubsCacheTime=0;}
 async function refreshGameCache(){await getSubmissionsAsync();}
-// Session #3: creator-only UI (Wallet/Profile dev + royalty sections) used to read the game cache
-// synchronously, so it stayed hidden whenever the cache hadn't been loaded yet (e.g. Wallet opened
-// before visiting Showroom/The Back). This loads the list on demand before deciding.
-async function userHasSubmittedGames(){
-  if(isAdmin()) return true;
-  if(!S.connected||!S.principalText) return false;
-  if(!_gameSubsCache){ try{ await refreshGameCache(); }catch(_){ } }
-  return getSubmissions().some(s=>s.principal===S.principalText);
-}
 function normalizeGameSubmission(g,monMap,pricingMap){
   // paysTickets/wantsPurchasable/tokenCost/purchasePrice: real values from the separate
   // gameMonetization/gamePricing maps when present (monMap/pricingMap, batch-fetched by
