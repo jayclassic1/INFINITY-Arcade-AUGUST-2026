@@ -954,12 +954,6 @@ persistent actor ArcadeBackend {
     accountPlayCountEntries := [];
 
     runtimeStateHydrated := false;
-    // Session #3: rebuild runtime maps immediately (after the legacy-array reset above) instead of
-    // waiting for the first update call - otherwise every query between an upgrade and that first
-    // update saw empty maps (Ticket games showing as Non-Ticket, blank game details), and a save in
-    // that window could overwrite real data with blanks. A failure here fails the upgrade, which
-    // rolls back automatically with all saved data intact.
-    hydrateRuntimeStateIfNeeded();
   };
 
   func findPrincipalNat(entries : [(Principal, Nat)], key : Principal) : ?Nat {
