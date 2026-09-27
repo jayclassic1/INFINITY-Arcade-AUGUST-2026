@@ -5879,7 +5879,6 @@ function backendIdl({IDL}){
     adminMarkZipDownloaded:IDL.Func([IDL.Text],[Result],[]),
     adminDeletePendingZipUpload:IDL.Func([IDL.Text],[Result],[]),
     adminPublishZipGame:IDL.Func([IDL.Text,IDL.Text,IDL.Text],[Result],[]),
-    adminStageZipGameUrl:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     adminSetGameThumbnail:IDL.Func([IDL.Text,IDL.Text,IDL.Text],[Result],[]),
     getMyNotifications:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Text,recipient:IDL.Principal,title:IDL.Text,message:IDL.Text,gameId:IDL.Text,createdAt:IDL.Int,seen:IDL.Bool}))],['query']),
     markNotificationSeen:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
@@ -10671,17 +10670,6 @@ async function uploadGameToChain(){
   if(!S.connected||!isAdmin()) return arcadeAlert('Admin Only','Only admins can upload games to chain.');
   const gameId=document.getElementById('uploadGameId').value.trim().toLowerCase().replace(/[^a-z0-9\-]/g,'');
   if(!gameId){return arcadeAlert('Missing ID','Enter a game folder name (e.g. swing-blade)');}
-  // Publish-in-place (session #3): when a pending submission is selected in the picker, its files
-  // belong to THAT submission's own record - never a new adminAddGame listing, never another
-  // game's folder. Block a folder name already used by a different (non-removed) game, which the
-  // update-target logic below would otherwise treat as an update and silently overwrite.
-  const pendingSubId=document.getElementById('adminPendingSubmissionSelect')?.value||'';
-  if(pendingSubId){
-    const clash=findAdminGameUpdateTargetForSlug(gameId);
-    if(clash&&clash.id!==pendingSubId){
-      return arcadeAlert('Folder In Use','The folder "'+escHtml(gameId)+'" already belongs to '+escHtml(clash.name||clash.id)+'. Choose a different Game Folder Name for this submission.');
-    }
-  }
   const fileInput=document.getElementById('uploadGameFile');
   if(!fileInput.files[0]){return arcadeAlert('No File','Choose a zip file first.');}
   const file=fileInput.files[0];
@@ -10858,24 +10846,7 @@ async function uploadGameToChain(){
     // backend registration is intentionally skipped to avoid duplicate listings.
     const f=getAdminGameFields();
     const updateTarget=findAdminGameUpdateTargetForSlug(gameId);
-    if(pendingSubId){
-      // Stage the real hosted URL on the submission itself; Accept (adminPublishZipGame) then
-      // publishes this same record, so its monetization/category/accessibility/pricing stay attached.
-      // Picker is deliberately NOT cleared here - Accept reuses its staged thumbnail.
-      status.innerHTML='<span style="color:#ffd700">Saving hosted location for this submission...</span>';
-      try{
-        const be=await getBackendActor(true);
-        const r=await be.adminStageZipGameUrl(pendingSubId,onChainUrl);
-        if(r.ok!==undefined){
-          status.innerHTML='<span style="color:#22c55e">Uploaded '+uploaded+' files for this submission. Now click <b>Accept</b> on its pending entry to publish it. <a href="'+onChainUrl+'" target="_blank" style="color:#22c55e">'+onChainUrl+'</a></span>';
-          invalidateGameCache(); await refreshGameCache(); refreshAdminGameUpdateSelect();
-        } else {
-          status.innerHTML='<span style="color:#ef4444">Files uploaded, but saving their location failed: '+escHtml(safeUserErrorMessage(r.err,'stage hosted url'))+'. Do not Accept yet - run Upload to Chain again.</span>';
-        }
-      }catch(stErr){
-        status.innerHTML='<span style="color:#ef4444">Files uploaded, but saving their location errored: '+escHtml(safeUserErrorMessage(stErr,'stage hosted url'))+'. Do not Accept yet - run Upload to Chain again.</span>';
-      }
-    } else if(updateTarget){
+    if(updateTarget){
       status.innerHTML='<span style="color:#22c55e">Updated '+uploaded+' files for '+escHtml(updateTarget.name||gameId)+'! Backend listing kept as-is. <a href="'+onChainUrl+'" target="_blank" style="color:#22c55e">'+onChainUrl+'</a></span>';
       invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); refreshAdminGameUpdateSelect(); refreshAdminPendingSubmissionSelect(); clearAdminPendingSubmissionPicker();
     } else if(f.name && f.dev){
@@ -13207,12 +13178,11 @@ function resetUploadGameForm(){
 async function approveSubmission(gameId,zipUploadId,thumbUploadId,thumbChunkCount){
   try{
     if(zipUploadId){
-      const confirmed=await arcadeConfirm('Approve Submission','Publish this submission live now, using the files hosted by "Upload Game to Chain"?');
+      const hostedUrl=assetCanisterUrl(GAME_ASSET_CANISTER)+'/games/'+gameId+'/';
+      const confirmed=await arcadeConfirm('Approve Submission',`This assumes you already ran "Upload Game to Chain" for game ID <b>${escHtml(gameId)}</b>.<br><br>Hosted URL: <span style="word-break:break-all">${escHtml(hostedUrl)}</span><br><br>Continue?`);
       if(!confirmed) return;
       const be=await getBackendActor(true);
-      // Empty hostedUrl: the backend uses the URL Upload Game to Chain staged on this exact
-      // submission (adminStageZipGameUrl) and refuses if none was staged - never a guessed URL.
-      const result=await be.adminPublishZipGame(gameId,'',zipUploadId);
+      const result=await be.adminPublishZipGame(gameId,hostedUrl,zipUploadId);
       if(result.err) throw new Error(result.err);
     }
     if(thumbUploadId){

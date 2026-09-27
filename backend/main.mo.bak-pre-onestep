@@ -3920,30 +3920,10 @@ persistent actor ArcadeBackend {
     }
   };
 
-  /// Admin: records where Upload Game to Chain actually hosted a pending submission's files,
-  /// without changing its status. Lets the folder name differ from the game ID (e.g. "swing-blade")
-  /// while the submission's own record - and every per-game setting keyed by its ID (monetization,
-  /// category, accessibility, pricing) - stays the one record that goes live on Accept.
-  public shared(msg) func adminStageZipGameUrl(gameId : Text, hostedUrl : Text) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Admin only");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (game.status != "backroom-zip-pending" and game.status != "showroom-zip-pending") {
-      return #err("Not a pending submission: " # game.status);
-    };
-    if (Text.size(hostedUrl) == 0) return #err("Hosted URL required");
-    gameSubmissions.put(gameId, { game with url = hostedUrl });
-    #ok("Hosted URL staged")
-  };
-
   /// Admin: after manually hosting a reviewed zip via the existing "Upload Game to Chain" tool,
-  /// this sets the game's real url and moves it out of its pending-zip state. Both tiers go
-  /// straight to "live" (one-step publish, Jay session #3: Accept is the final approval; the old
-  /// "showroom-pending" review stage and approveGameShowroom are no longer reachable from here).
-  /// hostedUrl may be empty, in which case the URL staged by adminStageZipGameUrl is used.
+  /// this sets the game's real url and moves it out of its pending-zip state. The Back goes
+  /// straight to "live"; Showroom moves to "showroom-pending" so it still goes through the
+  /// existing separate content-approval step (approveGameShowroom/rejectGameShowroom).
   public shared(msg) func adminPublishZipGame(gameId : Text, hostedUrl : Text, uploadId : Text) : async Result.Result<Text, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
@@ -3951,15 +3931,13 @@ persistent actor ArcadeBackend {
       case null return #err("Game not found");
       case (?g) g;
     };
-    if (game.status != "backroom-zip-pending" and game.status != "showroom-zip-pending") {
-      return #err("Not a pending submission: " # game.status);
-    };
-    let finalUrl = if (Text.size(hostedUrl) > 0) hostedUrl else game.url;
-    if (Text.size(finalUrl) == 0) return #err("No hosted files yet - run Upload Game to Chain for this submission first");
-    let tierLabel = if (game.gameTier == "showroom") "the Showroom" else "The Back";
-    let updated : GameSubmission = { game with url = finalUrl; status = "live" };
+    if (Text.size(hostedUrl) == 0) return #err("Hosted URL required");
+    let newStatus = if (game.gameTier == "showroom") "showroom-pending" else "live";
+    let updated : GameSubmission = { game with url = hostedUrl; status = newStatus };
     gameSubmissions.put(gameId, updated);
-    createNotification(game.creator, "Game Published!", "\"" # game.name # "\" is now live in " # tierLabel # ".", gameId);
+    if (newStatus == "live") {
+      createNotification(game.creator, "Game Published!", "\"" # game.name # "\" is now live in The Back.", gameId);
+    };
     switch (pendingZipUploads.get(uploadId)) {
       case (?upload) { deletePendingZipUploadAndChunks(uploadId, upload.chunkCount) };
       case null {};
