@@ -12980,9 +12980,10 @@ function parseZipUploadFilename(raw){
 let _pendingZipUploadsCache=[];
 
 /// Unified pending-submissions view for the admin Submissions tab: one box per tier (The Back,
-/// Showroom), listing brand-new zip/thumbnail submissions awaiting review (one-step publish since
-/// session #3: Accept makes the submission's own record live). Each row is just a thumbnail, name,
-/// dev, and Accept/Reject — no
+/// Showroom), each combining two kinds of "awaiting a decision" games — brand-new zip/thumbnail
+/// uploads (stage 1, both tiers) and Showroom's own second-stage content review (stage 2,
+/// Showroom only, once its zip is already published but it's still awaiting the separate
+/// showroom-pending approval). Each row is just a thumbnail, name, dev, and Accept/Reject — no
 /// ticket-pool stats, no promote/boost/delete/retire clutter, which live instead on the relocated
 /// Live Games Management list under the Other tab.
 async function renderPendingSubmissionsByTier(){

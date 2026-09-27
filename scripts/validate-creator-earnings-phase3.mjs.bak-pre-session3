@@ -33,9 +33,7 @@ const allowedRoyaltyContexts = [
   'restoreGameCreatorEarningsBalance',
   'spendTokensOnGame',
   'creditRoyalty',
-  'claimRoyalties',
-  'purchaseGame',
-  'tryGame'
+  'claimRoyalties'
 ];
 
 function enclosingFunctionName(index) {
@@ -51,11 +49,13 @@ test('all royalty map writes are limited to ICP-e8s earning/claim helpers', () =
   return unexpected.length === 0;
 }, `unexpected royalty writes: ${royaltyPutMatches.map(hit => ({ ...hit, fn: enclosingFunctionName(hit.index) })).filter(hit => !allowedRoyaltyContexts.includes(hit.fn)).map(hit => `${hit.fn}:${hit.text}`).join('; ')}`);
 
-test('no-refund policy: nothing credits the refund balance (session #3 - fees are final)', () => {
-  const writes = [...backend.matchAll(/refundsE8s\.put\(/g)].map(m => enclosingFunctionName(m.index ?? -1));
-  return !/func creditRefundE8s/.test(backend)
-    && writes.every(fn => ['claimRoyalties', 'restoreRefundBalance'].includes(fn));
-}, 'refund balance may only be zeroed by claimRoyalties or restored after a failed claim');
+test('reject/application/removal refunds use a separate refund balance, not royalties', () => {
+  const refundFns = ['rejectNftShowroom', 'rejectGameShowroom', 'removeGameSubmission'];
+  return refundFns.every(fn => {
+    const body = sliceBetween(backend, `func ${fn}`, '\n  //');
+    return body && /creditRefundE8s\(/.test(body) && !/royalties\.put/.test(body);
+  });
+}, 'refund flows must call creditRefundE8s and must not write royalties');
 
 test('claim path includes game creator earnings, NFT seller earnings, and separate refund balance atomically', () => {
   const body = sliceBetween(backend, 'public shared(msg) func claimRoyalties()', '// ============================================\n  // === NFT ESCROW');
@@ -83,11 +83,13 @@ test('ticket-based user NFT redemption credits only separate NFT seller earnings
 }, 'redeemUserNft must not write game creator royalties and must credit the separate NFT seller bucket after NFT transfer success');
 
 test('backend comments state legacy royalties are game creator ICP e8s and refunds are separate', () => {
-  return /game creator royalty balance query \(ICP owed, in e8s\)/i.test(backend);
+  return /game creator royalty balance query \(ICP owed, in e8s\)/i.test(backend)
+    && /Refund[^\n]*separate (?:ICP )?refund balance|separate refund balance/i.test(backend);
 });
 
 test('frontend refund wording does not call refunds creator earnings', () => {
-  return !/refund credited/i.test(frontend); // no-refund policy: UI must never claim a refund was credited
+  return !/refund credited to creator earnings balance/i.test(frontend)
+    && /refund credited to your separate ICP refund balance/i.test(frontend);
 });
 
 test('closed-loop Tokens and Tickets product copy remains present', () => {
