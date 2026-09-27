@@ -4402,15 +4402,6 @@ persistent actor ArcadeBackend {
       case (?_) {
         gameSubmissions.delete(gameId);
         deleteAllPendingUploadsForGameId(gameId);
-        // Per-game settings keyed by this ID (session #3) - cleared so deletes stop leaving orphans.
-        // Deliberately NOT touched: ticket pools, purchases, token spend, paid sessions - those hold
-        // real value, and what happens to them on delete is a separate policy decision.
-        gameCategories.delete(gameId);
-        gameAccessibility.delete(gameId);
-        gameMonetization.delete(gameId);
-        gamePricing.delete(gameId);
-        gamePayoutConfigs.delete(gameId);
-        gameTicketJackpotConfigs.delete(gameId);
         #ok("Game permanently deleted.");
       };
     };
