@@ -3592,34 +3592,6 @@ persistent actor ArcadeBackend {
     }
   };
 
-  /// Admin: free Spotlight boost - identical rules to buyGameBoost (live Showroom games only, 7 days stacking,
-  /// counts toward the Spotlight slot cap) minus the payment. No await, so the check-and-write is atomic.
-  public shared(msg) func adminBoostGame(gameId : Text) : async Result.Result<Int, Text> {
-    if (not isAdmin(msg.caller)) return #err("Admin only");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (game.gameTier != "showroom" and game.gameTier != "jays-picks") return #err("Only Showroom games can be boosted");
-    if (game.status != "live") return #err("Only live games can be boosted");
-    let now = Time.now();
-    var activeCount = 0;
-    var current : Int = 0;
-    for ((id, exp) in gameBoostEntries.vals()) {
-      if (exp > now) { activeCount += 1; if (id == gameId) current := exp };
-    };
-    let alreadyActive = current > now;
-    if (not alreadyActive and activeCount + boostPurchaseInFlight.size() >= MAX_SPOTLIGHT_SLOTS) {
-      return #err("Spotlight is full (" # Nat.toText(MAX_SPOTLIGHT_SLOTS) # " games). Try again when a slot opens up.");
-    };
-    let base = if (alreadyActive) current else now;
-    let newExp = base + BOOST_DURATION_NS;
-    let kept = Array.filter<(Text, Int)>(gameBoostEntries, func((id, exp)) { id != gameId and exp > now });
-    gameBoostEntries := Array.append<(Text, Int)>(kept, [(gameId, newExp)]);
-    #ok(newExp)
-  };
-
   public shared(msg) func getBoostTreasuryBalance() : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);

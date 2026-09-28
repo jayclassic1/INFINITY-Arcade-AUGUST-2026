@@ -2107,7 +2107,7 @@ window.addEventListener('message', (e) => {
 <div style='font-size:.75rem;font-weight:800;color:#ff8800;letter-spacing:2px'>GAME BOOSTS</div>
 <button class='btn' onclick='adminAddBoost()' style='font-size:.65rem;padding:3px 10px;border-color:#ff8800;color:#ff8800'>+ Boost Game</button>
 </div>
-<div style='font-size:.6rem;color:#5a3d20;margin-bottom:6px'>Admin boosts are free and work exactly like creator boosts: 7 days per boost (stacking), live Showroom games only, and they count toward the Spotlight slot limit.</div>
+<div style='font-size:.6rem;color:#5a3d20;margin-bottom:6px'>Boosted games appear at the top of the Showroom. Set duration or leave permanent.</div>
 <div id='boostList' style='font-size:.75rem;color:#5a3d20'>No boosted games</div>
 </div>
 <div id='adminBanSection' style='background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:12px;padding:14px;margin-bottom:16px'>
@@ -5954,7 +5954,6 @@ function backendIdl({IDL}){
     getAllGameBackedTicketPools:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,backedTicketPool:IDL.Nat}))],['query']),
     setGameScreenshots:IDL.Func([IDL.Text,IDL.Vec(IDL.Text)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     buyGameBoost:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Int,err:IDL.Text})],[]),
-    adminBoostGame:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Int,err:IDL.Text})],[]),
     buyNftBoost:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminBanUser:IDL.Func([IDL.Principal,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminSoftPunishBlackholeUploader:IDL.Func([IDL.Principal,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -8215,7 +8214,7 @@ async function renderShowroom(){
   let onChainBoosts=[];
   try{const be=await getBackendActor();onChainBoosts=await be.getActiveBoosts();}catch(_){}
   const boostedGameIds=new Set(onChainBoosts.map(b=>b.gameId));
-  const boosted=allGames.filter(s=>boostedGameIds.has(s.id));
+  const boosted=allGames.filter(s=>s.boosted||s.promoted||boostedGameIds.has(s.id));
   const fullList=allGames;
 
   function gameCard(s,borderColor,isSpotlight){
@@ -8791,7 +8790,7 @@ function renderInlineGameAdminTools(gameId){
         ?`<button class='btn' onclick='adminRelistGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
         :`<button class='btn' onclick='adminSuspendGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#fbbf24;color:#fbbf24'>⏸️ Suspend</button>`}
       <button class='btn' onclick='adminDeleteGamePermanently("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--red);color:var(--red)'>🗑️ Delete Permanently</button>
-      ${gt!=='backroom'?`<button class='btn' onclick='quickBoostGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff8800;color:#ff8800'>⚡ Boost</button>`:''}
+      ${gt!=='backroom'?(isGameBoosted(gameId)?`<button class='btn' onclick='adminRemoveBoost("${gameId}");renderGameAdminList()' style='font-size:.68rem;padding:5px 8px;border-color:#ff8800;color:#ff8800'>Remove Boost</button>`:`<button class='btn' onclick='quickBoostGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff8800;color:#ff8800'>Boost</button>`):''}
     </div>
     ${(sub.paysTickets!==false&&gt!=='backroom')?`<div id='payoutAdmin_${payoutDomId(gameId)}'>${renderPayoutConfigAdmin(gameId,null)}</div><div id='jackpotAdmin_${payoutDomId(gameId)}'>${renderTicketJackpotAdmin(gameId,null)}</div>`:''}
     <div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>
@@ -9058,7 +9057,7 @@ async function openCategoryPage(room,category){
 
   if(room==='showroom'){
     const pool=allGames.filter(s=>(s.tier==='showroom'||s.gameTier==='showroom'||s.tier==='jays-picks'||s.gameTier==='jays-picks')&&(s.status||'live')==='live');
-    if(category==='spotlight'){title='Spotlight';titleColor='#00aaff';borderColor='#00aaff';{let ids=new Set();try{const be=await getBackendActor();ids=new Set((await be.getActiveBoosts()).map(b=>b.gameId));}catch(_){}games=pool.filter(s=>ids.has(s.id));}}
+    if(category==='spotlight'){title='Spotlight';titleColor='#00aaff';borderColor='#00aaff';games=pool.filter(s=>s.boosted||s.promoted);}
     else if(category==='dao-approved'){title="DAO Favourites";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.tier==='jays-picks'||s.gameTier==='jays-picks');}
     else if(category==='local-multiplayer'){title='Local Multiplayer';titleColor='#a855f7';borderColor='#a855f7';games=pool.filter(s=>s.compat==='local-multiplayer'||s.compatibility==='local-multiplayer'||s.tags?.includes('multiplayer'));}
     else if(category==='ticket-games'){title='Ticket Games';titleColor='#39ff14';borderColor='#39ff14';games=pool.filter(s=>s.paysTickets!==false);}
@@ -10497,43 +10496,79 @@ async function adminRemoveMod(principal){
     }
   }catch(e){if(statusEl) statusEl.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'admin action'))+'</span>'; }
 }
-// ─── GAME BOOSTS (session #3: real backend Spotlight boosts; admin boosts are free, same rules) ───
-async function adminBoostGameById(gameId){
-  if(!isAdmin()||!gameId) return;
-  const g=getSubmissions().find(x=>x.id===gameId);
-  if(!await arcadeConfirm('Admin Boost','Boost <b>'+escHtml(g?g.name:gameId)+'</b> to the Showroom Spotlight for 7 days?<br><br>Free for admin. Stacks with any remaining time and counts toward the Spotlight slot limit.')) return;
-  try{
-    const be=await getBackendActor(true);
-    const r=await be.adminBoostGame(gameId);
-    if('err' in r) throw new Error(r.err);
-    await arcadeAlert('Boosted','In the Spotlight until '+escHtml(new Date(Number(r.ok)/1e6).toLocaleString())+'.');
-  }catch(e){ arcadeAlert('Boost failed',escHtml(safeUserErrorMessage(e,'admin boost'))); }
-  renderBoostList();
-}
+// ─── GAME BOOSTS ───
+function getBoostedGames(){try{return JSON.parse(localStorage.getItem('arcade_boosted_games')||'[]');}catch(_){return [];}}
+function saveBoostedGames(list){localStorage.setItem('arcade_boosted_games',JSON.stringify(list));}
+
 function adminAddBoost(){
   if(!isAdmin()) return;
-  const id=prompt('Enter the game ID to boost (from Live Games Management):');
-  if(id&&id.trim()) adminBoostGameById(id.trim());
+  const gameId=prompt('Enter the game ID to boost (from the admin game list):');
+  if(!gameId) return;
+  const days=prompt('Boost duration in days (0 = permanent):','7');
+  if(days===null) return;
+  const d=parseInt(days)||0;
+  const boosts=getBoostedGames();
+  if(boosts.find(b=>b.id===gameId)){alert('Game already boosted.');return;}
+  boosts.push({
+    id:gameId.trim(),
+    boostedAt:new Date().toISOString(),
+    expiresAt:d>0?Date.now()+d*86400000:0,
+    permanent:d===0
+  });
+  saveBoostedGames(boosts);
+  renderBoostList();
 }
-function quickBoostGame(gameId){ if(!isAdmin()) return; adminBoostGameById(gameId); }
-async function renderBoostList(){
-  const container=document.getElementById('boostList'); if(!container) return;
-  try{ localStorage.removeItem('arcade_boosted_games'); }catch(_){}
-  container.innerHTML='<div style="color:#5a3d20;font-size:.7rem">Loading…</div>';
-  try{
-    const be=await getBackendActor(false);
-    const [boosts,slots]=await Promise.all([be.getActiveBoosts(),be.getSpotlightSlots().catch(()=>null)]);
-    if(!_gameSubsCache){ try{ await refreshGameCache(); }catch(_){} }
-    const subs=getSubmissions(); const now=Date.now();
-    const head=slots?`<div style="font-size:.65rem;color:#ff8800;margin-bottom:4px">Spotlight: ${Number(slots.used)}/${Number(slots.max)} slots in use</div>`:'';
-    if(!boosts.length){ container.innerHTML=head+'<div style="color:#3a2a15;font-size:.7rem;padding:4px 0">No games currently boosted</div>'; return; }
-    container.innerHTML=head+boosts.map(b=>{
-      const g=subs.find(x=>x.id===b.gameId); const left=Math.max(0,Number(b.expiresAt)/1e6-now);
-      const d=Math.floor(left/86400000), h=Math.floor((left%86400000)/3600000);
-      return `<div style='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,136,0,.1)'><span style='flex:1;color:#ff8800;font-size:.75rem'>${escHtml(g?g.name:b.gameId)} <span style="color:#5a3d20;font-size:.6rem">${d}d ${h}h left</span></span></div>`;
-    }).join('');
-  }catch(e){ container.innerHTML='<div style="color:#ef4444;font-size:.7rem">'+escHtml(safeUserErrorMessage(e,'boost list'))+'</div>'; }
+
+function adminRemoveBoost(gameId){
+  if(!isAdmin()) return;
+  saveBoostedGames(getBoostedGames().filter(b=>b.id!==gameId));
+  renderBoostList();
 }
+
+function renderBoostList(){
+  const container=document.getElementById('boostList');
+  if(!container) return;
+  let boosts=getBoostedGames();
+  // Auto-expire
+  const now=Date.now();
+  const before=boosts.length;
+  boosts=boosts.filter(b=>b.permanent||b.expiresAt>now);
+  if(boosts.length!==before) saveBoostedGames(boosts);
+  if(!boosts.length){
+    container.innerHTML='<div style="color:#3a2a15;font-size:.7rem;padding:4px 0">No games currently boosted</div>';
+    return;
+  }
+  const subs=getSubmissions();
+  container.innerHTML=boosts.map(b=>{
+    const game=subs.find(s=>s.id===b.id);
+    const name=game?.name||b.id;
+    const timeLeft=b.permanent?'Permanent':Math.max(0,Math.ceil((b.expiresAt-now)/86400000))+'d left';
+    return `<div style='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,136,0,.1)'>
+      <span style='flex:1;color:#ff8800;font-size:.75rem'>${escHtml(name)} <span style="color:#5a3d20;font-size:.6rem">${timeLeft}</span></span>
+      <button onclick='adminRemoveBoost("${b.id}")' style='padding:2px 8px;background:none;border:1px solid rgba(239,68,68,.2);border-radius:4px;color:#ef4444;font-size:.6rem;cursor:pointer'>Remove</button>
+    </div>`;
+  }).join('');
+}
+
+function quickBoostGame(gameId){
+  if(!isAdmin()) return;
+  const days=prompt('Boost for how many days? (0 = permanent)','7');
+  if(days===null) return;
+  const d=parseInt(days)||0;
+  const boosts=getBoostedGames();
+  if(boosts.find(b=>b.id===gameId)){alert('Already boosted.');return;}
+  boosts.push({id:gameId,boostedAt:new Date().toISOString(),expiresAt:d>0?Date.now()+d*86400000:0,permanent:d===0});
+  saveBoostedGames(boosts);
+  renderBoostList();
+  renderGameAdminList();
+}
+
+function isGameBoosted(gameId){
+  const boosts=getBoostedGames();
+  const now=Date.now();
+  return boosts.some(b=>b.id===gameId&&(b.permanent||b.expiresAt>now));
+}
+
 function renderModList(){
   const container=document.getElementById('modList');
   if(!container) return;
@@ -13630,7 +13665,7 @@ async function renderGameAdminList(){
     </div>
     <div style='display:flex;gap:4px;flex-wrap:wrap'>
     ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>👑</button>`:`<button class='btn' onclick='demoteGameFromPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--muted);color:var(--muted)'>↓</button>`}
-    ${gt!=='backroom'?`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>⚡ Boost</button>`:''}
+    ${gt!=='backroom'?(isGameBoosted(s.id)?`<button class='btn' onclick='adminRemoveBoost("${s.id}");renderGameAdminList()' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Unbst</button>`:`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>Boost</button>`):''}
     ${s.status==='suspended'
       ?`<button class='btn' onclick='adminRelistGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
       :`<button class='btn' onclick='adminSuspendGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#fbbf24;color:#fbbf24'>⏸️ Suspend</button>`}
@@ -15832,7 +15867,7 @@ function closeNftDetail(){
   ['showTab',showTab],['renderNftShop',renderNftShop],['renderCollection',renderCollection],['renderCollectionPage',()=>window.renderCollectionPage&&window.renderCollectionPage()],['showCollectionNftDetail',showCollectionNftDetail],['setProfilePfpFromCollectionNft',setProfilePfpFromCollectionNft],['openQuickListNftPopup',openQuickListNftPopup],['quickListOwnedNft',quickListOwnedNft],['redeemNft',redeemNft],['withdrawNft',withdrawNft],
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['pickAvatarEmoji',pickAvatarEmoji],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
-  ['openPlayerPortal',openPlayerPortal],['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['scanWalletBtn',scanWalletBtn],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['openShowroomEdit',openShowroomEdit],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['showBanOverlay',showBanOverlay],['adminBanUser',adminBanUser],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['toggleReplies',toggleReplies],['showReplyForm',showReplyForm],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
+  ['openPlayerPortal',openPlayerPortal],['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['scanWalletBtn',scanWalletBtn],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['openShowroomEdit',openShowroomEdit],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['showBanOverlay',showBanOverlay],['adminBanUser',adminBanUser],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['toggleReplies',toggleReplies],['showReplyForm',showReplyForm],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['adminRemoveBoost',adminRemoveBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
   ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleGrail',adminToggleGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminSetCollectionTag',adminSetCollectionTag],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
   ['runTreasuryScan',runTreasuryScan],
   ['showNftDetail',showNftDetail],['closeNftDetail',closeNftDetail],
