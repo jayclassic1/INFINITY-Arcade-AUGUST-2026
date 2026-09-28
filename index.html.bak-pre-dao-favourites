@@ -415,14 +415,8 @@ new MutationObserver(mutations=>{
 
 <!-- DAO Favourites -->
 <div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:8px 12px'>
-<div onclick='openCategoryPage("showroom","dao-approved")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES - TICKET <span style='font-size:.55rem;opacity:.5'>View All</span></div>
+<div onclick='openCategoryPage("showroom","dao-approved")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES <span style='font-size:.55rem;opacity:.5'>View All</span></div>
 <div id='rowJaysPicks' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
-</div>
-
-<!-- DAO Favourites - Non-Ticket -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:8px 12px'>
-<div onclick='openCategoryPage("showroom","dao-approved-nonticket")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES - NON-TICKET <span style='font-size:.55rem;opacity:.5'>View All</span></div>
-<div id='rowDaoFavNonTicket' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
 <!-- Ticket Games -->
@@ -529,7 +523,7 @@ new MutationObserver(mutations=>{
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>THUMBNAIL IMAGE</div><div style='display:grid;gap:8px'><label style='padding:10px 14px;background:rgba(204,68,255,.08);border:1px solid rgba(204,68,255,.25);border-radius:10px;color:#d8b4fe;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Upload from Computer<input type='file' id='backSubThumbFile' accept='image/*' style='display:none' onchange='handleSubmissionThumbUpload(this,"backSubThumb")'/></label><input type='hidden' id='backSubThumb'/><div id='backSubThumbPreview' style='display:none;padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center'></div></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>DESCRIPTION</div><textarea class='wallet-input' id='backSubDesc' rows='3' placeholder='What is your game about?' style='font-size:.85rem;font-family:inherit;resize:vertical'></textarea></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:6px'>GAME CATEGORY</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='ai-made' style='margin-right:6px'/>AI Made</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='independent' checked style='margin-right:6px'/>Independent</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='studio' style='margin-right:6px'/>Studio</label></div></div>
-<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubMadeWithAi'/>Made with AI</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubLocalMp'/>Local Multiplayer</label></div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubMadeWithAi'/>Made with AI</label></div></div>
 <div style='padding:10px 12px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.25);border-radius:10px'><label style='display:flex;align-items:flex-start;gap:10px;cursor:pointer'><input type='checkbox' id='backSubHopeful' style='margin-top:3px;accent-color:#a855f7'/><span style='font-size:.8rem;color:#d8b4fe;line-height:1.5'><b style='color:#c084fc'>Showroom Hopeful</b><br><span style='color:#a78bca;font-size:.72rem'>Mark this so players know the creator wants it considered for Showroom.</span></span></label></div>
 <div style='display:grid;gap:8px'>
   <div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:0'>SUBMISSION FEE</div>
@@ -558,7 +552,7 @@ new MutationObserver(mutations=>{
 <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>PLATFORM</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='desktop' checked style='margin-right:6px'/>Desktop</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='mobile' style='margin-right:6px'/>Mobile</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME CATEGORY</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='independent' checked style='margin-right:6px'/>Independent</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='studio' style='margin-right:6px'/>Studio</label></div></div>
-<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubMadeWithAi'/>Made with AI</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubLocalMp'/>Local Multiplayer</label></div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubMadeWithAi'/>Made with AI</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>MONETIZATION</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.25);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubPaysTickets' onchange='updateShowSubMonetizationUi()'/>🎟️ Ticket Game</label><label id='showSubWantsPurchasableLabel' style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubWantsPurchasable'/>💰 Purchasable (buy outright)</label></div><div id='showSubPurchasableHint' style='display:none;font-size:.65rem;color:#5a7baa;margin-top:4px'>Ticket games can't be purchasable</div></div>
 </div>
 <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
@@ -5945,10 +5939,6 @@ function backendIdl({IDL}){
     adminRemoveNftSpotlight:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     getNftSpotlightIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
     getNftGrailIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
-    getDaoFavourites:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,crowned:IDL.Bool,score:IDL.Nat}))],['query']),
-    getLocalMultiplayerGameIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
-    setGameLocalMultiplayer:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
-    adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -5986,6 +5976,7 @@ function backendIdl({IDL}){
     getGxpLevel:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getDvpLevel:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getPlayerLevels:IDL.Func([IDL.Principal],[IDL.Record({gxp:IDL.Nat,gxpLevel:IDL.Nat,gxpPercentile:IDL.Nat,dvp:IDL.Nat,dvpLevel:IDL.Nat,dvpPercentile:IDL.Nat,lifetimeSpent:IDL.Nat,achievements:IDL.Vec(IDL.Text)})],['query']),
+    promoteGameToJaysPicks:IDL.Func([IDL.Text],[Result],[]),
     removeGameSubmission:IDL.Func([IDL.Text],[Result],[]),
     adminSuspendGame:IDL.Func([IDL.Text],[Result],[]),
     adminRelistGame:IDL.Func([IDL.Text],[Result],[]),
@@ -7775,18 +7766,14 @@ async function getSubmissionsAsync(){
     // real paysTickets/tokenCost actually reaches the player-facing cache, not just admin's own
     // views of it. Previously these were silently absent everywhere, so every game always fell
     // back to hardcoded defaults (ticket-game, 1 token/play) regardless of what was actually set.
-    const [games,monEntries,pricingEntries,favEntries,lmpIds]=await Promise.all([
+    const [games,monEntries,pricingEntries]=await Promise.all([
       be.getGameSubmissions(),
       be.getAllGameMonetization().catch(()=>[]),
       be.getAllGamePricing().catch(()=>[]),
-      be.getDaoFavourites().catch(()=>[]),
-      be.getLocalMultiplayerGameIds().catch(()=>[]),
     ]);
     const monMap=new Map(monEntries.map(([id,v])=>[id,v]));
     const pricingMap=new Map(pricingEntries.map(([id,v])=>[id,v]));
     _gameSubsCache=games.map(g=>normalizeGameSubmission(g,monMap,pricingMap));
-    {const favMap=new Map(favEntries.map(f=>[f.gameId,f]));for(const g of _gameSubsCache){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
-    {const lmp=new Set(lmpIds);for(const g of _gameSubsCache){g.localMultiplayer=lmp.has(g.id);}}
     _gameSubsCacheTime=Date.now();
     return _gameSubsCache;
   }catch(e){console.error('Failed to fetch game submissions:',e); return _gameSubsCache||[];}
@@ -8143,7 +8130,6 @@ async function submitBackGame(){
     const gameId=gameResult.ok;
     be.setGameCategory(gameId,category).catch(e=>console.warn('Category save failed:',e));
     be.setGameAccessibility(gameId,document.getElementById('backSubKeyboardOnly')?.checked||false,document.getElementById('backSubKeyboardMouse')?.checked||false,document.getElementById('backSubControllerReady')?.checked||false,document.getElementById('backSubMadeWithAi')?.checked||false).catch(e=>console.warn('Accessibility tags save failed:',e));
-    be.setGameLocalMultiplayer(gameId,document.getElementById('backSubLocalMp')?.checked||false).catch(e=>console.warn('Local multiplayer save failed:',e));
     qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip...</span>';
     await chunkedUploadFile(gameId,'zip',zipFile,(done,total)=>{
       qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip... ('+done+'/'+total+')</span>';
@@ -8202,7 +8188,6 @@ async function submitShowroomGame(){
     const gameId=gameResult.ok;
     be.setGameCategory(gameId,category).catch(e=>console.warn('Category save failed:',e));
     be.setGameAccessibility(gameId,document.getElementById('showSubKeyboardOnly')?.checked||false,document.getElementById('showSubKeyboardMouse')?.checked||false,document.getElementById('showSubControllerReady')?.checked||false,document.getElementById('showSubMadeWithAi')?.checked||false).catch(e=>console.warn('Accessibility tags save failed:',e));
-    be.setGameLocalMultiplayer(gameId,document.getElementById('showSubLocalMp')?.checked||false).catch(e=>console.warn('Local multiplayer save failed:',e));
     be.setGameMonetization(gameId,document.getElementById('showSubPaysTickets')?.checked||false,document.getElementById('showSubWantsPurchasable')?.checked||false).catch(e=>console.warn('Monetization save failed:',e));
     qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip...</span>';
     await chunkedUploadFile(gameId,'zip',zipFile,(done,total)=>{
@@ -8224,8 +8209,7 @@ async function submitShowroomGame(){
 async function renderShowroom(){
   await refreshGameCache();
   const allGames=getSubmissions().filter(s=>(s.tier==='showroom'||s.gameTier==='showroom'||s.tier==='jays-picks'||s.gameTier==='jays-picks')&&(s.status||'live')==='live');
-  const jaysPicks=allGames.filter(s=>s.daoFav&&s.paysTickets!==false); // DAO Favourites - Ticket
-  const daoFavNonTicket=allGames.filter(s=>s.daoFav&&s.paysTickets===false);
+  const jaysPicks=allGames.filter(s=>s.tier==='jays-picks'||s.gameTier==='jays-picks');
   // Check on-chain boosts for spotlight
   let onChainBoosts=[];
   try{const be=await getBackendActor();onChainBoosts=await be.getActiveBoosts();}catch(_){}
@@ -8273,7 +8257,6 @@ async function renderShowroom(){
 
   bRow.innerHTML=boosted.length?boosted.map(s=>gameCard(s,'',true)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No spotlight games yet</div>';
   jRow.innerHTML=jaysPicks.length?jaysPicks.map(s=>gameCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No DAO Favourites yet</div>';
-  {const dnRow=qs('rowDaoFavNonTicket');if(dnRow)dnRow.innerHTML=daoFavNonTicket.length?daoFavNonTicket.map(s=>gameCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No DAO Favourites yet</div>';}
   mRow.innerHTML=multiplayer.length?multiplayer.map(s=>gameCard(s,'#a855f7',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No local multiplayer games yet</div>';
   if(tRow) tRow.innerHTML=ticketGames.length?ticketGames.map(s=>gameCard(s,'#39ff14',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No ticket games yet</div>';
   if(pRow) pRow.innerHTML=purchasableGames.length?purchasableGames.map(s=>gameCard(s,'#86efac',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No purchasable games yet</div>';
@@ -8393,7 +8376,7 @@ async function renderBackroom(){
   }
   // TODO: spotlight/dao-fav flags will come from backend later, for now use boosted/promoted
   const sortedNewest=[...subs].sort((a,b)=>(Number(b.createdAt||b.created_at||0)||0)-(Number(a.createdAt||a.created_at||0)||0));
-  const daoFavs=sortedNewest.filter(s=>s.daoFav).sort((a,b)=>(Number(b.daoFavCrowned)-Number(a.daoFavCrowned))||((b.daoFavScore||0)-(a.daoFavScore||0)));
+  const daoFavs=sortedNewest.filter(s=>s.daoFav);
 
   // Showroom Hopefuls: self-tagged by dev at submission
   const hopefuls=subs.filter(s=>s.gameCategory==='showroom-hopeful');
@@ -8684,7 +8667,6 @@ async function openGameDetails(id){
     accessibilityTags.keyboardAndMouse?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>⌨️🖱️ Keyboard and Mouse</span>`:'',
     accessibilityTags.controllerReady?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>🎮 Controller Ready</span>`:'',
     accessibilityTags.madeWithAi?`<span style='background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>🤖 Made with AI</span>`:'',
-    (getSubmissions().find(x=>x.id===id)||{}).localMultiplayer?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>👥 Local Multiplayer</span>`:'',
   ].join(''):'';
   const ticketPayoutTruthSection=isTicketGame?`<div style='padding:10px 12px;border:1px solid rgba(255,216,107,.2);border-radius:10px;background:rgba(255,216,107,.06);font-size:.74rem;color:#f8e5a0;line-height:1.5'>Ticket payouts are based on the admin score ladder plus any configured jackpot percentage tiers. Backend caps apply before tickets are awarded.</div>`:'';
   const backedPoolLabel=backedTicketPoolCount===null?'--':Number(backedTicketPoolCount||0).toLocaleString();
@@ -8699,7 +8681,7 @@ async function openGameDetails(id){
   const typeTag=isBackroom
     ?''
     :isTicketGame
-    ?`<span style='display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(255,215,0,.15),rgba(255,215,0,.15)),#0b1020;color:var(--gold);padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span></span>`
+    ?`<span style='background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.4);color:var(--gold);padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span>`
     :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`;
   const tierTag=`<span style='background:rgba(0,0,0,.3);border:1px solid ${tierColors[tier]||'#555'};color:${tierColors[tier]||'#888'};padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>${tierNames[tier]||tier}</span>`;
   const adminToolsSection=isAdmin()?`
@@ -8802,7 +8784,7 @@ function renderInlineGameAdminTools(gameId){
     <div style='font-size:.68rem;color:#9fb0d6'>Admin tools for <b style='color:#fff'>${escHtml(sub.name||gameId)}</b></div>
     <div style='display:flex;gap:6px;flex-wrap:wrap'>
       <button class='btn' onclick='openAdminGameUpdateFromDetails("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#22c55e;color:#22c55e'>Update Files</button>
-      ${sub.daoFavCrowned?`<button class='btn' onclick='adminToggleDaoFavourite("${gameId}",false)' style='font-size:.68rem;padding:5px 8px;border-color:var(--muted);color:var(--muted)'>Remove from DAO Favourites</button>`:`<button class='btn' onclick='adminToggleDaoFavourite("${gameId}",true)' style='font-size:.68rem;padding:5px 8px;border-color:#ff44aa;color:#ff44aa'>👑 DAO Favourite</button>`}
+      ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#ff44aa;color:#ff44aa'>Promote to DAO Favourites</button>`:`<button class='btn' onclick='demoteGameFromPicks("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--muted);color:var(--muted)'>Demote</button>`}
       ${(sub.paysTickets&&gt!=='backroom')?`<button class='btn' onclick='adminRetireBreaker("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:#a855f7;color:#a855f7'>Retire Breaker</button>`:''}
       ${sub.status==='suspended'
         ?`<button class='btn' onclick='adminRelistGame("${gameId}")' style='font-size:.68rem;padding:5px 8px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
@@ -9076,8 +9058,7 @@ async function openCategoryPage(room,category){
   if(room==='showroom'){
     const pool=allGames.filter(s=>(s.tier==='showroom'||s.gameTier==='showroom'||s.tier==='jays-picks'||s.gameTier==='jays-picks')&&(s.status||'live')==='live');
     if(category==='spotlight'){title='Spotlight';titleColor='#00aaff';borderColor='#00aaff';{let ids=new Set();try{const be=await getBackendActor();ids=new Set((await be.getActiveBoosts()).map(b=>b.gameId));}catch(_){}games=pool.filter(s=>ids.has(s.id));}}
-    else if(category==='dao-approved'){title="DAO Favourites - Ticket";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.daoFav&&s.paysTickets!==false);}
-    else if(category==='dao-approved-nonticket'){title="DAO Favourites - Non-Ticket";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.daoFav&&s.paysTickets===false);}
+    else if(category==='dao-approved'){title="DAO Favourites";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.tier==='jays-picks'||s.gameTier==='jays-picks');}
     else if(category==='local-multiplayer'){title='Local Multiplayer';titleColor='#a855f7';borderColor='#a855f7';games=pool.filter(s=>s.compat==='local-multiplayer'||s.compatibility==='local-multiplayer'||s.tags?.includes('multiplayer'));}
     else if(category==='ticket-games'){title='Ticket Games';titleColor='#39ff14';borderColor='#39ff14';games=pool.filter(s=>s.paysTickets!==false);}
     else if(category==='purchasable'){title='Optional Purchase';titleColor='#86efac';borderColor='#86efac';games=pool.filter(s=>s.wantsPurchasable);}
@@ -9088,7 +9069,7 @@ async function openCategoryPage(room,category){
     const pool=allGames.filter(s=>(s.tier==='backroom'||s.gameTier==='backroom')&&(s.status||'live')==='live');
     await refreshGameVoteCache(pool.map(s=>s.id));
     const sortedPool=[...pool].sort((a,b)=>(Number(b.createdAt||b.created_at||0)||0)-(Number(a.createdAt||a.created_at||0)||0));
-    const daoGames=sortedPool.filter(s=>s.daoFav).sort((a,b)=>(Number(b.daoFavCrowned)-Number(a.daoFavCrowned))||((b.daoFavScore||0)-(a.daoFavScore||0)));
+    const daoGames=sortedPool.filter(s=>s.daoFav);
     const popularGames=sortedPool.filter(s=>{
       if(s.daoFav) return false;
       const a=getGameApprovals(s.id);
@@ -9727,7 +9708,7 @@ async function openDevGameDetails(gameId){
     <div style="font-size:.85rem;color:#e0e6f0;margin-top:2px">${escHtml(s.name)}</div>
     ${lbl('DESCRIPTION')}<textarea id="devDetDesc" maxlength="1000" rows="4" style="width:100%;padding:8px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:.8rem;box-sizing:border-box;resize:vertical">${escHtml(s.desc||'')}</textarea>
     ${lbl('GAME CATEGORY')}<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rb('independent','Independent')}${rb('studio','Studio')}</div>
-    ${lbl('GAME DETAILS')}<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${cb('devDetKb','Keyboard Only',acc.keyboardOnly)}${cb('devDetKbm','Keyboard and Mouse',acc.keyboardAndMouse)}${cb('devDetCtl','Controller Ready',acc.controllerReady)}${cb('devDetAi','Made with AI',acc.madeWithAi)}${cb('devDetLmp','Local Multiplayer',!!((getSubmissions().find(x=>x.id===gameId)||{}).localMultiplayer))}</div>
+    ${lbl('GAME DETAILS')}<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${cb('devDetKb','Keyboard Only',acc.keyboardOnly)}${cb('devDetKbm','Keyboard and Mouse',acc.keyboardAndMouse)}${cb('devDetCtl','Controller Ready',acc.controllerReady)}${cb('devDetAi','Made with AI',acc.madeWithAi)}</div>
     <div style="font-size:.62rem;color:#5a7a9a;margin-top:10px">🔒 Ticket Game / Purchasable are locked after publishing.</div>
     <div id="devDetStatus" style="font-size:.72rem;margin-top:8px"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
@@ -9747,7 +9728,6 @@ async function saveDevGameDetails(gameId){
     const be=await getBackendActor(true);
     const r1=await be.setGameDescription(gameId,desc); if('err' in r1) throw new Error(r1.err);
     const r2=await be.setGameAccessibility(gameId,v('devDetKb'),v('devDetKbm'),v('devDetCtl'),v('devDetAi')); if('err' in r2) throw new Error(r2.err);
-    const r4=await be.setGameLocalMultiplayer(gameId,v('devDetLmp')); if('err' in r4) throw new Error(r4.err);
     if(cat){ const r3=await be.setGameCategory(gameId,cat); if('err' in r3) throw new Error(r3.err); }
     invalidateGameCache(); await refreshGameCache();
     document.getElementById('devDetailsModal')?.remove();
@@ -13551,11 +13531,14 @@ async function adminRetireBreaker(gameId){
 // Warmup progress display removed - all live games are now publicly visible
 
 // Game admin functions (on-chain v2)
-async function adminToggleDaoFavourite(id,on){
-  try{const be=await getBackendActor(true);const r=await be.adminSetDaoFavourite(id,on);
-    if(r.err) return arcadeAlert('DAO Favourites',escHtml(safeUserErrorMessage(r.err,'admin action')));
+async function promoteGameToJaysPicks(id){
+  try{const be=await getBackendActor(true);const r=await be.promoteGameToJaysPicks(id);
+    if(r.err) return alert(safeUserErrorMessage(r.err,'admin action'));
     invalidateGameCache(); await refreshGameCache(); renderGameAdminList();
-  }catch(e){arcadeAlert('DAO Favourites',escHtml(safeUserErrorMessage(e,'admin action')));}
+  }catch(e){alert(safeUserErrorMessage(e,'wallet action'));}
+}
+async function demoteGameFromPicks(id){
+  alert('Demotion not yet supported on-chain. Use Remove and have creator re-submit.');
 }
 async function adminSetGameCategoryUi(gameId,category){
   try{
@@ -13587,13 +13570,12 @@ async function renderGameAdminList(){
       el.innerHTML=renderBackendSlicePending('Game admin list is disabled because adminGetAllGames is not installed on this backend slice yet.');
       return;
     }
-    const [raw,auditMap,catPairs,monEntries5,pricingEntries5,favEntries5]=await Promise.all([
+    const [raw,auditMap,catPairs,monEntries5,pricingEntries5]=await Promise.all([
       be.adminGetAllGames(),
       getAdminTicketPoolAuditMap(be).catch(()=>new Map()),
       be.getAllGameCategories().catch(()=>[]),
       be.getAllGameMonetization().catch(()=>[]),
-      be.getAllGamePricing().catch(()=>[]),
-      be.getDaoFavourites().catch(()=>[])
+      be.getAllGamePricing().catch(()=>[])
     ]);
     ticketPoolAudit=auditMap;
     categoryMap=new Map(catPairs);
@@ -13601,7 +13583,6 @@ async function renderGameAdminList(){
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
     subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
-    {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
   }catch(_e){el.innerHTML=renderBackendSlicePending('Game admin list is temporarily unavailable. Backend admin game-list support is pending.');return;}
   // Session #3: 3 admin categories. Ticket vs non-ticket comes from the creator's monetization
   // choice (s.paysTickets, via getAllGameMonetization) - the same source the Showroom rows use.
@@ -13631,7 +13612,7 @@ async function renderGameAdminList(){
     <span class='tiny' style='color:var(--muted)'>${s.url?.substring(0,40)}...</span>
     </div>
     <div style='display:flex;gap:4px;flex-wrap:wrap'>
-    ${s.daoFavCrowned?`<button class='btn' title='Remove from DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>👑</button>`:`<button class='btn' title='Add to DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#555;color:#888'>👑</button>`}
+    ${gt!=='jays-picks'?`<button class='btn' onclick='promoteGameToJaysPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>👑</button>`:`<button class='btn' onclick='demoteGameFromPicks("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--muted);color:var(--muted)'>↓</button>`}
     ${gt!=='backroom'?`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>⚡ Boost</button>`:''}
     ${s.status==='suspended'
       ?`<button class='btn' onclick='adminRelistGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--green);color:var(--green)'>▶️ Relist</button>`
@@ -15872,7 +15853,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['adminToggleDaoFavourite',adminToggleDaoFavourite],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['promoteGameToJaysPicks',promoteGameToJaysPicks],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['demoteGameFromPicks',demoteGameFromPicks],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],

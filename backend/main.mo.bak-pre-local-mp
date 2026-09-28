@@ -3778,26 +3778,6 @@ persistent actor ArcadeBackend {
     }
   };
 
-  // === LOCAL MULTIPLAYER (creator-designated, session #3) ===
-  // Set from the submission form and the Details editor; decides the Local Multiplayer home row.
-  stable var localMultiplayerGameIds : [Text] = [];
-
-  public query func getLocalMultiplayerGameIds() : async [Text] { localMultiplayerGameIds };
-
-  public shared(msg) func setGameLocalMultiplayer(gameId : Text, on : Bool) : async Result.Result<(), Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (not Principal.equal(game.creator, caller) and not isAdmin(caller)) return #err("Not authorized");
-    let without = Array.filter<Text>(localMultiplayerGameIds, func(id) { id != gameId });
-    localMultiplayerGameIds := if (on) Array.append<Text>(without, [gameId]) else without;
-    #ok(())
-  };
-
   public shared(msg) func getBoostTreasuryBalance() : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);

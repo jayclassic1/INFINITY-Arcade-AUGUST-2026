@@ -8684,7 +8684,6 @@ async function openGameDetails(id){
     accessibilityTags.keyboardAndMouse?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>⌨️🖱️ Keyboard and Mouse</span>`:'',
     accessibilityTags.controllerReady?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>🎮 Controller Ready</span>`:'',
     accessibilityTags.madeWithAi?`<span style='background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>🤖 Made with AI</span>`:'',
-    (getSubmissions().find(x=>x.id===id)||{}).localMultiplayer?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>👥 Local Multiplayer</span>`:'',
   ].join(''):'';
   const ticketPayoutTruthSection=isTicketGame?`<div style='padding:10px 12px;border:1px solid rgba(255,216,107,.2);border-radius:10px;background:rgba(255,216,107,.06);font-size:.74rem;color:#f8e5a0;line-height:1.5'>Ticket payouts are based on the admin score ladder plus any configured jackpot percentage tiers. Backend caps apply before tickets are awarded.</div>`:'';
   const backedPoolLabel=backedTicketPoolCount===null?'--':Number(backedTicketPoolCount||0).toLocaleString();
@@ -8699,7 +8698,7 @@ async function openGameDetails(id){
   const typeTag=isBackroom
     ?''
     :isTicketGame
-    ?`<span style='display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(255,215,0,.15),rgba(255,215,0,.15)),#0b1020;color:var(--gold);padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span></span>`
+    ?`<span style='background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.4);color:var(--gold);padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span>`
     :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`;
   const tierTag=`<span style='background:rgba(0,0,0,.3);border:1px solid ${tierColors[tier]||'#555'};color:${tierColors[tier]||'#888'};padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>${tierNames[tier]||tier}</span>`;
   const adminToolsSection=isAdmin()?`
