@@ -393,7 +393,7 @@ new MutationObserver(mutations=>{
 <div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:url(showroom-v3.jpg) center top/cover no-repeat'></div>
 <div style='position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,transparent 40%,rgba(3,5,15,.5) 70%,rgba(3,5,15,.85) 100%)'></div>
 <!-- The Back door hitbox (center doors + sign) -->
-
+<button onclick="window.showView('backroom')" style='position:absolute;z-index:3;left:33%;top:10%;width:34%;height:55%;background:transparent;border:none;outline:none;cursor:pointer;border-radius:8px'></button>
 <!-- Content overlay - scrollable viewport -->
 <div style='position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden'>
 <div id='deviceFilter' style='display:none'></div>
@@ -649,28 +649,22 @@ new MutationObserver(mutations=>{
 <div id='backDaoFavs' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
+<!-- Local Multiplayer -->
+<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:8px 12px'>
+<div style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(168,85,247,.4)'>LOCAL MULTIPLAYER</div>
+<div id='backMultiplayer' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
+</div>
+
 <!-- Most Upvoted -->
 <div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(0,255,100,.15);border-radius:10px;padding:8px 12px'>
 <div onclick='openCategoryPage("backroom","popular")' style='font-size:.7rem;font-weight:800;color:#00ff66;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(0,255,100,.4);cursor:pointer'>MOST UPVOTED <span style='font-size:.55rem;opacity:.5'>View All</span></div>
 <div id='backPopular' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(0,255,100,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
-<!-- Showroom Hopefuls -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,136,0,.2);border-radius:10px;padding:8px 12px'>
-<div style='font-size:.7rem;font-weight:800;color:#ff8800;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,136,0,.4)'>SHOWROOM HOPEFULS</div>
-<div id='backHopefuls' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,136,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
-</div>
-
 <!-- Newest -->
 <div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 12px'>
 <div onclick='openCategoryPage("backroom","newest")' style='font-size:.7rem;font-weight:800;color:#8899aa;margin-bottom:5px;letter-spacing:2px;cursor:pointer'>NEWEST <span style='font-size:.55rem;opacity:.5'>View All</span></div>
 <div id='backOthers' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
-</div>
-
-<!-- Local Multiplayer -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:8px 12px'>
-<div style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(168,85,247,.4)'>LOCAL MULTIPLAYER</div>
-<div id='backMultiplayer' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
 </div>
@@ -5942,8 +5936,6 @@ function backendIdl({IDL}){
     getDaoFavourites:IDL.Func([],[IDL.Vec(IDL.Record({gameId:IDL.Text,crowned:IDL.Bool,score:IDL.Nat}))],['query']),
     getLocalMultiplayerGameIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
     setGameLocalMultiplayer:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
-    getShowroomHopefulGameIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
-    setGameShowroomHopeful:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -7771,20 +7763,18 @@ async function getSubmissionsAsync(){
     // real paysTickets/tokenCost actually reaches the player-facing cache, not just admin's own
     // views of it. Previously these were silently absent everywhere, so every game always fell
     // back to hardcoded defaults (ticket-game, 1 token/play) regardless of what was actually set.
-    const [games,monEntries,pricingEntries,favEntries,lmpIds,hopIds]=await Promise.all([
+    const [games,monEntries,pricingEntries,favEntries,lmpIds]=await Promise.all([
       be.getGameSubmissions(),
       be.getAllGameMonetization().catch(()=>[]),
       be.getAllGamePricing().catch(()=>[]),
       be.getDaoFavourites().catch(()=>[]),
       be.getLocalMultiplayerGameIds().catch(()=>[]),
-      be.getShowroomHopefulGameIds().catch(()=>[]),
     ]);
     const monMap=new Map(monEntries.map(([id,v])=>[id,v]));
     const pricingMap=new Map(pricingEntries.map(([id,v])=>[id,v]));
     _gameSubsCache=games.map(g=>normalizeGameSubmission(g,monMap,pricingMap));
     {const favMap=new Map(favEntries.map(f=>[f.gameId,f]));for(const g of _gameSubsCache){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
     {const lmp=new Set(lmpIds);for(const g of _gameSubsCache){g.localMultiplayer=lmp.has(g.id);}}
-    {const hop=new Set(hopIds);for(const g of _gameSubsCache){g.showroomHopeful=hop.has(g.id);}}
     _gameSubsCacheTime=Date.now();
     return _gameSubsCache;
   }catch(e){console.error('Failed to fetch game submissions:',e); return _gameSubsCache||[];}
@@ -8127,7 +8117,7 @@ async function submitBackGame(){
   const desc=qs('backSubDesc').value.trim();
   const zipFile=window._pendingSubmissionZip?.back;
   const thumbFile=window._pendingSubmissionThumb?.back;
-  const category=(document.querySelector('input[name="backSubGameCategory"]:checked')?.value||'independent');
+  const category=document.getElementById('backSubHopeful')?.checked?'independent':(document.querySelector('input[name="backSubGameCategory"]:checked')?.value||'independent');
   if(!name){qs(resId).textContent='Name required'; return;}
   if(!zipFile){qs(resId).textContent='Please choose a game zip file'; return;}
   if(!thumbFile){qs(resId).textContent='Please choose a thumbnail image'; return;}
@@ -8142,7 +8132,6 @@ async function submitBackGame(){
     be.setGameCategory(gameId,category).catch(e=>console.warn('Category save failed:',e));
     be.setGameAccessibility(gameId,document.getElementById('backSubKeyboardOnly')?.checked||false,document.getElementById('backSubKeyboardMouse')?.checked||false,document.getElementById('backSubControllerReady')?.checked||false,document.getElementById('backSubMadeWithAi')?.checked||false).catch(e=>console.warn('Accessibility tags save failed:',e));
     be.setGameLocalMultiplayer(gameId,document.getElementById('backSubLocalMp')?.checked||false).catch(e=>console.warn('Local multiplayer save failed:',e));
-    if(document.getElementById('backSubHopeful')?.checked) be.setGameShowroomHopeful(gameId,true).catch(e=>console.warn('Showroom Hopeful save failed:',e));
     qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip...</span>';
     await chunkedUploadFile(gameId,'zip',zipFile,(done,total)=>{
       qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip... ('+done+'/'+total+')</span>';
@@ -8393,7 +8382,7 @@ async function renderBackroom(){
   await refreshGameVoteCache(subs.map(s=>s.id));
   // Most Upvoted: games with ≥90% approval (any vote count, at least 1 vote), excluding DAO favourites
   const popularApproval=sortedNewest.filter(s=>{
-    if(s.daoFav) return false;
+    if(s.daoFav||s.localMultiplayer) return false;
     const a=getGameApprovals(s.id);
     const total=a.likesCount+a.dislikesCount;
     if(total<1) return false;
@@ -8408,12 +8397,11 @@ async function renderBackroom(){
   });
 
   const popularIds=new Set(popularApproval.map(s=>s.id));
-  const newest=sortedNewest.filter(s=>!s.daoFav&&!s.localMultiplayer&&!s.showroomHopeful&&!popularIds.has(s.id));
+  const newest=sortedNewest.filter(s=>!s.daoFav&&!s.localMultiplayer&&!popularIds.has(s.id));
 
   const df=qs('backDaoFavs'), mp=qs('backPopular'), ot=qs('backOthers');
   df.innerHTML=daoFavs.length?daoFavs.map(s=>backCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No DAO favourites yet</div>';
-  {const lmp=hopefuls.filter(s=>!popularIds.has(s.id)&&!s.showroomHopeful);bm.innerHTML=lmp.length?lmp.map(s=>backCard(s,'#a855f7',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No local multiplayer games yet</div>';}
-  {const hh=qs('backHopefuls');const hop=sortedNewest.filter(s=>!s.daoFav&&!popularIds.has(s.id)&&s.showroomHopeful);if(hh)hh.innerHTML=hop.length?hop.map(s=>backCard(s,'#ff8800',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No Showroom Hopefuls yet</div>';}
+  bm.innerHTML=hopefuls.length?hopefuls.map(s=>backCard(s,'#a855f7',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No local multiplayer games yet</div>';
   mp.innerHTML=popularApproval.length?popularApproval.map(s=>backCard(s,'#00ff66',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No upvote leaders yet</div>';
   ot.innerHTML=newest.length?newest.map(s=>backCard(s,'rgba(255,255,255,.15)',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:10px">No fresh drops yet</div>';
   hydrateGameCardStats(subs);
@@ -9081,7 +9069,7 @@ async function openCategoryPage(room,category){
     const sortedPool=[...pool].sort((a,b)=>(Number(b.createdAt||b.created_at||0)||0)-(Number(a.createdAt||a.created_at||0)||0));
     const daoGames=sortedPool.filter(s=>s.daoFav).sort((a,b)=>(Number(b.daoFavCrowned)-Number(a.daoFavCrowned))||((b.daoFavScore||0)-(a.daoFavScore||0)));
     const popularGames=sortedPool.filter(s=>{
-      if(s.daoFav) return false;
+      if(s.daoFav||s.localMultiplayer) return false;
       const a=getGameApprovals(s.id);
       const total=a.likesCount+a.dislikesCount;
       if(total<1) return false;
@@ -9095,7 +9083,7 @@ async function openCategoryPage(room,category){
       return tb-ta;
     });
     const popularIds=new Set(popularGames.map(s=>s.id));
-    const newestGames=sortedPool.filter(s=>!s.daoFav&&!s.localMultiplayer&&!s.showroomHopeful&&!popularIds.has(s.id));
+    const newestGames=sortedPool.filter(s=>!s.daoFav&&!s.localMultiplayer&&!popularIds.has(s.id));
     if(category==='dao-favourites'){title='DAO Favourites';titleColor='#ffd700';borderColor='#ffd700';games=daoGames;}
     else if(category==='local-multiplayer'){title='Local Multiplayer';titleColor='#a855f7';borderColor='#a855f7';games=pool.filter(s=>!s.daoFav&&s.localMultiplayer);}
     else if(category==='popular'){title='Most Upvoted';titleColor='#00ff66';borderColor='#00ff66';games=popularGames;}
@@ -10507,6 +10495,35 @@ async function adminRemoveMod(principal){
     }
   }catch(e){if(statusEl) statusEl.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'admin action'))+'</span>'; }
 }
+// ─── SMOOTH VERTICAL SCROLL OVER HORIZONTAL ROWS (Showroom + The Back, session #3) ───
+// Trackpad scroll latching could lock a mostly-vertical gesture onto a sideways-scrolling row, so the page
+// wouldn't move while the cursor was over a row. Vertical-dominant wheel input over a row is forwarded to the
+// page's own vertical scroller; horizontal-dominant input is left alone so rows still scroll sideways.
+(function __arcadeRowWheelFix(){
+  function isScrollY(cs){return cs.overflowY==='auto'||cs.overflowY==='scroll';}
+  document.addEventListener('wheel',function(e){
+    if(e.ctrlKey) return;
+    const t=e.target; if(!t||!t.closest) return;
+    const view=t.closest('#view-arcade,#view-backroom'); if(!view) return;
+    if(Math.abs(e.deltaY)<=Math.abs(e.deltaX)) return;
+    let row=null;
+    for(let n=t;n&&n!==view;n=n.parentElement){
+      const cs=getComputedStyle(n);
+      if(isScrollY(cs)) return;
+      if(cs.overflowX==='auto'||cs.overflowX==='scroll'){row=n;break;}
+    }
+    if(!row) return;
+    let sc=null;
+    for(let n=row.parentElement;n&&n!==document.body;n=n.parentElement){
+      const cs=getComputedStyle(n);
+      if(isScrollY(cs)&&n.scrollHeight>n.clientHeight){sc=n;break;}
+    }
+    if(!sc) return;
+    const d=e.deltaY*(e.deltaMode===1?16:(e.deltaMode===2?sc.clientHeight:1));
+    if(Math.abs(d)>=50) sc.scrollBy({top:d,behavior:'smooth'}); else sc.scrollTop+=d;
+    e.preventDefault();
+  },{passive:false});
+})();
 // ─── GAME BOOSTS (session #3: real backend Spotlight boosts; admin boosts are free, same rules) ───
 async function adminBoostGameById(gameId){
   if(!isAdmin()||!gameId) return;

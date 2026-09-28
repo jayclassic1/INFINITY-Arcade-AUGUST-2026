@@ -3798,29 +3798,6 @@ persistent actor ArcadeBackend {
     #ok(())
   };
 
-  // === SHOWROOM HOPEFULS (Back games, set at submission, session #3) ===
-  // Creator can set it only before the game is live (i.e. at submission); admin can change it anytime.
-  stable var showroomHopefulGameIds : [Text] = [];
-
-  public query func getShowroomHopefulGameIds() : async [Text] { showroomHopefulGameIds };
-
-  public shared(msg) func setGameShowroomHopeful(gameId : Text, on : Bool) : async Result.Result<(), Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (game.gameTier != "backroom") return #err("Showroom Hopeful is only for The Back games");
-    let callerIsAdmin = isAdmin(caller);
-    if (not Principal.equal(game.creator, caller) and not callerIsAdmin) return #err("Not authorized");
-    if (not callerIsAdmin and game.status == "live") return #err("Showroom Hopeful can only be set at submission");
-    let without = Array.filter<Text>(showroomHopefulGameIds, func(id) { id != gameId });
-    showroomHopefulGameIds := if (on) Array.append<Text>(without, [gameId]) else without;
-    #ok(())
-  };
-
   public shared(msg) func getBoostTreasuryBalance() : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
