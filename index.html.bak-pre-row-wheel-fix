@@ -10495,35 +10495,6 @@ async function adminRemoveMod(principal){
     }
   }catch(e){if(statusEl) statusEl.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(e,'admin action'))+'</span>'; }
 }
-// ─── SMOOTH VERTICAL SCROLL OVER HORIZONTAL ROWS (Showroom + The Back, session #3) ───
-// Trackpad scroll latching could lock a mostly-vertical gesture onto a sideways-scrolling row, so the page
-// wouldn't move while the cursor was over a row. Vertical-dominant wheel input over a row is forwarded to the
-// page's own vertical scroller; horizontal-dominant input is left alone so rows still scroll sideways.
-(function __arcadeRowWheelFix(){
-  function isScrollY(cs){return cs.overflowY==='auto'||cs.overflowY==='scroll';}
-  document.addEventListener('wheel',function(e){
-    if(e.ctrlKey) return;
-    const t=e.target; if(!t||!t.closest) return;
-    const view=t.closest('#view-arcade,#view-backroom'); if(!view) return;
-    if(Math.abs(e.deltaY)<=Math.abs(e.deltaX)) return;
-    let row=null;
-    for(let n=t;n&&n!==view;n=n.parentElement){
-      const cs=getComputedStyle(n);
-      if(isScrollY(cs)) return;
-      if(cs.overflowX==='auto'||cs.overflowX==='scroll'){row=n;break;}
-    }
-    if(!row) return;
-    let sc=null;
-    for(let n=row.parentElement;n&&n!==document.body;n=n.parentElement){
-      const cs=getComputedStyle(n);
-      if(isScrollY(cs)&&n.scrollHeight>n.clientHeight){sc=n;break;}
-    }
-    if(!sc) return;
-    const d=e.deltaY*(e.deltaMode===1?16:(e.deltaMode===2?sc.clientHeight:1));
-    if(Math.abs(d)>=50) sc.scrollBy({top:d,behavior:'smooth'}); else sc.scrollTop+=d;
-    e.preventDefault();
-  },{passive:false});
-})();
 // ─── GAME BOOSTS (session #3: real backend Spotlight boosts; admin boosts are free, same rules) ───
 async function adminBoostGameById(gameId){
   if(!isAdmin()||!gameId) return;
