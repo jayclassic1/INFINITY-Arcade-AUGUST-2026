@@ -547,7 +547,7 @@ new MutationObserver(mutations=>{
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>PLATFORM</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='desktop' checked style='margin-right:6px'/>Desktop</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='mobile' style='margin-right:6px'/>Mobile</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME CATEGORY</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='independent' checked style='margin-right:6px'/>Independent</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubGameCategory' value='studio' style='margin-right:6px'/>Studio</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubMadeWithAi'/>Made with AI</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubLocalMp'/>Local Multiplayer</label></div></div>
-<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>MONETIZATION</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.25);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubPaysTickets' onchange='updateShowSubMonetizationUi()'/>🎟️ Ticket Game</label><label id='showSubWantsPurchasableLabel' style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubWantsPurchasable' onchange='updateShowSubMonetizationUi()'/>💰 Purchasable (buy outright)</label></div><div id='showSubPurchasePriceRow' style='display:none;margin-top:6px'><input type='number' id='showSubPurchasePrice' min='1' step='1' placeholder='Purchase price (tokens)' style='width:100%;padding:8px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(134,239,172,.3);border-radius:8px;color:#fff;font-size:.78rem;box-sizing:border-box'/></div><div id='showSubPurchasableHint' style='display:none;font-size:.65rem;color:#5a7baa;margin-top:4px'>Ticket games can't be purchasable</div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>MONETIZATION</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.25);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubPaysTickets' onchange='updateShowSubMonetizationUi()'/>🎟️ Ticket Game</label><label id='showSubWantsPurchasableLabel' style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='showSubWantsPurchasable'/>💰 Purchasable (buy outright)</label></div><div id='showSubPurchasableHint' style='display:none;font-size:.65rem;color:#5a7baa;margin-top:4px'>Ticket games can't be purchasable</div></div>
 </div>
 <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
 
@@ -5944,7 +5944,6 @@ function backendIdl({IDL}){
     setGameLocalMultiplayer:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
     getShowroomHopefulGameIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
     setGameShowroomHopeful:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
-    setGameRequestedPurchasePrice:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Null,err:IDL.Text})],[]),
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -8178,14 +8177,11 @@ function updateShowSubMonetizationUi(){
     purchasableLabel.style.cursor=paysTickets?'not-allowed':'pointer';
   }
   if(hint) hint.style.display=paysTickets?'':'none';
-  const priceRow=document.getElementById('showSubPurchasePriceRow');
-  if(priceRow) priceRow.style.display=(purchasableCb&&purchasableCb.checked&&!paysTickets)?'':'none';
 }
 
 async function submitShowroomGame(){
   const resId='showSubRes';
   const name=qs('showSubName').value.trim();
-  if(document.getElementById('showSubWantsPurchasable')?.checked&&!((Math.floor(Number(document.getElementById('showSubPurchasePrice')?.value)||0))>=1)){arcadeAlert('Purchase price needed','Enter a purchase price of at least 1 token, or untick Purchasable.');return;}
   const dev=(getProfile()?.name||qs('showSubDev').value||'').trim();
   const desc=qs('showSubDesc').value.trim();
   const compat=document.querySelector('input[name="showSubCompat"]:checked')?.value||'desktop';
@@ -8206,8 +8202,7 @@ async function submitShowroomGame(){
     be.setGameCategory(gameId,category).catch(e=>console.warn('Category save failed:',e));
     be.setGameAccessibility(gameId,document.getElementById('showSubKeyboardOnly')?.checked||false,document.getElementById('showSubKeyboardMouse')?.checked||false,document.getElementById('showSubControllerReady')?.checked||false,document.getElementById('showSubMadeWithAi')?.checked||false).catch(e=>console.warn('Accessibility tags save failed:',e));
     be.setGameLocalMultiplayer(gameId,document.getElementById('showSubLocalMp')?.checked||false).catch(e=>console.warn('Local multiplayer save failed:',e));
-    const _monP=be.setGameMonetization(gameId,document.getElementById('showSubPaysTickets')?.checked||false,document.getElementById('showSubWantsPurchasable')?.checked||false).catch(e=>console.warn('Monetization save failed:',e));
-    {const _pp=Math.floor(Number(document.getElementById('showSubPurchasePrice')?.value)||0);if(document.getElementById('showSubWantsPurchasable')?.checked&&_pp>=1){_monP.then(()=>be.setGameRequestedPurchasePrice(gameId,BigInt(_pp))).catch(e=>console.warn('Purchase price save failed:',e));}}
+    be.setGameMonetization(gameId,document.getElementById('showSubPaysTickets')?.checked||false,document.getElementById('showSubWantsPurchasable')?.checked||false).catch(e=>console.warn('Monetization save failed:',e));
     qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip...</span>';
     await chunkedUploadFile(gameId,'zip',zipFile,(done,total)=>{
       qs(resId).innerHTML='<span style="color:var(--cyan)">Uploading game zip... ('+done+'/'+total+')</span>';
@@ -8498,21 +8493,23 @@ async function openBackroomGame(id){
   // Showroom: show INSERT TOKEN screen
   modal.innerHTML=`<div class='panel' style='width:min(96vw,1600px);height:94vh;display:flex;flex-direction:column;position:relative;padding:10px'>
     <div style='position:absolute;top:14px;right:14px;z-index:20;display:flex;gap:8px;align-items:center'>
-      ${sub.paysTickets!==false?`<button class='btn green' onclick='arcadeButtonHit(this);submitLatestScoreAndClose("${id}")' style='font-size:.82rem'>Submit Score</button>`:''}
+      <button class='btn green' onclick='arcadeButtonHit(this);submitLatestScoreAndClose("${id}")' style='font-size:.82rem'>Submit Score</button>
       <button class='btn red' onclick='arcadeButtonHit(this);forceCloseArcadeSession("${id}")' style='font-size:.82rem'>Close</button>
     </div>
     <div style='display:flex;justify-content:flex-start;align-items:center;gap:8px;padding:4px 132px 10px 4px;flex-wrap:wrap;min-height:38px'>
       <button id='insertMoreBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' style='display:none;padding:8px 18px;font-size:.82rem;background:rgba(0,0,0,.9);border:1px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;letter-spacing:1px'>INSERT TOKEN</button>
     </div>
     <div id='coinGate' style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;border:1px solid #3456aa;border-radius:8px'>
-      <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>INSERT TOKEN</div>
-      ${sub.paysTickets!==false?`<div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per session &gt; Submitting Score ends session</div>`:`<div style='margin:16px 0 8px'></div>`}
+      <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>${sub.purchasePrice>0&&sub.paysTickets!==true?'SELECT MODE':'INSERT TOKEN'}</div>
+      <div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per session &gt; Submitting Score ends session</div>
+      ${sub.purchasePrice>0&&sub.paysTickets!==true?`<div style='color:#c084fc;font-size:.8rem;margin-bottom:8px'>Full game: ${sub.purchasePrice} Tokens &nbsp;·&nbsp; Demo: 1 Token (5 min)</div><div id='autoUnlockProgress' style='color:#5a7a9a;font-size:.72rem;margin-bottom:12px'>Checking play history...</div>`:''}
       <div id='highScoreDisplay' style='display:none;color:#3d6090;font-size:.75rem;margin-bottom:8px'></div>
       <div id='ownedNotice' style='display:none;color:#22c55e;font-size:.9rem;font-weight:700;margin-bottom:12px'>YOU OWN THIS GAME - PLAY FREE</div>
       <div id='coinGateButtons' style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center'>
         <button id='coinPlayBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' class='btn' style='padding:12px 40px;font-size:1.1rem;border-color:var(--gold);color:var(--gold);cursor:pointer;letter-spacing:2px'>PLAY</button>
         ${sub.purchasePrice>0&&sub.paysTickets!==true?`
-        <button id='coinBuyBtn' onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer;letter-spacing:1px'>BUY (<span style='background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700'>${sub.purchasePrice} Tokens</span>)</button>
+        <button id='coinBuyBtn' onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer;letter-spacing:1px'>BUY (${sub.purchasePrice} Tokens)</button>
+        <button id='coinTryBtn' onclick='tryGameDemo("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#c084fc;color:#c084fc;cursor:pointer;letter-spacing:1px'>TRY (1 Token)</button>
         `:''}</div>
       <div style='color:var(--cyan);font-size:.85rem;margin-top:12px'>Balance: <span id='coinGateBalance'>${Math.floor(S.quarters)||0}</span> Tokens</div>
     </div>
@@ -8695,7 +8692,7 @@ async function openGameDetails(id){
     ?''
     :isTicketGame
     ?`<span style='display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(255,215,0,.15),rgba(255,215,0,.15)),#0b1020;color:var(--gold);padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span></span>`
-    :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`+(sub.wantsPurchasable?`<span style='margin-left:6px;display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(134,239,172,.12),rgba(134,239,172,.12)),#0b1020;color:#86efac;padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>💰 PURCHASABLE · ${Number(sub.purchasePrice)>0?Number(sub.purchasePrice).toLocaleString()+' TOKENS':'PRICE PENDING'}</span></span>`+(Number(sub.purchasePrice)>0?`<div style='order:99;width:100%;margin-top:6px;font-size:.74rem;color:#86efac'>🔓 Unlocks permanently at ${Number(sub.purchasePrice).toLocaleString()} tokens: buy it outright, or keep playing until you've spent ${Number(sub.purchasePrice).toLocaleString()} tokens on it.</div>`:''):'');
+    :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`+(sub.wantsPurchasable?`<span style='margin-left:6px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.45);color:#86efac;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>💰 PURCHASABLE</span>`:'');
   const tierTag=`<span style='background:rgba(0,0,0,.3);border:1px solid ${tierColors[tier]||'#555'};color:${tierColors[tier]||'#888'};padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>${tierNames[tier]||tier}</span>`;
   const adminToolsSection=isAdmin()?`
         <div style='margin-top:10px;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)'>
@@ -11180,7 +11177,6 @@ async function loadAdminPendingSubmissionTarget(){
   try{
     const be2=await getBackendActor(false);
     const mon=await be2.getGameMonetization(game.id);
-    var _reqPrice=0;try{const _pe=(await be2.getAllGamePricing()).find(([pid])=>pid===game.id);_reqPrice=_pe?Number(_pe[1][1])||0:0;}catch(_){}
     monetizationRow=mon.paysTickets
       ?`<div style='margin-bottom:6px;color:#ffd700'>🎟️ Ticket Game (creator's choice)</div>`
       :mon.wantsPurchasable
@@ -11192,7 +11188,7 @@ async function loadAdminPendingSubmissionTarget(){
     // token-per-play game that didn't ask for it, per Jay's explicit rule.
     if(!mon.paysTickets){
       const purchaseInput=mon.wantsPurchasable
-        ?`<input type='number' id='adminPendingPurchasePrice_${game.id}' value='${(typeof _reqPrice!=='undefined'&&_reqPrice)?_reqPrice:''}' placeholder='Purchase price' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(134,239,172,.3);border-radius:6px;color:#fff;font-size:.7rem'/>`
+        ?`<input type='number' id='adminPendingPurchasePrice_${game.id}' placeholder='Purchase price' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(134,239,172,.3);border-radius:6px;color:#fff;font-size:.7rem'/>`
         :`<input type='number' disabled placeholder='Not purchasable' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#5a7baa;font-size:.7rem'/>`;
       pricingRow=`<div style='display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap'><input type='number' id='adminPendingTokenCost_${game.id}' placeholder='Token cost/play' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(139,180,255,.3);border-radius:6px;color:#fff;font-size:.7rem'/>${purchaseInput}<button class='btn tiny' onclick='adminSetPendingGamePricing("${game.id}")' style='font-size:.65rem;padding:4px 10px'>Set Pricing</button></div>`;
     }

@@ -4639,33 +4639,6 @@ persistent actor ArcadeBackend {
     #ok(())
   };
 
-  /// Creator-requested buy-outright price (tokens), set from the Showroom submission form. Creator only
-  /// before the game is live, and only for non-ticket games marked Purchasable; admin anytime. Writes the
-  /// same pricing record adminSetGamePricing does, keeping the existing per-play token cost (default 1).
-  public shared(msg) func setGameRequestedPurchasePrice(gameId : Text, purchasePrice : Nat) : async Result.Result<(), Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    let callerIsAdmin = isAdmin(caller);
-    if (not Principal.equal(game.creator, caller) and not callerIsAdmin) return #err("Not authorized");
-    if (not callerIsAdmin and game.status == "live") return #err("Purchase price can only be set at submission");
-    if (purchasePrice == 0) return #err("Purchase price must be at least 1 token");
-    switch (gameMonetization.get(gameId)) {
-      case (?(paysTickets, wantsPurchasable)) {
-        if (paysTickets) return #err("Ticket games can't be purchasable");
-        if (not wantsPurchasable) return #err("Game is not marked Purchasable");
-      };
-      case null { return #err("Set monetization before the purchase price") };
-    };
-    let tokenCost = switch (gamePricing.get(gameId)) { case (?(tc, _)) { if (tc == 0) 1 else tc }; case null { 1 } };
-    gamePricing.put(gameId, (tokenCost, purchasePrice));
-    #ok(())
-  };
-
   public query func getGamePricing(gameId : Text) : async { tokenCost : ?Nat; purchasePrice : ?Nat } {
     switch (gamePricing.get(gameId)) {
       case null { { tokenCost = null; purchasePrice = null } };

@@ -8498,21 +8498,23 @@ async function openBackroomGame(id){
   // Showroom: show INSERT TOKEN screen
   modal.innerHTML=`<div class='panel' style='width:min(96vw,1600px);height:94vh;display:flex;flex-direction:column;position:relative;padding:10px'>
     <div style='position:absolute;top:14px;right:14px;z-index:20;display:flex;gap:8px;align-items:center'>
-      ${sub.paysTickets!==false?`<button class='btn green' onclick='arcadeButtonHit(this);submitLatestScoreAndClose("${id}")' style='font-size:.82rem'>Submit Score</button>`:''}
+      <button class='btn green' onclick='arcadeButtonHit(this);submitLatestScoreAndClose("${id}")' style='font-size:.82rem'>Submit Score</button>
       <button class='btn red' onclick='arcadeButtonHit(this);forceCloseArcadeSession("${id}")' style='font-size:.82rem'>Close</button>
     </div>
     <div style='display:flex;justify-content:flex-start;align-items:center;gap:8px;padding:4px 132px 10px 4px;flex-wrap:wrap;min-height:38px'>
       <button id='insertMoreBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' style='display:none;padding:8px 18px;font-size:.82rem;background:rgba(0,0,0,.9);border:1px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;letter-spacing:1px'>INSERT TOKEN</button>
     </div>
     <div id='coinGate' style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;border:1px solid #3456aa;border-radius:8px'>
-      <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>INSERT TOKEN</div>
-      ${sub.paysTickets!==false?`<div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per session &gt; Submitting Score ends session</div>`:`<div style='margin:16px 0 8px'></div>`}
+      <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>${sub.purchasePrice>0&&sub.paysTickets!==true?'SELECT MODE':'INSERT TOKEN'}</div>
+      <div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per session &gt; Submitting Score ends session</div>
+      ${sub.purchasePrice>0&&sub.paysTickets!==true?`<div style='color:#c084fc;font-size:.8rem;margin-bottom:8px'>Full game: ${sub.purchasePrice} Tokens &nbsp;·&nbsp; Demo: 1 Token (5 min)</div><div id='autoUnlockProgress' style='color:#5a7a9a;font-size:.72rem;margin-bottom:12px'>Checking play history...</div>`:''}
       <div id='highScoreDisplay' style='display:none;color:#3d6090;font-size:.75rem;margin-bottom:8px'></div>
       <div id='ownedNotice' style='display:none;color:#22c55e;font-size:.9rem;font-weight:700;margin-bottom:12px'>YOU OWN THIS GAME - PLAY FREE</div>
       <div id='coinGateButtons' style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center'>
         <button id='coinPlayBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' class='btn' style='padding:12px 40px;font-size:1.1rem;border-color:var(--gold);color:var(--gold);cursor:pointer;letter-spacing:2px'>PLAY</button>
         ${sub.purchasePrice>0&&sub.paysTickets!==true?`
-        <button id='coinBuyBtn' onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer;letter-spacing:1px'>BUY (<span style='background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700'>${sub.purchasePrice} Tokens</span>)</button>
+        <button id='coinBuyBtn' onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer;letter-spacing:1px'>BUY (${sub.purchasePrice} Tokens)</button>
+        <button id='coinTryBtn' onclick='tryGameDemo("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#c084fc;color:#c084fc;cursor:pointer;letter-spacing:1px'>TRY (1 Token)</button>
         `:''}</div>
       <div style='color:var(--cyan);font-size:.85rem;margin-top:12px'>Balance: <span id='coinGateBalance'>${Math.floor(S.quarters)||0}</span> Tokens</div>
     </div>
@@ -8695,7 +8697,7 @@ async function openGameDetails(id){
     ?''
     :isTicketGame
     ?`<span style='display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(255,215,0,.15),rgba(255,215,0,.15)),#0b1020;color:var(--gold);padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>TICKET GAME</span></span>`
-    :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`+(sub.wantsPurchasable?`<span style='margin-left:6px;display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(134,239,172,.12),rgba(134,239,172,.12)),#0b1020;color:#86efac;padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>💰 PURCHASABLE · ${Number(sub.purchasePrice)>0?Number(sub.purchasePrice).toLocaleString()+' TOKENS':'PRICE PENDING'}</span></span>`+(Number(sub.purchasePrice)>0?`<div style='order:99;width:100%;margin-top:6px;font-size:.74rem;color:#86efac'>🔓 Unlocks permanently at ${Number(sub.purchasePrice).toLocaleString()} tokens: buy it outright, or keep playing until you've spent ${Number(sub.purchasePrice).toLocaleString()} tokens on it.</div>`:''):'');
+    :`<span style='background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>XP GAME</span>`+(sub.wantsPurchasable?`<span style='margin-left:6px;display:inline-block;padding:2px;border-radius:8px;background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);line-height:0;vertical-align:middle'><span style='display:inline-block;line-height:normal;background:linear-gradient(rgba(134,239,172,.12),rgba(134,239,172,.12)),#0b1020;color:#86efac;padding:2px 9px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>💰 PURCHASABLE · ${Number(sub.purchasePrice)>0?Number(sub.purchasePrice).toLocaleString()+' TOKENS':'PRICE PENDING'}</span></span>`:'');
   const tierTag=`<span style='background:rgba(0,0,0,.3);border:1px solid ${tierColors[tier]||'#555'};color:${tierColors[tier]||'#888'};padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>${tierNames[tier]||tier}</span>`;
   const adminToolsSection=isAdmin()?`
         <div style='margin-top:10px;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)'>
