@@ -13548,28 +13548,6 @@ async function adminRetireBreaker(gameId){
 // Warmup progress display removed - all live games are now publicly visible
 
 // Game admin functions (on-chain v2)
-async function openPayoutEditor(gameId){
-  if(!isAdmin()||!gameId) return;
-  closePayoutEditor(true);
-  const g=(getSubmissions()||[]).find(x=>x.id===gameId);
-  const m=document.createElement('div'); m.id='payoutEditorModal';
-  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:12px';
-  m.innerHTML=`<div style='width:min(94vw,760px);background:#0b1020;border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:16px'>
-    <div style='display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px'>
-      <b style='color:#ffd700;font-size:.9rem'>🎟️ Payout Ladder - ${escHtml(g?g.name:gameId)}</b>
-      <button class='btn' onclick='closePayoutEditor()' style='font-size:.7rem;padding:4px 10px'>Close</button>
-    </div>
-    <div style='font-size:.65rem;color:#9fb0d6;margin-bottom:8px'>Changes apply to the very next score submitted. Editable anytime.</div>
-    <div id='payoutAdmin_${payoutDomId(gameId)}' style='font-size:.7rem;color:#9fb0d6'>Loading...</div>
-  </div>`;
-  m.addEventListener('click',e=>{if(e.target===m) closePayoutEditor();});
-  document.body.appendChild(m);
-  await hydratePayoutConfigAdmin(gameId);
-}
-function closePayoutEditor(silent){
-  const m=document.getElementById('payoutEditorModal'); if(m) m.remove();
-  if(!silent&&typeof renderGameAdminList==='function') renderGameAdminList();
-}
 async function adminToggleDaoFavourite(id,on){
   try{const be=await getBackendActor(true);const r=await be.adminSetDaoFavourite(id,on);
     if(r.err) return arcadeAlert('DAO Favourites',escHtml(safeUserErrorMessage(r.err,'admin action')));
@@ -13652,7 +13630,6 @@ async function renderGameAdminList(){
     <span class='tiny' style='color:var(--muted)'>${s.url?.substring(0,40)}...</span>
     </div>
     <div style='display:flex;gap:4px;flex-wrap:wrap'>
-    ${(s.paysTickets!==false&&(s.gameTier==='showroom'||s.gameTier==='jays-picks'))?`<button class='btn' title='Set ticket payout ladder' onclick='openPayoutEditor("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>🎟️ Payout</button>`:''}
     ${(s.paysTickets!==false&&(s.gameTier==='showroom'||s.gameTier==='jays-picks')&&!s.hasPayoutTable)?`<span title='This Ticket game pays 0 tickets until its payout ladder is set (Details, Open Admin Tools)' style='font-size:.6rem;padding:3px 6px;border:1px solid #ef4444;color:#ef4444;border-radius:6px'>⚠️ No payout table</span>`:''}
     ${s.daoFavCrowned?`<button class='btn' title='Remove from DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>👑</button>`:`<button class='btn' title='Add to DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#555;color:#888'>👑</button>`}
     ${gt!=='backroom'?`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>⚡ Boost</button>`:''}
@@ -15895,7 +15872,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['adminToggleDaoFavourite',adminToggleDaoFavourite],['openPayoutEditor',openPayoutEditor],['closePayoutEditor',closePayoutEditor],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['adminToggleDaoFavourite',adminToggleDaoFavourite],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],

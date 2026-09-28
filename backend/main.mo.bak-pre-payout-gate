@@ -4463,15 +4463,6 @@ persistent actor ArcadeBackend {
     if (game.status != "backroom-zip-pending" and game.status != "showroom-zip-pending") {
       return #err("Not a pending submission: " # game.status);
     };
-    // Ticket games need a complete, enabled payout table to go live - otherwise every score pays 0.
-    if (isTicketGameSubmission(game)) {
-      switch (gamePayoutConfigs.get(gameId)) {
-        case null { return #err("Set the payout table before accepting this Ticket game (7 score thresholds) - without one every score pays 0 tickets.") };
-        case (?cfg) {
-          if (not cfg.enabled or cfg.thresholds.size() != 7) return #err("Enable a complete 7-threshold payout table before accepting this Ticket game.");
-        };
-      };
-    };
     let finalUrl = if (Text.size(hostedUrl) > 0) hostedUrl else game.url;
     if (Text.size(finalUrl) == 0) return #err("No hosted files yet - run Upload Game to Chain for this submission first");
     let tierLabel = if (game.gameTier == "showroom") "the Showroom" else "The Back";
@@ -4863,15 +4854,6 @@ persistent actor ArcadeBackend {
       case null { return #err("Game not found") };
       case (?game) {
         if (game.status != "suspended") return #err("Game is not suspended: " # game.status);
-        // Ticket games need a complete, enabled payout table to go live - otherwise every score pays 0.
-        if (isTicketGameSubmission(game)) {
-          switch (gamePayoutConfigs.get(gameId)) {
-            case null { return #err("Set the payout table before relisting this Ticket game (7 score thresholds) - without one every score pays 0 tickets.") };
-            case (?cfg) {
-              if (not cfg.enabled or cfg.thresholds.size() != 7) return #err("Enable a complete 7-threshold payout table before relisting this Ticket game.");
-            };
-          };
-        };
         let updated : GameSubmission = {
           id = game.id; name = game.name; developer = game.developer;
           url = game.url; thumbnailUrl = game.thumbnailUrl; description = game.description;

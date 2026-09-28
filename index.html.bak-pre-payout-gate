@@ -11181,7 +11181,6 @@ async function loadAdminPendingSubmissionTarget(){
     const be2=await getBackendActor(false);
     const mon=await be2.getGameMonetization(game.id);
     var _reqPrice=0;try{const _pe=(await be2.getAllGamePricing()).find(([pid])=>pid===game.id);_reqPrice=_pe?Number(_pe[1][1])||0:0;}catch(_){}
-    var _payoutRow=mon.paysTickets?`<div style='margin-bottom:6px'><div style='font-size:.62rem;color:#ffd166;margin-bottom:4px'>Required before Accept: set and save this Ticket game's payout ladder.</div><div id='payoutAdmin_${payoutDomId(game.id)}'>${renderPayoutConfigAdmin(game.id,null)}</div></div>`:'';
     monetizationRow=mon.paysTickets
       ?`<div style='margin-bottom:6px;color:#ffd700'>🎟️ Ticket Game (creator's choice)</div>`
       :mon.wantsPurchasable
@@ -11202,8 +11201,7 @@ async function loadAdminPendingSubmissionTarget(){
     preview.style.display='block';
     const zipRow=zipItem?`<div style='margin-bottom:6px'>📦 <b>${escHtml(parseZipUploadFilename(zipItem.filename).filename)}</b> (${(Number(zipItem.totalBytes)/1024).toFixed(0)}KB) <button class='btn tiny' onclick='downloadPendingZipUpload("${zipItem.id}","${escHtml(parseZipUploadFilename(zipItem.filename).filename)}",${zipItem.chunkCount})' style='font-size:.62rem;padding:3px 8px;margin-left:6px'>Download Zip</button> <span id='pendingZipAutoFillStatus' style='font-size:.62rem;color:#5a7a9a;margin-left:6px'>Loading into Choose ZIP…</span></div>`:'<div style="color:var(--red);margin-bottom:6px">No zip uploaded for this submission</div>';
     const thumbRow=thumbItem?`<div style='display:flex;align-items:center;gap:8px'><div id='adminPendingThumbPreview_${thumbItem.id}' style='width:80px;height:80px;background:#1a2548;border-radius:6px;overflow:hidden;flex-shrink:0'>🖼️</div><div style='display:flex;flex-direction:column;gap:4px'><button id='pendingThumbUseBtn' onclick='useAdminPendingThumbnail()' class='btn tiny' style='font-size:.62rem;padding:4px 10px' disabled>Loading…</button><button onclick='swapAdminPendingThumbnail()' class='btn tiny' style='font-size:.62rem;padding:4px 10px;border-color:#8b5cf6;color:#c084fc'>Swap Thumbnail</button></div><input type='file' id='adminPendingThumbSwapFile' accept='image/*' style='display:none' onchange='handleAdminPendingThumbnailSwap(this)'/></div>`:'<div style="color:var(--red)">No thumbnail uploaded</div>';
-    preview.innerHTML=`${monetizationRow}${pricingRow}${(typeof _payoutRow!=='undefined'?_payoutRow:'')}${zipRow}${thumbRow}`;
-    if(typeof _payoutRow!=='undefined'&&_payoutRow) hydratePayoutConfigAdmin(game.id);
+    preview.innerHTML=`${monetizationRow}${pricingRow}${zipRow}${thumbRow}`;
     if(thumbItem) loadPendingThumbnailPreview(thumbItem.id,thumbItem.chunkCount,'width:100%;height:100%;object-fit:cover;display:block','adminPendingThumbPreview_'+thumbItem.id);
   }
 
@@ -13548,28 +13546,6 @@ async function adminRetireBreaker(gameId){
 // Warmup progress display removed - all live games are now publicly visible
 
 // Game admin functions (on-chain v2)
-async function openPayoutEditor(gameId){
-  if(!isAdmin()||!gameId) return;
-  closePayoutEditor(true);
-  const g=(getSubmissions()||[]).find(x=>x.id===gameId);
-  const m=document.createElement('div'); m.id='payoutEditorModal';
-  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:12px';
-  m.innerHTML=`<div style='width:min(94vw,760px);background:#0b1020;border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:16px'>
-    <div style='display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px'>
-      <b style='color:#ffd700;font-size:.9rem'>🎟️ Payout Ladder - ${escHtml(g?g.name:gameId)}</b>
-      <button class='btn' onclick='closePayoutEditor()' style='font-size:.7rem;padding:4px 10px'>Close</button>
-    </div>
-    <div style='font-size:.65rem;color:#9fb0d6;margin-bottom:8px'>Changes apply to the very next score submitted. Editable anytime.</div>
-    <div id='payoutAdmin_${payoutDomId(gameId)}' style='font-size:.7rem;color:#9fb0d6'>Loading...</div>
-  </div>`;
-  m.addEventListener('click',e=>{if(e.target===m) closePayoutEditor();});
-  document.body.appendChild(m);
-  await hydratePayoutConfigAdmin(gameId);
-}
-function closePayoutEditor(silent){
-  const m=document.getElementById('payoutEditorModal'); if(m) m.remove();
-  if(!silent&&typeof renderGameAdminList==='function') renderGameAdminList();
-}
 async function adminToggleDaoFavourite(id,on){
   try{const be=await getBackendActor(true);const r=await be.adminSetDaoFavourite(id,on);
     if(r.err) return arcadeAlert('DAO Favourites',escHtml(safeUserErrorMessage(r.err,'admin action')));
@@ -13606,14 +13582,13 @@ async function renderGameAdminList(){
       el.innerHTML=renderBackendSlicePending('Game admin list is disabled because adminGetAllGames is not installed on this backend slice yet.');
       return;
     }
-    const [raw,auditMap,catPairs,monEntries5,pricingEntries5,favEntries5,payoutEntries5]=await Promise.all([
+    const [raw,auditMap,catPairs,monEntries5,pricingEntries5,favEntries5]=await Promise.all([
       be.adminGetAllGames(),
       getAdminTicketPoolAuditMap(be).catch(()=>new Map()),
       be.getAllGameCategories().catch(()=>[]),
       be.getAllGameMonetization().catch(()=>[]),
       be.getAllGamePricing().catch(()=>[]),
-      be.getDaoFavourites().catch(()=>[]),
-      be.getAllGamePayoutConfigs().catch(()=>[])
+      be.getDaoFavourites().catch(()=>[])
     ]);
     ticketPoolAudit=auditMap;
     categoryMap=new Map(catPairs);
@@ -13621,7 +13596,6 @@ async function renderGameAdminList(){
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
     subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
-    {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&v.thresholds.length===7).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
     {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
   }catch(_e){el.innerHTML=renderBackendSlicePending('Game admin list is temporarily unavailable. Backend admin game-list support is pending.');return;}
   // Session #3: 3 admin categories. Ticket vs non-ticket comes from the creator's monetization
@@ -13652,8 +13626,6 @@ async function renderGameAdminList(){
     <span class='tiny' style='color:var(--muted)'>${s.url?.substring(0,40)}...</span>
     </div>
     <div style='display:flex;gap:4px;flex-wrap:wrap'>
-    ${(s.paysTickets!==false&&(s.gameTier==='showroom'||s.gameTier==='jays-picks'))?`<button class='btn' title='Set ticket payout ladder' onclick='openPayoutEditor("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>🎟️ Payout</button>`:''}
-    ${(s.paysTickets!==false&&(s.gameTier==='showroom'||s.gameTier==='jays-picks')&&!s.hasPayoutTable)?`<span title='This Ticket game pays 0 tickets until its payout ladder is set (Details, Open Admin Tools)' style='font-size:.6rem;padding:3px 6px;border:1px solid #ef4444;color:#ef4444;border-radius:6px'>⚠️ No payout table</span>`:''}
     ${s.daoFavCrowned?`<button class='btn' title='Remove from DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>👑</button>`:`<button class='btn' title='Add to DAO Favourites' onclick='adminToggleDaoFavourite("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#555;color:#888'>👑</button>`}
     ${gt!=='backroom'?`<button class='btn' onclick='quickBoostGame("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:#ff8800;color:#ff8800'>⚡ Boost</button>`:''}
     ${s.status==='suspended'
@@ -15895,7 +15867,7 @@ function closeNftDetail(){
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
   ['promoteToJaysPicks',promoteToJaysPicks],['demoteNftFromPicks',demoteNftFromPicks],['removeNft',removeNft],['renderNftAdminList',renderNftAdminList],
   ['toggleInlineGameAdminTools',toggleInlineGameAdminTools],['renderInlineGameAdminTools',renderInlineGameAdminTools],['openAdminGameUpdateFromDetails',openAdminGameUpdateFromDetails],['adminSweepMainToOperating',adminSweepMainToOperating],['switchAdminTab',switchAdminTab],['filterAdminNfts',filterAdminNfts],['filterAdminGames',filterAdminGames],['loadTreasuryStats',loadTreasuryStats],['loadWalletNfts',loadWalletNfts],['scanAndCacheWalletNfts',scanAndCacheWalletNfts],
-  ['adminToggleDaoFavourite',adminToggleDaoFavourite],['openPayoutEditor',openPayoutEditor],['closePayoutEditor',closePayoutEditor],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
+  ['adminToggleDaoFavourite',adminToggleDaoFavourite],['devFundTickets',devFundTickets],['devBoostGame',devBoostGame],['openDevGameDetails',openDevGameDetails],['saveDevGameDetails',saveDevGameDetails],['loadPrincipalAccount',loadPrincipalAccount],['principalAcctMax',principalAcctMax],['principalAcctSend',principalAcctSend],['principalAcctToArcade',principalAcctToArcade],['loadArcadeShareInfo',loadArcadeShareInfo],['withdrawArcadeShare',withdrawArcadeShare],['removeGame',removeGame],['adminSetGameCategoryUi',adminSetGameCategoryUi],['renderGameAdminList',renderGameAdminList],['openPendingSubmissionDetail',openPendingSubmissionDetail],['adminSaveSubmissionCategory',adminSaveSubmissionCategory],['promptRejectSubmission',promptRejectSubmission],['adminRetireBreaker',adminRetireBreaker],['renderHallOfBreakers',renderHallOfBreakers],['closeGameModalImmediate',closeGameModalImmediate],
   ['refreshNftListingsCache',refreshNftListingsCache],['invalidateNftCache',invalidateNftCache],['refreshGameCache',refreshGameCache],['invalidateGameCache',invalidateGameCache],
   ['startArcadeGame',startArcadeGame],['logGameInput',logGameInput],['endArcadeGame',endArcadeGame],['getGameStats',getGameStats],['getLeaderboard',getLeaderboardHighScore],
   ['fetchExternalNftMetadata',fetchExternalNftMetadata],['checkExternalNftOwner',checkExternalNftOwner],['getDynamicNftActor',getDynamicNftActor],
