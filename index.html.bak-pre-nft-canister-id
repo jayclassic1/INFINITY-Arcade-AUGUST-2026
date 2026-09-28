@@ -358,7 +358,7 @@ new MutationObserver(mutations=>{
 })();
 </script>
 
-<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' id='nftDetailSpotlight' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ffd700;color:#ffd700'>⭐ Spotlight</button><button class='btn' id='nftDetailGrail' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ff44aa;color:#ff44aa'>Grail NFT</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← RETURN</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Scan</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
+<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← RETURN</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Scan</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
 <button id='playerManualBtn' onclick='openPlayerManual()' style='position:fixed;bottom:16px;left:14px;z-index:80;display:none;padding:6px 16px;background:rgba(4,8,20,.85);border:1px solid rgba(0,170,255,.3);border-radius:8px;color:#00aaff;font-size:.72rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.borderColor="rgba(0,170,255,.7)";this.style.color="#fff"' onmouseleave='this.style.borderColor="rgba(0,170,255,.3)";this.style.color="#00aaff"'>Player Manual</button>
 <div id='legalFooterBtn' style='position:fixed;top:72px;left:14px;z-index:80;display:flex;gap:8px'>
 <button onclick="showView('legal-tos')" style='padding:5px 12px;background:rgba(4,8,20,.75);border:1px solid #1a2848;border-radius:7px;color:#3d6090;font-size:.65rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.color="#00aaff";this.style.borderColor="#0066ff44"' onmouseleave='this.style.color="#3d6090";this.style.borderColor="#1a2848"'>Terms</button>
@@ -474,16 +474,16 @@ new MutationObserver(mutations=>{
 <div id='nftRowGrails' style='display:flex;gap:10px;overflow-x:auto;padding:8px;scrollbar-width:thin;scrollbar-color:rgba(255,100,200,.3) transparent'></div>
 </div>
 
-<!-- Arcade Collections -->
-<div style='background:rgba(20,4,30,.9);backdrop-filter:blur(8px);border:2px solid rgba(168,85,247,.4);border-radius:10px;padding:8px 12px;box-shadow:0 0 20px rgba(168,85,247,.15)'>
-<div onclick='openCollectionBrowser()' style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 12px rgba(168,85,247,.6);cursor:pointer;display:flex;align-items:center;gap:6px' onmouseenter='this.style.color="#c084fc"' onmouseleave='this.style.color="#a855f7"'>ARCADE COLLECTIONS <span style='font-size:.6rem;opacity:.7'>Browse All</span></div>
-<div id='nftRowDegenFighter' style='display:flex;gap:10px;overflow-x:auto;padding:8px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.3) transparent'></div>
-</div>
-
 <!-- Spotlight -->
 <div style='background:rgba(4,8,20,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,215,0,.25);border-radius:10px;padding:8px 12px'>
 <div onclick='openPrizeRowPopup("spotlight")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>SPOTLIGHT <span style='font-size:.55rem;opacity:.5'>View All</span></div>
 <div id='nftRowBoosted' style='display:flex;gap:10px;overflow-x:auto;padding:8px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent'></div>
+</div>
+
+<!-- Arcade Collections -->
+<div style='background:rgba(20,4,30,.9);backdrop-filter:blur(8px);border:2px solid rgba(168,85,247,.4);border-radius:10px;padding:8px 12px;box-shadow:0 0 20px rgba(168,85,247,.15)'>
+<div onclick='openCollectionBrowser()' style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 12px rgba(168,85,247,.6);cursor:pointer;display:flex;align-items:center;gap:6px' onmouseenter='this.style.color="#c084fc"' onmouseleave='this.style.color="#a855f7"'>ARCADE COLLECTIONS <span style='font-size:.6rem;opacity:.7'>Browse All</span></div>
+<div id='nftRowDegenFighter' style='display:flex;gap:10px;overflow-x:auto;padding:8px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.3) transparent'></div>
 </div>
 
 <!-- Existing NFTs -->
@@ -5217,7 +5217,7 @@ window.addEventListener('keyup',(e)=>{forwardArcadeKeyToGame(e,'up');});
 const NFT_OWNED_KEY='arcade_nfts_owned';
 const NFT_CATALOG=[];  // Test NFTs removed - real listings only
 const RARITY_COLORS={Common:'#9eb0d8',Uncommon:'#2df59d',Rare:'#00aaff',Legendary:'#ffd86b'};
-const NFT_CANISTER='4xhad-gd777-77775-aaacq-cai';
+const NFT_CANISTER='4qggx-l3777-77775-aaaca-cai';
 // Closed-loop policy: Official Arcade NFTs (minted on our own nft_canister) cannot be sent
 // anywhere except back into Prize Booth — the backend enforces this for everyone, including
 // admin, so there is deliberately no Withdraw/Send UI for them either. Flip this back to true
@@ -5938,9 +5938,6 @@ function backendIdl({IDL}){
     adminAddNftSpotlight:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftSpotlight:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     getNftSpotlightIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
-    getNftGrailIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),
-    adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -7306,15 +7303,14 @@ async function renderNftShop(){
     } else { vpRow.innerHTML=''; }
   }
 
-  // Grails - admin-flagged NFTs (backend flag; live listings only, drop out when redeemed)
-  let _grailIds=new Set();
-  try{_grailIds=new Set(await (await getBackendActor()).getNftGrailIds());}catch(e){console.warn('Grail fetch:',e);}
-  const grailNfts=allUserNfts.filter(s=>_grailIds.has(s.id));
+  // Grails - NFTs tagged with collection:'grails'
+  const grailNfts=allUserNfts.filter(s=>s.collection&&s.collection.toLowerCase().replace(/\s+/g,'-').startsWith('grail'));
   const grailRow=qs('nftRowGrails');
-  if(grailRow) grailRow.innerHTML=grailNfts.length?grailNfts.map(s=>`<div onclick='showUserNftDetail("${s.id}")' style='min-width:160px;max-width:160px;cursor:pointer;border-radius:10px;padding:3px;background:linear-gradient(135deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);flex-shrink:0;transition:all .2s;box-shadow:0 0 12px rgba(255,68,170,.2)' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.05)";this.style.boxShadow="0 0 20px rgba(255,68,170,.5)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)";this.style.boxShadow="0 0 12px rgba(255,68,170,.2)"'><img src="${s.imgData}" style='width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;display:block;border-radius:7px' onerror='this.style.display="none"'/></div>`).join(''):'<div style="color:#5a3d5a;font-size:.8rem;padding:20px">No grails listed yet</div>';
+  if(grailRow) grailRow.innerHTML=grailNfts.length?grailNfts.map(s=>`<div onclick='showUserNftDetail("${s.id}")' style='min-width:120px;max-width:120px;cursor:pointer;border-radius:10px;border:2px solid #ff44aa;overflow:hidden;background:#0a0a1a;flex-shrink:0;transition:all .2s;box-shadow:0 0 12px rgba(255,68,170,.2)' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.05)";this.style.boxShadow="0 0 20px rgba(255,68,170,.5)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)";this.style.boxShadow="0 0 12px rgba(255,68,170,.2)"'><img src="${s.imgData}" style='width:100%;height:120px;object-fit:contain;display:block' onerror='this.style.display="none"'/></div>`).join(''):'<div style="color:#5a3d5a;font-size:.8rem;padding:20px">No grails listed yet</div>';
 
   // Arcade Collections - show one thumbnail card per collection (not individual NFTs)
-  const collectionNfts=allUserNfts.filter(s=>isCollectionNft(s));
+  function isGrailNft(n){return n.collection&&n.collection.toLowerCase().replace(/\s+/g,'-').startsWith('grail');}
+  const collectionNfts=allUserNfts.filter(s=>isCollectionNft(s)&&!isGrailNft(s));
   // Group by collection name
   const _colGroups={};
   for(const nft of collectionNfts){
@@ -12457,6 +12453,7 @@ async function openCollectionManager(colId){
           <button onclick='adminEditNftAbility(${tokenId},"${ability}")' style='background:none;border:1px solid rgba(168,85,247,.3);color:#a855f7;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:.5rem;flex:1'>Set Ability</button>
           ${ability!=='none'?`<button onclick='adminClearNftAbility(${tokenId})' style='background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:4px;padding:1px 4px;cursor:pointer;font-size:.5rem'>X</button>`:''}
         </div>
+        <button onclick='adminToggleGrail("${listingId}","${escHtml(listing?listing.collectionName:'')}","${escHtml(col.name)}")' style='background:none;border:1px solid ${listing&&listing.collectionName==='Grails'?'rgba(255,68,170,.4)':'rgba(100,100,100,.3)'};color:${listing&&listing.collectionName==='Grails'?'#ff44aa':'#555'};border-radius:4px;padding:1px 6px;cursor:pointer;font-size:.5rem;margin-top:3px;width:100%'>${listing&&listing.collectionName==='Grails'?'Remove from Grails':'Move to Grails'}</button>
       </div>
     </div>`;
   }
@@ -12480,13 +12477,30 @@ async function adminToggleSpotlight(listingId,add){
   }catch(e){arcadeAlert('Error',escHtml(safeUserErrorMessage(e,'arcade action')));}
 }
 
-async function adminToggleNftGrail(listingId,add){
+async function adminSetCollectionTag(listingId,tag){
   try{
     const be=await getBackendActor(true);
-    const r=add?await be.adminAddNftGrail(listingId):await be.adminRemoveNftGrail(listingId);
-    if(r.ok!==undefined){invalidateNftCache();renderNftAdminList();if(typeof renderNftShop==='function')renderNftShop();}
+    const r=await be.adminSetNftCollectionTag(listingId,tag);
+    if(r.ok!==undefined){
+      invalidateNftCache();
+      if(typeof renderNftAdminList==='function')renderNftAdminList();
+      if(typeof renderNftShop==='function')renderNftShop();
+    }
     else{arcadeAlert('Error',escHtml(safeUserErrorMessage(r.err||'Unknown','arcade action')));}
   }catch(e){arcadeAlert('Error',escHtml(safeUserErrorMessage(e,'arcade action')));}
+}
+
+async function adminToggleGrail(listingId,currentCollection,originalCollection){
+  const isGrail=currentCollection==='Grails';
+  const newTag=isGrail?(originalCollection||'Degen Fighters'):'Grails';
+  const status=document.getElementById('colMgrStatus');
+  status.textContent=isGrail?'Removing from Grails...':'Moving to Grails...';status.style.color='#ffd700';
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminSetNftCollectionTag(listingId,newTag);
+    if(r.ok!==undefined){status.textContent=r.ok;status.style.color='#39ff14';invalidateNftCache();if(typeof renderNftShop==='function')renderNftShop();}
+    else{status.textContent=safeUserErrorMessage(r.err||'Unknown','collection action');status.style.color='#ef4444';}
+  }catch(e){status.textContent=safeUserErrorMessage(e,'arcade action');status.style.color='#ef4444';}
 }
 
 async function adminEditNftPrice(listingId,currentPrice){
@@ -12786,8 +12800,6 @@ async function renderNftAdminList(){
   // Fetch spotlight list
   let _adminSpotlightSet=new Set();
   try{const be=await getBackendActor();const ids=await be.getNftSpotlightIds();_adminSpotlightSet=new Set(ids);}catch(e){}
-  let _adminGrailSet=new Set();
-  try{_adminGrailSet=new Set(await (await getBackendActor()).getNftGrailIds());}catch(e){}
   const TIER_LABELS={open:'Open Floor',showroom:'Showroom','showroom-pending':'Pending Review','jays-picks':'Showroom'};
   const TIER_COLORS={open:'var(--muted)',showroom:'var(--gold)','showroom-pending':'var(--cyan)','jays-picks':'var(--gold)'};
   // Helper: extract NFT number from name like "Degen Fighters #42"
@@ -12838,14 +12850,14 @@ async function renderNftAdminList(){
       </div>
       <div id='${groupId}' style='display:none;padding:0 8px 8px'>`;
     html+=g.nfts.map(s=>{
-      const isGrail=_adminGrailSet.has(s.id);
+      const isGrail=s.collection&&s.collection.toLowerCase().startsWith('grail');
       return `<div style='display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(168,85,247,.1)'>
         <img src="${s.imgData}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'"/>
         <div style='flex:1'><b style='font-size:.8rem'>${escHtml(s.name)}</b>${isGrail?' <span style="font-size:.55rem;color:#ff44aa;font-weight:700">GRAIL</span>':''}${_adminSpotlightSet.has(s.id)?' <span style="font-size:.55rem;color:#ffd700;font-weight:700">SPOTLIGHT</span>':''}<br><span class='tiny' style='color:#5a7a9a'><span onclick='adminEditNftPrice("${s.id}",${s.ticketCost})' style='cursor:pointer;text-decoration:underline dotted' title='Click to edit price'>${s.ticketCost.toLocaleString()} tickets</span></span></div>
         <div style='display:flex;gap:4px'>
         <button class='btn' onclick='adminEditNftPrice("${s.id}",${s.ticketCost})' style='font-size:.55rem;padding:2px 6px;border-color:#ffd700;color:#ffd700'>Price</button>
         ${_adminSpotlightSet.has(s.id)?`<button class='btn' onclick='adminToggleSpotlight("${s.id}",false)' style='font-size:.55rem;padding:2px 6px;border-color:#ffd700;color:#ffd700'>Unspot</button>`:`<button class='btn' onclick='adminToggleSpotlight("${s.id}",true)' style='font-size:.55rem;padding:2px 6px;border-color:#555;color:#888'>Spot</button>`}
-        ${isGrail?`<button class='btn' onclick='adminToggleNftGrail("${s.id}",false)' style='font-size:.55rem;padding:2px 6px;border-color:#ff44aa;color:#ff44aa'>Ungrail</button>`:`<button class='btn' onclick='adminToggleNftGrail("${s.id}",true)' style='font-size:.55rem;padding:2px 6px;border-color:#a855f7;color:#a855f7'>Grail</button>`}
+        ${isGrail?`<button class='btn' onclick='adminSetCollectionTag("${s.id}","${escHtml(s.name.replace(/\\s*#\\d+$/,""))}");setTimeout(renderNftAdminList,500)' style='font-size:.55rem;padding:2px 6px;border-color:#ff44aa;color:#ff44aa'>Ungrail</button>`:`<button class='btn' onclick='adminSetCollectionTag("${s.id}","Grails");setTimeout(renderNftAdminList,500)' style='font-size:.55rem;padding:2px 6px;border-color:#a855f7;color:#a855f7'>Grail</button>`}
         </div>
       </div>`;
     }).join('');
@@ -12856,7 +12868,7 @@ async function renderNftAdminList(){
   if(userNfts.length){
     userNfts.sort((a,b)=>nftSortNum(a)-nftSortNum(b));
     html+=userNfts.map(s=>{
-      const isGrail=_adminGrailSet.has(s.id);
+      const isGrail=s.collection&&s.collection.toLowerCase().startsWith('grail');
       const tierDisplay=`<span style='color:${TIER_COLORS[s.tier]||"var(--muted)"}'>${TIER_LABELS[s.tier]||'Open Floor'}</span>`;
       return `<div style='display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2a3a5f'>
       <img src="${s.imgData}" style="width:50px;height:50px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'"/>
@@ -12864,7 +12876,7 @@ async function renderNftAdminList(){
       <div style='display:flex;gap:4px;flex-wrap:wrap'>
       
       ${_adminSpotlightSet.has(s.id)?`<button class='btn' onclick='adminToggleSpotlight("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>Unspot</button>`:`<button class='btn' onclick='adminToggleSpotlight("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#555;color:#888'>Spot</button>`}
-      ${isGrail?`<button class='btn' onclick='adminToggleNftGrail("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>Ungrail</button>`:`<button class='btn' onclick='adminToggleNftGrail("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#a855f7;color:#a855f7'>Grail</button>`}
+      ${isGrail?`<button class='btn' onclick='adminSetCollectionTag("${s.id}","${escHtml(s.name.replace(/\\s*#\\d+$/,""))}");setTimeout(renderNftAdminList,500)' style='font-size:.6rem;padding:3px 6px;border-color:#ff44aa;color:#ff44aa'>Ungrail</button>`:`<button class='btn' onclick='adminSetCollectionTag("${s.id}","Grails")' style='font-size:.6rem;padding:3px 6px;border-color:#a855f7;color:#a855f7'>Grail</button>`}
       <button class='btn' onclick='removeNft("${s.id}")' style='font-size:.6rem;padding:3px 6px;border-color:var(--red);color:var(--red)'>Delete</button>
       </div>
     </div>`}).join('');
@@ -15688,36 +15700,6 @@ async function showUserNftDetail(id){
     document.getElementById('nftDetailDesc').textContent=s.desc||'';
   }
   document.getElementById('nftDetailCost').textContent='🎟️ '+s.ticketCost.toLocaleString()+' Tickets';
-  // Admin-only Prize Booth Spotlight toggle: one button that adds or removes, in the same place.
-  {const spotBtn=document.getElementById('nftDetailSpotlight');
-   if(spotBtn){
-     spotBtn.style.display='none'; spotBtn.onclick=null; spotBtn.dataset.for=(s&&s.id)||'';
-     if(isAdmin()&&s&&s.id){(async()=>{
-       try{
-         const ids=await (await getBackendActor()).getNftSpotlightIds();
-         if(spotBtn.dataset.for!==s.id) return; // popup was reopened for another NFT meanwhile
-         const inSpot=ids.includes(s.id);
-         spotBtn.textContent=inSpot?'Remove from Spotlight':'⭐ Spotlight';
-         spotBtn.onclick=async()=>{spotBtn.disabled=true;try{await adminToggleSpotlight(s.id,!inSpot);}finally{spotBtn.disabled=false;}closeNftDetail();};
-         spotBtn.style.display='';
-       }catch(_){}
-     })();}
-   }}
-  // Admin-only Grail toggle: one button that adds or removes, in the same place.
-  {const grBtn=document.getElementById('nftDetailGrail');
-   if(grBtn){
-     grBtn.style.display='none'; grBtn.onclick=null; grBtn.dataset.for=(s&&s.id)||'';
-     if(isAdmin()&&s&&s.id){(async()=>{
-       try{
-         const ids=await (await getBackendActor()).getNftGrailIds();
-         if(grBtn.dataset.for!==s.id) return;
-         const isGr=ids.includes(s.id);
-         grBtn.textContent=isGr?'Remove Grail':'Grail NFT';
-         grBtn.onclick=async()=>{grBtn.disabled=true;try{await adminToggleNftGrail(s.id,!isGr);}finally{grBtn.disabled=false;}closeNftDetail();};
-         grBtn.style.display='';
-       }catch(_){}
-     })();}
-   }}
   const btn=document.getElementById('nftDetailRedeem');
 
   // Detect if this is an official collection NFT (minted by arcade, not escrowed)
@@ -15826,7 +15808,6 @@ function showNftDetail(tokenId){
   document.getElementById('nftDetailCost').textContent='🎟️ '+cost.toLocaleString()+' Tickets';
   const btn=document.getElementById('nftDetailRedeem');
   btn.onclick=()=>{closeNftDetail();redeemNft(tokenId);};
-  {const sb=document.getElementById('nftDetailSpotlight');if(sb)sb.style.display='none';const gb=document.getElementById('nftDetailGrail');if(gb)gb.style.display='none';}
   const m=document.getElementById('nftDetailModal');
   m.style.display='grid';
 }
@@ -15847,7 +15828,7 @@ function closeNftDetail(){
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['pickAvatarEmoji',pickAvatarEmoji],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
   ['openPlayerPortal',openPlayerPortal],['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['scanWalletBtn',scanWalletBtn],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['openShowroomEdit',openShowroomEdit],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['showBanOverlay',showBanOverlay],['adminBanUser',adminBanUser],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['toggleReplies',toggleReplies],['showReplyForm',showReplyForm],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
-  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleNftGrail',adminToggleNftGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
+  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleGrail',adminToggleGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminSetCollectionTag',adminSetCollectionTag],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
   ['runTreasuryScan',runTreasuryScan],
   ['showNftDetail',showNftDetail],['closeNftDetail',closeNftDetail],
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],

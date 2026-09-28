@@ -64,6 +64,7 @@ persistent actor NftCanister {
 
   // Admin
   stable var admins : [Principal] = [
+    Principal.fromText("6fuxu-dcmul-k6b5r-gdbkr-4fiqy-dgdjx-efdj3-hvqsx-3pfiu-bnc7x-qae"),
     Principal.fromText("fvuhj-qdha4-tu5gc-4hvim-yaxae-g5grp-xjiz3-u5rpo-5cniw-gpolf-eqe")
   ];
 

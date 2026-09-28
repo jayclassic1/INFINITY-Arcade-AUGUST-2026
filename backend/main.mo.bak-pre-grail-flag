@@ -3665,33 +3665,6 @@ persistent actor ArcadeBackend {
     #ok("Removed from Spotlight")
   };
 
-  // === PRIZE BOOTH GRAILS (admin-only flag, session #3) ===
-  // Same as the NFT Spotlight minus the cap: a flag, never a collection rename. Live-only, so a
-  // redeemed/removed NFT drops out automatically; stays until admin removes it.
-  stable var nftGrailIds : [Text] = [];
-
-  public query func getNftGrailIds() : async [Text] {
-    Array.filter<Text>(nftGrailIds, func(id) { isLiveNftListing(id) })
-  };
-
-  public shared(msg) func adminAddNftGrail(listingId : Text) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Admin only");
-    hydrateRuntimeStateIfNeeded();
-    if (not isLiveNftListing(listingId)) return #err("Only live NFT listings can be Grails");
-    nftGrailIds := Array.filter<Text>(nftGrailIds, func(id) { isLiveNftListing(id) });
-    for (id in nftGrailIds.vals()) { if (id == listingId) return #err("Already a Grail") };
-    nftGrailIds := Array.append<Text>(nftGrailIds, [listingId]);
-    #ok("Marked as Grail")
-  };
-
-  public shared(msg) func adminRemoveNftGrail(listingId : Text) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Admin only");
-    let before = nftGrailIds.size();
-    nftGrailIds := Array.filter<Text>(nftGrailIds, func(id) { id != listingId });
-    if (nftGrailIds.size() == before) return #err("Not a Grail");
-    #ok("Removed from Grails")
-  };
-
   public shared(msg) func getBoostTreasuryBalance() : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
