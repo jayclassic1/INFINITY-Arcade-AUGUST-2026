@@ -6110,7 +6110,6 @@ function backendIdl({IDL}){
     getBoostPrice:IDL.Func([],[IDL.Nat],['query']),
     getSpotlightSlots:IDL.Func([],[IDL.Record({used:IDL.Nat,max:IDL.Nat})],['query']),
     fundGameTickets:IDL.Func([IDL.Text,IDL.Nat],[ResultNat],[]),
-    adminSeedTicketPool:IDL.Func([IDL.Text],[ResultNat],[]),
     adminSetBoostPrice:IDL.Func([IDL.Nat],[ResultNat],[]),
     getBoostTreasuryBalance:IDL.Func([],[ResultNat],[]),
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),

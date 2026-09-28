@@ -531,7 +531,6 @@ new MutationObserver(mutations=>{
   <div id='backSubFeeNote' style='font-size:.72rem;color:#9cb1de'></div>
 </div>
 <button class='btn green' style='margin-top:16px;width:100%;padding:12px;font-size:1rem;border-radius:10px' onclick='submitBackGame()'>Submit to The Back</button>
-<div style='text-align:center;font-size:.68rem;color:#ef4444;margin-top:6px'>10 ICP submission fee · non-refundable, including if your game is rejected</div>
 <div class='result' id='backSubRes' style='margin-top:8px'></div>
 </div>
 </div></div></section>
@@ -565,7 +564,6 @@ new MutationObserver(mutations=>{
 </div>
 
 <button class='btn green' style='margin-top:16px;width:100%;padding:12px;font-size:1rem;border-radius:10px' onclick='submitShowroomGame()'>Submit Showroom Review</button>
-<div style='text-align:center;font-size:.68rem;color:#ef4444;margin-top:6px'>25 ICP submission fee (+0.0002 ICP ledger fees) · non-refundable, including if your game is rejected · Ticket games get 20% back as a seeded ticket pool</div>
 <div class='result' id='showSubRes' style='margin-top:8px'></div>
 </div>
 </div></div></section>
@@ -982,7 +980,7 @@ window.addEventListener('message', (e) => {
 <div style='margin-bottom:18px'>
 <div style='color:#ffd700;font-weight:800;font-size:.75rem;letter-spacing:1px;margin-bottom:6px'>TICKET POOL (SHOWROOM TICKET GAMES)</div>
 <div style='display:grid;gap:4px'>
-<div>Ticket games start with a <b style='color:#fff'>seeded ticket pool</b> - 20% of your Showroom submission fee converts to tickets when your game goes live</div>
+<div>Your game starts with a <b style='color:#fff'>seeded ticket pool</b> - 25% of your submission fee converts to tickets on approval</div>
 <div>The pool grows as players insert Tokens and shrinks as Tickets are awarded for scores</div>
 <div>Ticket payouts are capped by the backed ticket pool and may pay 0 if the pool is empty.</div>
 <div>If your game is removed, the remaining backed ticket pool stays reserved for that game economy; it is not redirected to DAO rewards.</div>
@@ -1431,7 +1429,7 @@ window.addEventListener('message', (e) => {
 <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-top:10px'>
 <div>
 <h1 style='margin:0;font-size:1.6rem;color:#f472b6;letter-spacing:3px'>CREATOR / SELLER EARNINGS</h1>
-<p style='margin:4px 0 0;font-size:.75rem;color:#5a7a9a'>Creator ICP, NFT seller ICP, and your Principal Account</p>
+<p style='margin:4px 0 0;font-size:.75rem;color:#5a7a9a'>Separate creator ICP, NFT seller ICP, ICP refunds, and closed-loop arcade balances</p>
 </div>
 </div>
 
@@ -1462,7 +1460,7 @@ window.addEventListener('message', (e) => {
 
 <!-- Claim safety info -->
 <div style='background:rgba(0,170,255,.05);border:1px solid rgba(0,170,255,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:.78rem;color:#5a8aaa;line-height:1.7'>
-<b style='color:#9bdcff'>Claiming is manual:</b> creator ICP and NFT seller ICP use the same safe manual claim action; claimed ICP (minus the 0.0001 ICP ledger fee) lands in your Principal Account at the top of this page. Creator and seller buckets stay separate in accounting, then combine only at claim time. NFT seller ICP is credited when a listed NFT is redeemed at 1 ICP = 1,000 Tickets; the buyer's Tickets are burned on successful redemption. Arcade Tokens are credits only. Tickets are prize/perk points only and cannot be exchanged for ICP by players.
+<b style='color:#9bdcff'>Claiming is manual:</b> creator ICP, NFT seller ICP, and separate ICP refunds use the same safe manual claim action. Creator and seller buckets stay separate in accounting, then combine only at claim time. NFT seller ICP is credited when a listed NFT is redeemed at 1 ICP = 1,000 Tickets; the buyer's Tickets are burned on successful redemption. Arcade Tokens are credits only. Tickets are prize/perk points only and cannot be exchanged for ICP by players.
 </div>
 <div style='background:rgba(244,114,182,.04);border:1px solid rgba(244,114,182,.14);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.72rem;color:#8aa0c8;line-height:1.6'>
 <b style='color:#f472b6'>Category breakdown:</b> display-only labels use existing safe data where available. The dashboard does not estimate category numbers; do not estimate or invent category numbers when event data is unavailable.
@@ -1773,7 +1771,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I submit a game?</button><div class='faq-a'>Click "Submit a Game" in the Showroom or The Back. You need a publicly hosted HTML5 game at an HTTPS URL. The only code requirement: send one postMessage with your score when the game ends. That\'s it. The arcade handles payments, saves, input, and everything else.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How much do I earn?</button><div class='faq-a'>Ticket games and non-ticket Showroom games accrue creator/seller earnings in an ICP-denominated claimable balance. Claimable creator earnings are labeled as ICP e8s claimable earnings. Claiming is manual; there is no scheduled batch payout. Claimed ICP (minus the 0.0001 ICP ledger fee) lands in your Principal Account on the Creator Earnings page. Submission fees and all other payments are non-refundable.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How much do I earn?</button><div class='faq-a'>Ticket games and non-ticket Showroom games accrue creator/seller earnings in an ICP-denominated claimable balance. Claimable creator earnings are labeled as ICP e8s claimable earnings. Claiming is manual; there is no scheduled batch payout. Refunds are separate ICP refunds and may be included in the same claim flow when the backend has a refund balance.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Do I need blockchain experience?</button><div class='faq-a'>No. Zero. Your game is a normal HTML5/JavaScript game. It talks to the arcade through simple browser postMessage calls - the same API websites already use. No wallet integration, no canister calls, no Motoko. You make the game, we make it Web3.</div></div>
 
@@ -6110,7 +6108,6 @@ function backendIdl({IDL}){
     getBoostPrice:IDL.Func([],[IDL.Nat],['query']),
     getSpotlightSlots:IDL.Func([],[IDL.Record({used:IDL.Nat,max:IDL.Nat})],['query']),
     fundGameTickets:IDL.Func([IDL.Text,IDL.Nat],[ResultNat],[]),
-    adminSeedTicketPool:IDL.Func([IDL.Text],[ResultNat],[]),
     adminSetBoostPrice:IDL.Func([IDL.Nat],[ResultNat],[]),
     getBoostTreasuryBalance:IDL.Func([],[ResultNat],[]),
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
@@ -6932,7 +6929,7 @@ async function handleHoleSubmit(){
     if(statusEl) statusEl.innerHTML='<span style="color:#ff9eb8">Fill out all three fields.</span>';
     return;
   }
-  if(!await arcadeConfirm('Drop Link Into Blackhole','This costs 1 ICP, charged from your arcade deposit. Non-refundable. Continue?')) return;
+  if(!await arcadeConfirm('Drop Link Into Blackhole','This costs 1 ICP, charged from your arcade deposit. Continue?')) return;
   try{
     if(statusEl) statusEl.innerHTML='<span style="color:#8fdcff">Dropping link...</span>';
     await submitHoleLink(title,description,url);
@@ -8179,7 +8176,7 @@ async function submitShowroomGame(){
   if(!zipFile){qs(resId).textContent='Please choose a game zip file'; return;}
   if(!thumbFile){qs(resId).textContent='Please choose a thumbnail image'; return;}
   if(!S.identity) return alert('Please connect your wallet to pay the submission fee');
-  if(!await arcadeConfirm('Submission Fee: 25 ICP','25 ICP (+0.0002 ICP ledger fees, one of which covers moving your ticket-pool seed) will be deducted from your arcade deposit.<br><span style="color:#ef4444;font-size:.8rem">Non-refundable. Your game and thumbnail will be reviewed by admin before going live in Showroom.</span>')) return;
+  if(!await arcadeConfirm('Submission Fee: 25 ICP','25 ICP will be deducted from your arcade deposit.<br><span style="color:#ef4444;font-size:.8rem">Non-refundable. Your game and thumbnail will be reviewed by admin before going live in Showroom.</span>')) return;
   qs(resId).innerHTML='<span style="color:var(--cyan)">Submitting game...</span>';
   try{
     const be=await getBackendActor(true);
@@ -9366,7 +9363,7 @@ async function claimTipEarningsUi(){
 
 async function claimCreatorEarnings(){
   if(!S.connected) return showConnect();
-  const ok = await arcadeConfirm('Manual creator / seller claim','Claiming is manual. This claims your creator ICP and NFT seller ICP into your Principal Account (the 0.0001 ICP ledger fee is deducted). Tokens are arcade credits only; Tickets are prize/perk points only and cannot be exchanged for ICP by players.');
+  const ok = await arcadeConfirm('Manual creator / seller claim','Claiming is manual. This claim requests your claimable creator ICP, NFT seller ICP, and any separate ICP refunds currently handled by the backend claim flow. Tokens are arcade credits only; Tickets are prize/perk points only and cannot be exchanged for ICP by players.');
   if(!ok) return;
   const be = await getBackendActor(true);
   try{
@@ -9403,7 +9400,7 @@ async function showRoyaltyTab(tab){
       const bal = await be.getGameCreatorEarnings(S.principal);
       const subs = getSubmissions().filter(s=>s.principal===S.principalText||S.principalText===ADMIN_PRINCIPALS[0]);
       if(Number(bal)===0 && subs.length===0){
-        panel.innerHTML = '<div style="color:#3d6090;text-align:center;padding:40px;font-size:.85rem">No claimable creator ICP e8s yet. Submit a game to the Showroom to start earning. Claims land in your Principal Account above.</div>';
+        panel.innerHTML = '<div style="color:#3d6090;text-align:center;padding:40px;font-size:.85rem">No claimable creator ICP e8s yet. Submit a game to the Showroom to start earning; refunds, if any, stay separate from creator earnings and use the same manual claim flow.</div>';
         return;
       }
       let html = `<div style='font-size:.78rem;color:#8090b0;margin-bottom:12px'>Creator earnings / royalties accrue from player game sessions as ICP e8s claimable earnings. Claiming is manual; use the shared claim action when you want to request payout. Refunds and NFT seller ICP stay separate in accounting and are included in the same claim flow when present.</div>`;

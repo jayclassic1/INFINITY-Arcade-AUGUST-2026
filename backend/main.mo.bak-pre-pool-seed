@@ -3693,74 +3693,6 @@ persistent actor ArcadeBackend {
     }
   };
 
-  // ============================================
-  // === SHOWROOM TICKET-POOL SEED (session #3) ===
-  // When a Showroom Ticket game goes live, 20% of the Showroom fee its creator actually paid (recorded in
-  // showroomFeePaid) moves from the Showroom Treasury into general custody and backs that many tickets
-  // (1 ICP = 1,000) in the game's pool. The transfer's ledger fee was prepaid by the submitter at
-  // submission time. At most once per game: marked seeded before the await, unmarked if the transfer fails.
-  // ============================================
-  transient let TICKET_POOL_SEED_PERCENT : Nat = 20;
-  stable var seededTicketPoolGames : [Text] = [];
-
-  func seedTicketPoolIfEligible(gameId : Text) : async Result.Result<Nat, Text> {
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (game.gameTier != "showroom" and game.gameTier != "jays-picks") return #ok(0);
-    if (not isTicketGameSubmission(game)) return #ok(0);
-    if (game.showroomFeePaid == 0) return #ok(0);
-    for (id in seededTicketPoolGames.vals()) { if (id == gameId) return #ok(0) };
-    let seedE8s = (game.showroomFeePaid * TICKET_POOL_SEED_PERCENT) / 100;
-    let ticketCount = seedE8s / E8S_PER_TICKET;
-    let usedE8s = ticketCount * E8S_PER_TICKET;
-    if (ticketCount == 0) return #ok(0);
-    seededTicketPoolGames := Array.append<Text>(seededTicketPoolGames, [gameId]);
-    let selfPrincipal = Principal.fromActor(ArcadeBackend);
-    try {
-      let result = await ICP_LEDGER.icrc1_transfer({
-        to = { owner = selfPrincipal; subaccount = null };
-        fee = ?ICP_LEDGER_FEE_E8S;
-        memo = null;
-        from_subaccount = ?SHOWROOM_TREASURY_SUBACCOUNT;
-        created_at_time = null;
-        amount = usedE8s;
-      });
-      switch (result) {
-        case (#Ok(_)) {
-          addToGameRawTicketPool(gameId, ticketCount);
-          addToGameBackedTicketPool(gameId, ticketCount);
-          clampBackedPoolToRaw(gameId);
-          #ok(ticketCount)
-        };
-        case (#Err(e)) {
-          seededTicketPoolGames := Array.filter<Text>(seededTicketPoolGames, func(id) { id != gameId });
-          #err(icpTransferErrorText("Ticket pool seed", e))
-        };
-      }
-    } catch (e) {
-      seededTicketPoolGames := Array.filter<Text>(seededTicketPoolGames, func(id) { id != gameId });
-      #err("Ticket pool seed transfer error: " # Error.message(e))
-    }
-  };
-
-  /// Admin: seed (or retry seeding) a live Showroom Ticket game's pool - also backfills games published before seeding existed.
-  public shared(msg) func adminSeedTicketPool(gameId : Text) : async Result.Result<Nat, Text> {
-    if (not isAdmin(msg.caller)) return #err("Admin only");
-    hydrateRuntimeStateIfNeeded();
-    switch (gameSubmissions.get(gameId)) {
-      case null { return #err("Game not found") };
-      case (?g) { if (g.status != "live") return #err("Game is not live") };
-    };
-    switch (await seedTicketPoolIfEligible(gameId)) {
-      case (#ok(0)) { #err("Not eligible (not a paid Showroom Ticket game) or already seeded") };
-      case (#ok(n)) { #ok(n) };
-      case (#err(e)) { #err(e) };
-    }
-  };
-
   /// Real implementation — was previously declared in the frontend IDL and called by
   /// refreshBackSubmissionFeeDisplay, but never existed on the backend, so the call always
   /// silently failed and the UI fell back to stale hardcoded fee text.
@@ -3798,11 +3730,11 @@ persistent actor ArcadeBackend {
     let fromSub = principalToSubaccount(caller);
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let bal = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?fromSub });
-    if (bal < SHOWROOM_SUBMISSION_FEE_E8S + ICP_LEDGER_FEE_E8S + ledgerFeeE8s) {
+    if (bal < SHOWROOM_SUBMISSION_FEE_E8S + ledgerFeeE8s) {
       gameSubmissionInFlight.delete(caller);
       return #err(
         "Not enough ICP in your arcade deposit. Showroom submission costs 25 ICP. Available " #
-        Nat.toText(bal) # " e8s; need " # Nat.toText(SHOWROOM_SUBMISSION_FEE_E8S + ICP_LEDGER_FEE_E8S + ledgerFeeE8s) # " e8s including ledger fees."
+        Nat.toText(bal) # " e8s; need " # Nat.toText(SHOWROOM_SUBMISSION_FEE_E8S + ledgerFeeE8s) # " e8s including ledger fee."
       );
     };
 
@@ -3813,7 +3745,7 @@ persistent actor ArcadeBackend {
         memo = null;
         from_subaccount = ?fromSub;
         created_at_time = null;
-        amount = SHOWROOM_SUBMISSION_FEE_E8S + ICP_LEDGER_FEE_E8S; // + submitter-prepaid fee for the later ticket-pool seed transfer
+        amount = SHOWROOM_SUBMISSION_FEE_E8S;
       });
       gameSubmissionInFlight.delete(caller);
       switch (transferResult) {
@@ -4244,14 +4176,7 @@ persistent actor ArcadeBackend {
       case (?upload) { deletePendingZipUploadAndChunks(uploadId, upload.chunkCount) };
       case null {};
     };
-    let seedMsg = if (game.gameTier == "showroom" or game.gameTier == "jays-picks") {
-      switch (await seedTicketPoolIfEligible(gameId)) {
-        case (#ok(0)) { "" };
-        case (#ok(n)) { " Ticket pool seeded with " # Nat.toText(n) # " tickets." };
-        case (#err(e)) { " Ticket pool seeding failed (" # e # ") - retry with adminSeedTicketPool." };
-      }
-    } else { "" };
-    #ok("Game published." # seedMsg)
+    #ok("Game published")
   };
 
   /// Admin: after downloading and reviewing a queued thumbnail and hosting it themselves (via
