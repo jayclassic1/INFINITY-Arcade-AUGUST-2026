@@ -6515,7 +6515,7 @@ function jackpotTierRowHtml(domId,tier,title,threshold,stored,isFixed,bonusOnly,
   const lab="font-size:.58rem;color:#9fb0d6;margin-bottom:3px;text-transform:uppercase;letter-spacing:.8px";
   const note="font-size:.64rem;color:#64748b;align-self:end;padding-bottom:8px";
   const shown=isFixed?Number(stored||0):Number(stored||0)/100;
-  const thr=bonusOnly?`<div style='${note}'>Beats the game's current #1 record</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Score threshold</span><input id='jackpot${tier}ScoreThreshold_${domId}' type='number' min='0' step='1' value='${Number(threshold||0)}' style='${inp}'/></label>`;
+  const thr=bonusOnly?`<div style='${note}'>On a validated new personal best</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Score threshold</span><input id='jackpot${tier}ScoreThreshold_${domId}' type='number' min='0' step='1' value='${Number(threshold||0)}' style='${inp}'/></label>`;
   const amt=`<label style='display:flex;flex-direction:column'><span style='${lab}'>Payout</span><input id='jackpot${tier}PayoutPercent_${domId}' type='number' min='0' step='any' value='${shown}' style='${inp}'/></label>`;
   const mode=bonusOnly?`<div style='${note}'>% of pool (0.01% steps)</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Type</span><select id='jackpot${tier}Mode_${domId}' style='${inp}'><option value='pct' ${isFixed?'':'selected'}>% of pool (0.01% steps)</option><option value='fixed' ${isFixed?'selected':''}>🎟️ Fixed tickets (1-25)</option></select></label>`;
   return `<div style='padding:8px 10px;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(0,0,0,.18)'><div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px'><b style='font-size:.72rem;color:#d8fbe4'>${title}</b><span style='font-size:.6rem;color:#64748b'>${help}</span></div><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px'>${thr}${amt}${mode}</div></div>`;
@@ -13565,7 +13565,7 @@ async function adminRetireBreaker(gameId){
   if(!isAdmin()) return;
   const principal=await arcadePrompt('Retire Breaker','Enter the principal of the player to retire from this game:','');
   if(!principal||!principal.includes('-')) return;
-  if(!await arcadeConfirm('Retire Breaker','Retire <b>'+principal+'</b> as a Breaker on game <b>'+gameId+'</b>?<br><br>This will:<br>- Keep their score as the ghost ceiling (shown in the Hall of Breakers)<br>- Stop their future runs on this game counting toward the record<br>- Promote the #2 score to be the record to beat (beating it pays the new-record bonus)<br>- Breaker Badge: coming in phase 2<br><br>Only the current #1 holder can be retired, and only once a #2 score exists.')) return;
+  if(!await arcadeConfirm('Retire Breaker','Retire <b>'+principal+'</b> as a Breaker on game <b>'+gameId+'</b>?<br><br>This will:<br>- Set their score as the ghost ceiling<br>- Remove them from leaderboard<br>- Award them a Breaker Badge<br>- Next player inherits #1 but NOT HSH badge')) return;
   try{
     const be=await getBackendActor(true);
     const r=await be.adminRetireBreaker(gameId,Principal.fromText(principal.trim()));

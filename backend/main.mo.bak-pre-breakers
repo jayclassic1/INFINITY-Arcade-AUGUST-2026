@@ -2475,7 +2475,7 @@ persistent actor ArcadeBackend {
     };
 
     let baseTickets : Nat = ticketPayout;
-    let newRecord = if (isRetiredBreaker(gameId, caller)) { false } else { updateGameTopScores(gameId, caller, score); recordValidatedHighScore(caller, gameId, score) };
+    let newRecord = recordValidatedHighScore(caller, gameId, score);
     let jackpotConfig = gameTicketJackpotConfigs.get(gameId);
     let remainingBackedAfterBase : Nat = availableBackedPool - baseTickets;
     let remainingDailyAfterBase : Nat = if (dailyEarned + baseTickets >= DAILY_TICKET_CAP) {
@@ -2636,90 +2636,6 @@ persistent actor ArcadeBackend {
   transient var ticketJackpotWins = Buffer.Buffer<TicketJackpotWin>(0);
   transient var ticketJackpotWinDetails = Buffer.Buffer<TicketJackpotWinDetail>(0);
   transient var leaderboards = HashMap.HashMap<Text, LeaderboardEntry>(8, Text.equal, textHash);
-
-  // === BREAKERS + TOP SCORES (session #3, phase 1) ===
-  // Top 10 best scores per game (one entry per player). Retiring the #1 "Breaker" keeps their score as the
-  // ghost ceiling, stops their future runs on that game counting, and promotes #2 to be the record to beat,
-  // so the new-high-score jackpot bonus becomes reachable again. Badges come in phase 2 (badgeId = "").
-  stable var gameTopScoreEntries : [(Text, [(Principal, Nat, Int)])] = [];
-  stable var retiredBreakerEntries : [(Text, Principal, Text, Nat, Int)] = [];
-
-  func gameTopScores(gameId : Text) : [(Principal, Nat, Int)] {
-    for (e in gameTopScoreEntries.vals()) { if (e.0 == gameId) return e.1 };
-    []
-  };
-
-  func putGameTopScores(gameId : Text, list : [(Principal, Nat, Int)]) {
-    let others = Array.filter<(Text, [(Principal, Nat, Int)])>(gameTopScoreEntries, func(e) { e.0 != gameId });
-    gameTopScoreEntries := if (list.size() == 0) { others } else { Array.append<(Text, [(Principal, Nat, Int)])>(others, [(gameId, list)]) };
-  };
-
-  func isRetiredBreaker(gameId : Text, p : Principal) : Bool {
-    for (b in retiredBreakerEntries.vals()) { if (b.0 == gameId and Principal.equal(b.1, p)) return true };
-    false
-  };
-
-  func updateGameTopScores(gameId : Text, player : Principal, score : Nat) {
-    var list = gameTopScores(gameId);
-    if (list.size() == 0) {
-      switch (leaderboards.get(gameId)) {
-        case (?cur) { if (not isRetiredBreaker(gameId, cur.player)) { list := [(cur.player, cur.score, cur.timestamp)] } };
-        case null {};
-      };
-    };
-    let buf = Buffer.Buffer<(Principal, Nat, Int)>(list.size() + 1);
-    var found = false;
-    for (e in list.vals()) {
-      if (Principal.equal(e.0, player)) {
-        found := true;
-        if (score > e.1) { buf.add((player, score, Time.now())) } else { buf.add(e) };
-      } else { buf.add(e) };
-    };
-    if (not found) { buf.add((player, score, Time.now())) };
-    let sorted = Array.sort<(Principal, Nat, Int)>(Buffer.toArray(buf), func(a, b) {
-      if (a.1 > b.1) { #less } else if (a.1 < b.1) { #greater } else if (a.2 < b.2) { #less } else if (a.2 > b.2) { #greater } else { #equal }
-    });
-    let top = if (sorted.size() > 10) { Array.tabulate<(Principal, Nat, Int)>(10, func(i) { sorted[i] }) } else { sorted };
-    putGameTopScores(gameId, top);
-  };
-
-  public shared(msg) func adminRetireBreaker(gameId : Text, player : Principal) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Not authorized");
-    hydrateRuntimeStateIfNeeded();
-    let current = switch (leaderboards.get(gameId)) {
-      case null { return #err("This game has no record yet") };
-      case (?c) c;
-    };
-    if (not Principal.equal(current.player, player)) return #err("Only the current #1 record holder can be retired");
-    if (isRetiredBreaker(gameId, player)) return #err("This player is already retired on this game");
-    var list = gameTopScores(gameId);
-    if (list.size() == 0) { list := [(current.player, current.score, current.timestamp)] };
-    let rest = Array.filter<(Principal, Nat, Int)>(list, func(e) { not Principal.equal(e.0, player) and not isRetiredBreaker(gameId, e.0) });
-    if (rest.size() == 0) return #err("No #2 score recorded yet. Retiring now would let any score claim the new-record bonus; wait until another player has a validated score.");
-    let next = rest[0];
-    retiredBreakerEntries := Array.append<(Text, Principal, Text, Nat, Int)>(retiredBreakerEntries, [(gameId, player, "", current.score, Time.now())]);
-    putGameTopScores(gameId, rest);
-    leaderboards.put(gameId, { player = next.0; score = next.1; gameId = gameId; timestamp = next.2 });
-    #ok("Retired. Ghost ceiling: " # Nat.toText(current.score) # ". New #1 to beat: " # Nat.toText(next.1) # ".");
-  };
-
-  public query func getAllBreakers() : async [(Text, Principal, Text, Nat, Int)] {
-    retiredBreakerEntries
-  };
-
-  public query func getBreakers(gameId : Text) : async [(Text, Principal, Text, Nat, Int)] {
-    Array.filter<(Text, Principal, Text, Nat, Int)>(retiredBreakerEntries, func(b) { b.0 == gameId })
-  };
-
-  public query func getBreakerScore(gameId : Text) : async Nat {
-    var m : Nat = 0;
-    for (b in retiredBreakerEntries.vals()) { if (b.0 == gameId and b.3 > m) { m := b.3 } };
-    m
-  };
-
-  public query func getGameTopScores(gameId : Text) : async [(Principal, Nat, Int)] {
-    gameTopScores(gameId)
-  };
 
   func recordValidatedHighScore(player : Principal, gameId : Text, score : Nat) : Bool {
     switch (leaderboards.get(gameId)) {
@@ -5089,9 +5005,6 @@ persistent actor ArcadeBackend {
         gamePayoutConfigs.delete(gameId);
         gameTicketJackpotConfigs.delete(gameId);
     jackpotTierModeEntries := Array.filter<(Text, (Bool, Bool))>(jackpotTierModeEntries, func(e) { e.0 != gameId });
-    leaderboards.delete(gameId);
-    gameTopScoreEntries := Array.filter<(Text, [(Principal, Nat, Int)])>(gameTopScoreEntries, func(e) { e.0 != gameId });
-    retiredBreakerEntries := Array.filter<(Text, Principal, Text, Nat, Int)>(retiredBreakerEntries, func(b) { b.0 != gameId });
         #ok("Game permanently deleted.");
       };
     };
