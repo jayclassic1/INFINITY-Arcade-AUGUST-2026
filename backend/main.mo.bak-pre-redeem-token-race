@@ -6062,8 +6062,6 @@ persistent actor ArcadeBackend {
       return #err("Not enough tickets. Need " # Nat.toText(cost) # " but have " # Nat.toText(balance));
     };
 
-    // Debit BEFORE the await (session #3 fix); refunded below if the transfer fails.
-    tickets.put(caller, balance - cost);
     try {
       let result = await nftCanister().icrc7_transfer({
         to = { owner = caller; subaccount = null };
@@ -6077,18 +6075,17 @@ persistent actor ArcadeBackend {
 
       switch (result) {
         case (#Ok(_)) {
+          tickets.put(caller, balance - cost);
           let log = Buffer.fromArray<(Principal, TokenId, Int)>(redemptionLog);
           log.add((caller, tokenId, Time.now()));
           redemptionLog := Buffer.toArray(log);
           #ok("NFT #" # Nat.toText(tokenId) # " transferred to your wallet!");
         };
         case (#Err(e)) {
-          tickets.put(caller, getTicketBalance(caller) + cost);
           #err("Transfer failed. The NFT may not be available.");
         };
       };
     } catch (e) {
-      tickets.put(caller, getTicketBalance(caller) + cost);
       #err("Transfer call failed: " # Error.message(e));
     };
   };
