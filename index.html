@@ -2634,7 +2634,7 @@ async function showProfileModal(){
   if(picker) picker.innerHTML='';
   if(loading) loading.style.display='block';
   if(empty) empty.style.display='none';
-  await loadProfileNfts();
+  await Promise.all([loadProfileNfts(),refreshMyWallKeys()]);
   if(loading) loading.style.display='none';
   if(picker) renderNftPicker(picker,selectedAvatarUrl,'pickAvatarNft');
   if(profileNfts.filter(n=>n.image).length===0 && empty) empty.style.display='block';
@@ -2738,13 +2738,15 @@ function renderNftPicker(pickerEl,selectedUrl,onClickFn){
     const origIdx=profileNfts.indexOf(nft);
     const selected=selectedUrl===nft.image || profileAvatarSelectionKey(nft)===profileAvatarSelectionKey({avatarUrl:selectedUrl,avatarNft:(onClickFn==='pickEditAvatar'?editAvatarNft:selectedAvatarNft)});
     const img=buildProfileAvatarImageTag({avatarUrl:nft.image,avatarNft:normalizeProfileAvatarNft(nft)},'width:100%;height:100%;object-fit:cover');
-    return `<div onclick="${onClickFn}(${origIdx})" style="cursor:pointer;border-radius:8px;border:2px solid ${selected?'var(--gold)':'rgba(255,255,255,.1)'};background:${selected?'rgba(255,215,0,.15)':'#0d1117'};overflow:hidden;transition:all .2s;aspect-ratio:1" title="${escHtml(nft.name)}">${img}</div>`;
+    const onWall=_myWallKeys.has(profileAvatarSelectionKey(normalizeProfileAvatarNft(nft)));
+    return `<div title="${onWall?'On your Wall':''}" onclick="${onWall?'pfpOnWallNotice()':onClickFn+'('+origIdx+')'}" style="${onWall?'opacity:.35;filter:grayscale(1);':''}cursor:pointer;border-radius:8px;border:2px solid ${selected?'var(--gold)':'rgba(255,255,255,.1)'};background:${selected?'rgba(255,215,0,.15)':'#0d1117'};overflow:hidden;transition:all .2s;aspect-ratio:1" title="${escHtml(nft.name)}">${img}</div>`;
   }).join('');
 }
 
 function pickAvatarNft(index){
   const nft=profileNfts[index];
   if(!nft) return;
+  if(_myWallKeys.has(profileAvatarSelectionKey(normalizeProfileAvatarNft(nft)))) return pfpOnWallNotice();
   selectedAvatarUrl=nft.image;
   selectedAvatarNft=normalizeProfileAvatarNft(nft);
   selectedAvatarEmoji=null;
@@ -2802,6 +2804,18 @@ function profileSection(title,color,body,headRight){
 }
 function profileEmpty(txt){ return `<div class='pf-empty'>${txt}</div>`; }
 function profileRow(left,right){ const cls=left.startsWith('👑')?' pf-row-record':left.startsWith('🏛')?' pf-row-breaker':left.startsWith('🎉')?' pf-row-jackpot':left.startsWith('#')?' pf-row-top':''; return `<div class='pf-row${cls}'><span class='pf-row-l'>${left}</span><span class='pf-row-r'>${right}</span></div>`; }
+let _myWallKeys=new Set();
+async function refreshMyWallKeys(){
+  try{ if(S.connected&&S.principalText){ const be=await getBackendActor(); _myWallKeys=new Set(await be.getProfileWall(Principal.fromText(S.principalText))); } }catch(_){}
+  return _myWallKeys;
+}
+function isMyPfpNft(n){
+  const p=getProfile()||{}; const k=n.canisterId+':'+n.tokenId;
+  if(p.avatarNft&&profileAvatarSelectionKey(normalizeProfileAvatarNft(p.avatarNft))===k) return true;
+  return !!(p.avatarUrl&&n.imageUrl&&p.avatarUrl===n.imageUrl);
+}
+window.pfpOnWallNotice=function(){ arcadeAlert('On your Wall','That NFT is hung on your Wall. Take it off the Wall first, or pick a different NFT for your profile picture.'); };
+window.wallPfpNotice=function(){ arcadeAlert('Profile picture','That NFT is your profile picture. Change your PFP first, or pick a different NFT for the Wall.'); };
 let _wallNfts=[], _wallPicks=[];
 function profileModalShell(id,title,bodyId){
   const old=document.getElementById(id); if(old) old.remove();
@@ -2820,10 +2834,11 @@ function renderWallEditGrid(){
   const body=document.getElementById('wallEditBody'); if(!body) return;
   if(!_wallNfts.length){ body.innerHTML="<div style='color:#2d5a8a;font-size:.8rem;padding:10px 0'>You don't own any NFTs yet.</div>"; return; }
   const grid=_wallNfts.map((n,i)=>{
-    const key=n.canisterId+':'+n.tokenId; const pos=_wallPicks.indexOf(key); const sel=pos>=0;
-    return `<div onclick="toggleWallPick(${i})" style="position:relative;cursor:pointer;border-radius:10px;border:2px solid ${sel?'#ffd700':'rgba(255,255,255,.08)'};overflow:hidden;background:${sel?'rgba(255,215,0,.08)':'rgba(0,10,25,.7)'}">
+    const key=n.canisterId+':'+n.tokenId; const pos=_wallPicks.indexOf(key); const sel=pos>=0; const isPfp=isMyPfpNft(n);
+    return `<div onclick="toggleWallPick(${i})" style="${isPfp?'opacity:.35;filter:grayscale(1);':''}position:relative;cursor:pointer;border-radius:10px;border:2px solid ${sel?'#ffd700':'rgba(255,255,255,.08)'};overflow:hidden;background:${sel?'rgba(255,215,0,.08)':'rgba(0,10,25,.7)'}">
       <div style="height:90px;display:grid;place-items:center;overflow:hidden;background:#0a0a1a">${n.imageUrl?`<img src="${escHtml(n.imageUrl)}" style="width:100%;height:100%;object-fit:contain"/>`:'<div style="font-size:1.5rem">?</div>'}</div>
       <div style="padding:4px 6px;font-size:.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8ab4d8">${escHtml(n.name||'NFT')}</div>
+      ${isPfp?'<div style="position:absolute;top:4px;left:4px;padding:2px 6px;border-radius:6px;background:#00e5ff;color:#012;font-size:.55rem;font-weight:900">PFP</div>':''}
       ${sel?`<div style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#ffd700;color:#000;font-weight:900;font-size:.65rem;display:grid;place-items:center">${pos+1}</div>`:''}
     </div>`;}).join('');
   body.innerHTML=`<div style='font-size:.72rem;color:#8ab4d8;margin-bottom:10px'>Tap up to 5 NFTs to hang them on your wall, in order. Everyone who visits your profile will see them. <b style='color:#ffd700'>${_wallPicks.length}/5</b></div>
@@ -2845,17 +2860,21 @@ window.openWallEdit=async function(){
 window.toggleWallPick=function(i){
   const n=_wallNfts[i]; if(!n) return;
   const key=n.canisterId+':'+n.tokenId; const pos=_wallPicks.indexOf(key);
+  if(pos<0&&isMyPfpNft(n)) return wallPfpNotice();
   if(pos>=0) _wallPicks.splice(pos,1);
   else if(_wallPicks.length<5) _wallPicks.push(key);
   renderWallEditGrid();
 };
 window.saveWallEdit=async function(){
   const st=document.getElementById('wallEditStatus');
+  const clash=_wallNfts.find(n=>_wallPicks.includes(n.canisterId+':'+n.tokenId)&&isMyPfpNft(n));
+  if(clash){ if(st) st.innerHTML="<span style='color:#ef4444'>"+escHtml(clash.name||'That NFT')+" is your profile picture. Remove it from the Wall or change your PFP first.</span>"; return; }
   if(st) st.innerHTML="<span style='color:#9dd6ff'>Saving...</span>";
   try{
     const be=await getBackendActor(true);
     const res=await be.setProfileWall(_wallPicks);
     if(res.err){ if(st) st.innerHTML="<span style='color:#ef4444'>"+escHtml(safeUserErrorMessage(res.err,'wall save'))+"</span>"; return; }
+    _myWallKeys=new Set(_wallPicks);
     const m=document.getElementById('m-wall-edit'); if(m) m.remove();
     renderProfileView();
   }catch(e){ console.error('Wall save failed:',e); if(st) st.innerHTML="<span style='color:#ef4444'>Save failed. Please try again.</span>"; }
@@ -3018,6 +3037,7 @@ function renderProfileView(){
     try{
       const be=await getBackendActor();
       const wall=await be.getProfileWall(P);
+      if(own) _myWallKeys=new Set(wall);
       const owned=await nftsP;
       if(!alive()) return;
       const byKey=new Map(owned.map(n=>[n.canisterId+':'+n.tokenId,n]));
@@ -3081,7 +3101,7 @@ async function openProfileEdit(){
   // Load NFTs for the picker (async)
   const picker=qs('editAvatarPicker');
   picker.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#00aaff;font-size:.8rem;padding:12px">Loading your NFTs...</div>';
-  await loadProfileNfts();
+  await Promise.all([loadProfileNfts(),refreshMyWallKeys()]);
   renderEditAvatarPicker();
 }
 function closeProfileEdit(){qs('profileEditModal').style.display='none';}
@@ -3090,7 +3110,7 @@ async function rescanEditProfileNfts(){
   if(btn){btn.textContent='Scanning...';btn.style.opacity='.5';btn.disabled=true;}
   const picker=qs('editAvatarPicker');
   picker.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#00aaff;font-size:.8rem;padding:12px">Scanning your NFTs...</div>';
-  await loadProfileNfts();
+  await Promise.all([loadProfileNfts(),refreshMyWallKeys()]);
   renderEditAvatarPicker();
   if(btn){btn.textContent='Scan NFTs';btn.style.opacity='1';btn.disabled=false;}
 }
@@ -3123,6 +3143,7 @@ function removeProfilePfp(){
 function saveProfileEdit(){
   const bio=qs('editProfileBio').value.trim();
   const existing=getProfile()||{};
+  if(editAvatarNft&&_myWallKeys.has(profileAvatarSelectionKey(editAvatarNft))) return pfpOnWallNotice();
   saveProfileData({...existing,bio,avatarUrl:editAvatarUrl||null,avatarNft:editAvatarNft||null});
   selectedAvatarUrl=editAvatarUrl;
   selectedAvatarNft=editAvatarNft;
@@ -3418,6 +3439,7 @@ function showBanUserModal(){
 function saveProfile(){
   const name=qs('profileNameInput').value.trim();
   if(!name){alert('Please enter a player name!'); return;}
+  if(selectedAvatarNft&&_myWallKeys.has(profileAvatarSelectionKey(selectedAvatarNft))) return pfpOnWallNotice();
   saveProfileData({name,avatarUrl:selectedAvatarUrl||null,avatarNft:selectedAvatarNft||null,createdAt:new Date().toISOString()});
   closeProfileModal();
   updateProfileDisplay();
@@ -7749,9 +7771,11 @@ async function renderCollection(forceRefresh=false){
   if(scanBtn){scanBtn.textContent='Scan';scanBtn.style.animation='';}
 }
 
-function setProfilePfpFromCollectionNft(jsonStr){
+async function setProfilePfpFromCollectionNft(jsonStr){
   const n=JSON.parse(jsonStr);
   if(!n||!n.imageUrl) return;
+  await refreshMyWallKeys();
+  if(_myWallKeys.has(profileAvatarSelectionKey(normalizeProfileAvatarNft(n)))) return pfpOnWallNotice();
   const existing=getProfile()||{};
   const avatarNft=normalizeProfileAvatarNft(n);
   saveProfileData({...existing,avatarUrl:n.imageUrl,avatarNft});
@@ -10126,8 +10150,13 @@ function getNftImageCandidates(nft){
   push(nft?.imgData||'');
   push(nft?.imageUrl||'');
   push(nft?.image||'');
-  if(tokenRaw) push('https://'+canisterId+'.raw.icp0.io/?tokenid='+encodeURIComponent(tokenRaw));
-  if(Number.isFinite(tokenNum)) push('https://'+canisterId+'.raw.icp0.io/?tokenid='+encodeURIComponent(String(tokenNum)));
+  // EXT-style ?tokenid= fallbacks only work for external collections on mainnet; skip them on local and for our own canisters.
+  const _h=location.hostname, _isLocal=(_h==='localhost'||_h.endsWith('.localhost')||_h==='127.0.0.1');
+  const _own=[typeof NFT_CANISTER!=='undefined'?NFT_CANISTER:'',typeof GAME_ASSET_CANISTER!=='undefined'?GAME_ASSET_CANISTER:'',typeof ARCADE_CANISTER_ID!=='undefined'?ARCADE_CANISTER_ID:''].includes(canisterId);
+  if(!_isLocal&&!_own){
+    if(tokenRaw) push('https://'+canisterId+'.raw.icp0.io/?tokenid='+encodeURIComponent(tokenRaw));
+    if(Number.isFinite(tokenNum)) push('https://'+canisterId+'.raw.icp0.io/?tokenid='+encodeURIComponent(String(tokenNum)));
+  }
 
   return urls;
 }
