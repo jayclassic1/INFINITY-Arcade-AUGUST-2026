@@ -1244,102 +1244,84 @@ window.addEventListener('message', (e) => {
 </div>
 </section>
 
-<style id='profileNeonStyles'>
-#view-profile{background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px),radial-gradient(1100px 480px at 50% -8%,rgba(124,58,237,.30),transparent 62%),radial-gradient(800px 380px at 8% 6%,rgba(0,170,255,.16),transparent 60%),linear-gradient(180deg,#060918 0%,#0a0f26 45%,#0c0620 100%)}
-#view-profile .pf-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
-#view-profile .pf-wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:18px 20px 60px}
-#view-profile .pf-card{background:rgba(8,12,32,.72);border:1px solid rgba(0,170,255,.18);border-radius:16px;backdrop-filter:blur(8px);margin-bottom:18px}
-#view-profile .pf-header{display:flex;gap:22px;align-items:center;padding:22px;border-color:rgba(124,58,237,.4);box-shadow:inset 0 0 0 1px rgba(0,170,255,.12),0 0 28px rgba(124,58,237,.22),0 0 60px rgba(0,170,255,.08)}
-#view-profile .pf-avatar-frame{width:108px;height:108px;border-radius:16px;padding:3px;flex-shrink:0;background:linear-gradient(90deg,#ff0000,#ff8800,#ffdd00,#00ff66,#00aaff,#8b5cf6,#ff44aa,#ff0000);background-size:300% 100%;animation:rainbowShift 6s linear infinite;box-shadow:0 0 18px rgba(139,92,246,.45)}
-#view-profile .pf-avatar{width:100%;height:100%;border-radius:13px;background:#070b1c;display:grid;place-items:center;overflow:hidden;font-size:3rem}
-#view-profile .pf-id{flex:1;min-width:0}
-#view-profile .pf-name-row{display:flex;align-items:center;gap:8px}
-#view-profile .pf-name{font-size:1.9rem;font-weight:900;letter-spacing:1.5px;color:#eaf6ff;text-shadow:0 0 10px rgba(0,229,255,.55),0 0 24px rgba(0,170,255,.35)}
-#view-profile .pf-meta{font-size:.72rem;color:#8fa6d6;margin:4px 0 12px}
-#view-profile .pf-chips{display:flex;gap:8px;flex-wrap:wrap}
-#view-profile .pf-chip{display:flex;align-items:baseline;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08)}
-#view-profile .pf-chip-val{font-weight:800;font-size:.95rem}
-#view-profile .pf-chip-lbl{font-size:.6rem;letter-spacing:1.5px;color:#7f93c2;text-transform:uppercase}
-#view-profile .pf-c-red{color:#ff4c6a;text-shadow:0 0 8px rgba(255,76,106,.5)}
-#view-profile .pf-c-green{color:#2df59d;text-shadow:0 0 8px rgba(45,245,157,.45)}
-#view-profile .pf-c-cyan{color:#00e5ff;text-shadow:0 0 8px rgba(0,229,255,.5)}
-#view-profile .pf-owner-btns{display:flex;flex-direction:column;gap:8px;align-self:flex-start}
-#view-profile .pf-owner-btns button{border-radius:10px!important}
-#view-profile .pf-owner-btns button:hover{transform:translateY(-1px);box-shadow:0 0 14px currentColor}
-#view-profile .pf-xp-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
-#view-profile .pf-xp{padding:16px 14px;border-radius:14px;background:rgba(8,12,32,.72);text-align:center;backdrop-filter:blur(8px)}
-#view-profile .pf-xp-lbl{font-size:.65rem;letter-spacing:2.5px;font-weight:800;text-transform:uppercase;margin-bottom:6px}
-#view-profile .pf-xp-val{font-size:1.9rem;font-weight:900}
-#view-profile .pf-xp-gold{border:1px solid rgba(255,216,107,.55);box-shadow:0 0 18px rgba(255,216,107,.18),inset 0 0 20px rgba(255,216,107,.06)}
-#view-profile .pf-xp-gold .pf-xp-lbl{color:#ffd86b;text-shadow:0 0 8px rgba(255,216,107,.5)}
-#view-profile .pf-xp-purple{border:1px solid rgba(168,85,247,.6);box-shadow:0 0 18px rgba(168,85,247,.2),inset 0 0 20px rgba(168,85,247,.07)}
-#view-profile .pf-xp-purple .pf-xp-lbl{color:#c084fc;text-shadow:0 0 8px rgba(168,85,247,.55)}
-#view-profile .pf-xp-cyan{border:1px solid rgba(0,229,255,.55);box-shadow:0 0 18px rgba(0,229,255,.18),inset 0 0 20px rgba(0,229,255,.06)}
-#view-profile .pf-xp-cyan .pf-xp-lbl{color:#00e5ff;text-shadow:0 0 8px rgba(0,229,255,.5)}
-#view-profile .pf-bio{padding:14px 18px;font-size:.88rem;color:#b6c7ea;line-height:1.6;border-color:rgba(0,229,255,.18)}
-#view-profile .pf-sec{padding:16px 18px}
-#view-profile .pf-sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-#view-profile .pf-sec-title{font-size:.78rem;font-weight:900;letter-spacing:3px;margin-bottom:12px}
-#view-profile .pf-sec-head .pf-sec-title{margin-bottom:0}
-#view-profile .pf-t-gold{color:#ffd86b;text-shadow:0 0 10px rgba(255,216,107,.5)}
-#view-profile .pf-sec-gold{border-color:rgba(255,216,107,.3);box-shadow:0 0 22px rgba(255,216,107,.08)}
-#view-profile .pf-sec-rainbow{border-color:rgba(139,92,246,.35)}
-#view-profile .pf-rainbow-text{background:linear-gradient(90deg,#ff0000,#ff8800,#ffdd00,#00ff66,#00aaff,#8b5cf6,#ff44aa,#ff0000);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:rainbowShift 6s linear infinite}
-#view-profile .pf-badges{display:flex;flex-wrap:wrap;gap:10px}
-#view-profile .pf-wall{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:rgba(255,216,107,.3) transparent}
-@media(max-width:640px){#view-profile .pf-header{flex-direction:column;text-align:center}#view-profile .pf-name-row,#view-profile .pf-chips{justify-content:center}#view-profile .pf-owner-btns{flex-direction:row;flex-wrap:wrap;justify-content:center;align-self:center}#view-profile .pf-xp-row{gap:8px}#view-profile .pf-xp{padding:12px 6px}#view-profile .pf-xp-val{font-size:1.3rem}#view-profile .pf-xp-lbl{letter-spacing:1px}}
-@media(prefers-reduced-motion:reduce){#view-profile .pf-avatar-frame,#view-profile .pf-rainbow-text{animation:none}}
-#view-profile .pf-wall{display:block;overflow:visible}
-#view-profile .pf-stage{position:relative;padding:6px 0 4px}
-#view-profile .pf-row-back{display:flex;justify-content:center;gap:56px}
-#view-profile .pf-row-front{display:flex;justify-content:center;gap:26px;margin-top:-14px;position:relative;z-index:2}
-#view-profile .pf-frame-click{cursor:pointer;transition:transform .15s ease,filter .15s ease}
-#view-profile .pf-frame-click:hover{transform:translateY(-3px) scale(1.03);filter:none}
-#view-profile .pf-back{position:relative;z-index:1}
-#view-profile .pf-back.pf-frame-click:hover{z-index:3}
-#view-profile .pf-frame{border-radius:12px;padding:3px;background:linear-gradient(145deg,#fff1b8,#ffd86b 40%,#b8860b);box-shadow:0 0 16px rgba(255,216,107,.35)}
-#view-profile .pf-frame-img{border-radius:9px;overflow:hidden;background:#070b1c;display:grid;place-items:center}
-#view-profile .pf-frame-img img{width:100%;height:100%;object-fit:cover;display:block}
-#view-profile .pf-back .pf-frame-img{width:138px;height:138px}
-#view-profile .pf-back .pf-frame-name{max-width:138px;font-size:.58rem}
-#view-profile .pf-front .pf-frame-img{width:168px;height:168px}
-#view-profile .pf-back{filter:brightness(.72) saturate(.9)}
-#view-profile .pf-front{box-shadow:0 0 26px rgba(255,216,107,.5),0 12px 30px rgba(0,0,0,.65)}
-#view-profile .pf-frame-name{max-width:168px;font-size:.64rem;color:#2a1b02;font-weight:900;letter-spacing:.5px;text-align:center;padding:4px 6px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#view-profile .pf-frame-empty{background:rgba(255,216,107,.05);border:1px dashed rgba(255,216,107,.28);box-shadow:none;filter:none;padding:2px}
-#view-profile .pf-frame-empty .pf-frame-img{background:rgba(0,0,0,.25)}
-@media(max-width:640px){#view-profile .pf-back .pf-frame-img{width:80px;height:80px}#view-profile .pf-front .pf-frame-img{width:100px;height:100px}#view-profile .pf-row-back{gap:24px}#view-profile .pf-row-front{gap:4px;margin-top:-10px}#view-profile .pf-frame-name{max-width:100px}#view-profile .pf-back .pf-frame-name{max-width:80px}}
-</style>
 <section class='view' id='view-profile' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden'>
-<div id='profileBgLayer' class='pf-bg'></div>
-<div class='pf-wrap'>
-<div id='profileViewHeader' class='pf-card pf-header'>
-<div class='pf-avatar-frame'><div id='profileViewAvatar' class='pf-avatar'></div></div>
-<div class='pf-id'>
-<div class='pf-name-row'><div id='profileViewName' class='pf-name'></div><button id='profileCfgBtn' onclick='openInputConfig()' style='background:none;border:none;color:#3d6090;font-size:1.1rem;cursor:pointer;padding:2px 6px;transition:color .2s' onmouseenter='this.style.color="#00aaff"' onmouseleave='this.style.color="#3d6090"' title='Controller Settings'>&#9881;</button></div>
-<div id='profileViewPrincipal' class='pf-meta'></div>
-<div class='pf-chips'>
-<div class='pf-chip'><span id='profileViewVp' class='pf-chip-val pf-c-red'>0</span><span class='pf-chip-lbl'>VP</span></div>
-<div class='pf-chip'><span id='profileViewGames' class='pf-chip-val pf-c-green'>0</span><span class='pf-chip-lbl'>Games made</span></div>
-<div class='pf-chip'><span id='profileViewNftCount' class='pf-chip-val pf-c-cyan'>0</span><span class='pf-chip-lbl'>NFTs</span></div>
+<div style='position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,#080c18 0%,#0a1428 40%,#0d0520 100%)'></div>
+<div style='position:relative;z-index:1;max-width:800px;margin:0 auto;padding:14px 20px'>
+
+<!-- Profile Header -->
+<div id='profileViewHeader' style='display:flex;align-items:flex-start;gap:24px;margin-bottom:24px;padding:24px;background:rgba(0,15,30,.7);border:1px solid rgba(0,170,255,.12);border-radius:16px;backdrop-filter:blur(8px)'>
+<div id='profileViewAvatar' style='width:100px;height:100px;border-radius:12px;background:rgba(13,17,23,.75);backdrop-filter:blur(8px);display:grid;place-items:center;font-size:3rem;border:2px solid rgba(0,170,255,.3);overflow:hidden;flex-shrink:0'></div>
+<div style='flex:1;min-width:0'>
+<div style='display:flex;align-items:center;gap:8px;margin-bottom:4px'><div id='profileViewName' style='font-size:1.5rem;font-weight:900;color:#e0e6f0;letter-spacing:1px'></div><button id='profileCfgBtn' onclick='openInputConfig()' style='background:none;border:none;color:#3d6090;font-size:1.1rem;cursor:pointer;padding:2px 6px;transition:color .2s' onmouseenter='this.style.color="#00aaff"' onmouseleave='this.style.color="#3d6090"' title='Controller Settings'>&#9881;</button></div>
+<div id='profileViewPrincipal' style='font-size:.65rem;color:#2d5a8a;margin-bottom:8px;word-break:break-all'></div>
+<div style='display:flex;gap:12px;flex-wrap:wrap'>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:var(--cyan,#00aaff)' id='profileViewNftCount'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>NFTs</div>
+</div>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:#ef4444' id='profileViewVp'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>VP</div>
+</div>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:#22c55e' id='profileViewGames'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>GAMES MADE</div>
+</div>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:#ff8800' id='profileViewGamerXp'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>GAMER XP</div>
+</div>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:#a855f7' id='profileViewDaoVp'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>DAO XP</div>
+</div>
+<div style='background:rgba(0,0,0,.3);border-radius:8px;padding:6px 12px;text-align:center'>
+<div style='font-size:1rem;font-weight:800;color:#00bfff' id='profileViewMarketXp'>0</div>
+<div style='font-size:.6rem;color:#2d5a8a;letter-spacing:1px'>MARKET XP</div>
 </div>
 </div>
-<div class='pf-owner-btns'><button id='profileEditBtn' onclick='openProfileEdit()' style='padding:8px 16px;background:rgba(0,170,255,.08);border:2px solid rgba(0,170,255,.2);border-radius:8px;color:var(--cyan,#00aaff);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(0,170,255,.5)"' onmouseleave='this.style.borderColor="rgba(0,170,255,.2)"'>Edit Profile</button><button id='profileDevDashBtn' onclick='showView("devdash")' style='display:none;padding:8px 16px;background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.2);border-radius:8px;color:#22c55e;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(34,197,94,.5)"' onmouseleave='this.style.borderColor="rgba(34,197,94,.2)"'>Developer Dashboard</button><button id='profileRoyaltiesBtn' onclick='showView("royalties")' style='display:none;padding:8px 16px;background:rgba(244,114,182,.08);border:2px solid rgba(244,114,182,.2);border-radius:8px;color:#f472b6;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(244,114,182,.5)"' onmouseleave='this.style.borderColor="rgba(244,114,182,.2)"'>Creator / Seller Earnings</button></div>
 </div>
-<div class='pf-xp-row'>
-<div class='pf-xp pf-xp-gold'><div class='pf-xp-lbl'>Gamer XP</div><div id='profileViewGamerXp' class='pf-xp-val'>0</div></div>
-<div class='pf-xp pf-xp-purple'><div class='pf-xp-lbl'>DAO XP</div><div id='profileViewDaoVp' class='pf-xp-val'>0</div></div>
-<div class='pf-xp pf-xp-cyan'><div class='pf-xp-lbl'>Market XP</div><div id='profileViewMarketXp' class='pf-xp-val'>0</div></div>
+<div id='profileAchievements' style='display:none;flex-wrap:wrap;gap:4px;margin-top:8px'></div>
+<div style='display:flex;flex-direction:column;gap:6px'>
+<button id='profileEditBtn' onclick='openProfileEdit()' style='padding:8px 16px;background:rgba(0,170,255,.08);border:2px solid rgba(0,170,255,.2);border-radius:8px;color:var(--cyan,#00aaff);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(0,170,255,.5)"' onmouseleave='this.style.borderColor="rgba(0,170,255,.2)"'>Edit Profile</button>
+<button id='profileDevDashBtn' onclick='showView("devdash")' style='display:none;padding:8px 16px;background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.2);border-radius:8px;color:#22c55e;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(34,197,94,.5)"' onmouseleave='this.style.borderColor="rgba(34,197,94,.2)"'>Developer Dashboard</button>
+<button id='profileRoyaltiesBtn' onclick='showView("royalties")' style='display:none;padding:8px 16px;background:rgba(244,114,182,.08);border:2px solid rgba(244,114,182,.2);border-radius:8px;color:#f472b6;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .3s;white-space:nowrap' onmouseenter='this.style.borderColor="rgba(244,114,182,.5)"' onmouseleave='this.style.borderColor="rgba(244,114,182,.2)"'>Creator / Seller Earnings</button>
 </div>
-<div id='profileAchievements' style='display:none'></div>
-<div id='profileViewBio' class='pf-card pf-bio' style='display:none'></div>
-<div id='profileBadgeShowcase' class='pf-card pf-sec pf-sec-rainbow' style='display:none'><div class='pf-sec-title pf-rainbow-text'>BADGES</div><div id='profileBadgeGrid' class='pf-badges'></div></div>
-<div class='pf-card pf-sec pf-sec-gold'>
-<div class='pf-sec-head'><div class='pf-sec-title pf-t-gold'>THE WALL</div><button id='profileWallEditBtn' onclick='openWallEdit()' style='display:none;padding:4px 12px;background:none;border:1px solid rgba(255,215,0,.2);border-radius:6px;color:var(--gold,#ffd700);font-size:.65rem;cursor:pointer;font-weight:700'>Edit</button></div>
-<div id='profileShowroomGrid' class='pf-wall'></div>
 </div>
+
+
+<!-- Badge Showcase -->
+<div id='profileBadgeShowcase' style='display:none;background:rgba(0,15,30,.7);border:1px solid rgba(255,215,0,.12);border-radius:12px;padding:16px;margin-bottom:20px'>
+<div style='font-size:.7rem;font-weight:800;color:var(--gold);letter-spacing:2px;margin-bottom:10px'>BADGES</div>
+<div id='profileBadgeGrid' style='display:flex;flex-wrap:wrap;gap:8px'></div>
+</div>
+
+<!-- Bio -->
+<div id='profileViewBio' style='display:none;background:rgba(0,15,30,.7);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:.85rem;color:#8ab4d8;line-height:1.6'></div>
+
 <div id='profileExtraSections'></div>
-<div id='profileCollectionSection' style='display:none'><div id='profileNftGrid'></div></div>
+
+<!-- Personal Showroom -->
+<div style='margin-bottom:20px'>
+<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px'>
+<div style='font-size:.85rem;font-weight:800;color:var(--gold,#ffd700);letter-spacing:2px'>THE WALL</div>
+<button id='profileWallEditBtn' onclick='openWallEdit()' style='display:none;padding:4px 12px;background:none;border:1px solid rgba(255,215,0,.2);border-radius:6px;color:var(--gold,#ffd700);font-size:.65rem;cursor:pointer;font-weight:700'>Edit</button>
+</div>
+<div id='profileShowroomGrid' style='display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent'>
+<div style='color:#1a3050;font-size:.8rem;padding:30px;text-align:center;width:100%'>No NFTs showcased yet</div>
+</div>
+</div>
+
+
+
+<!-- NFT Collection -->
+<div id='profileCollectionSection'>
+<div style='font-size:.85rem;font-weight:800;color:var(--cyan,#00aaff);letter-spacing:2px;margin-bottom:10px'>COLLECTION</div>
+<div id='profileNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px'>
+<div style='color:#1a3050;font-size:.8rem;grid-column:1/-1;text-align:center;padding:20px'>Connect wallet to view</div>
+</div>
+</div>
+
 </div>
 </section>
 
@@ -2850,47 +2832,6 @@ window.openScoresPopup=async function(){
     if(body) body.innerHTML=rows||"<div style='color:#2d5a8a;font-size:.8rem;padding:10px 0'>No scores on Showroom ticket games yet.</div>";
   }catch(e){ console.warn('Scores load failed:',e); if(body) body.innerHTML="<div style='color:#ef4444;font-size:.8rem'>Could not load scores. Please try again.</div>"; }
 };
-let _wallHung=[];
-function renderWallStage(hung,own){
-  _wallHung=hung.slice(0,5);
-  if(!_wallHung.length) return profileEmpty(own?'Nothing hung yet. Use Edit to hang up to 5 NFTs.':'Nothing hung on the wall yet.');
-  const slot=(i,cls)=>{
-    const n=_wallHung[i];
-    if(!n) return `<div class='pf-frame ${cls} pf-frame-empty'><div class='pf-frame-img'></div></div>`;
-    const nm=escHtml(n.name||'NFT');
-    return `<div class='pf-frame ${cls} pf-frame-click' title="${nm}" onclick="openWallNft(${i})"><div class='pf-frame-img'>${n.imageUrl?`<img src="${escHtml(n.imageUrl)}" alt="${nm}"/>`:'<span style="color:#ffd86b">?</span>'}</div><div class='pf-frame-name'>${nm}</div></div>`;
-  };
-  return `<div class='pf-stage'><div class='pf-row-back'>${[2,3,4].map(i=>slot(i,'pf-back')).join('')}</div><div class='pf-row-front'>${[0,1].map(i=>slot(i,'pf-front')).join('')}</div></div>`;
-}
-let _wallViewIdx=0;
-function wallViewerKeys(ev){
-  const m=document.getElementById('m-wall-nft');
-  if(!m){ document.removeEventListener('keydown',wallViewerKeys); return; }
-  if(ev.key==='ArrowRight') wallViewerStep(1);
-  else if(ev.key==='ArrowLeft') wallViewerStep(-1);
-  else if(ev.key==='Escape'){ m.remove(); document.removeEventListener('keydown',wallViewerKeys); }
-}
-function renderWallViewer(){
-  const body=document.getElementById('wallNftBody'); if(!body) return;
-  const total=_wallHung.length; const n=_wallHung[_wallViewIdx]; if(!n) return;
-  const nm=escHtml(n.name||'NFT');
-  const img=n.imageUrl?`<img src="${escHtml(n.imageUrl)}" alt="${nm}" onload="if(this.naturalWidth&&this.naturalWidth<=256)this.style.imageRendering='pixelated'" style="display:block;width:min(62vw,460px);max-height:60vh;object-fit:contain;border-radius:12px;background:#070b1c"/>`:`<div style="color:#ffd86b;font-size:3rem;padding:60px">?</div>`;
-  const arrow=(d,label,ch)=>total>1?`<button class='btn' onclick='wallViewerStep(${d})' aria-label='${label}' style='font-size:1.4rem;padding:8px 14px;border-color:#ffd86b;color:#ffd86b;flex-shrink:0'>${ch}</button>`:'';
-  const thumbs=total>1?`<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">${_wallHung.map((t,i)=>`<div onclick="wallViewerGo(${i})" title="${escHtml(t.name||'NFT')}" style="cursor:pointer;width:52px;height:52px;border-radius:8px;overflow:hidden;background:#070b1c;border:2px solid ${i===_wallViewIdx?'#ffd86b':'rgba(255,255,255,.12)'};box-shadow:${i===_wallViewIdx?'0 0 12px rgba(255,216,107,.5)':'none'};opacity:${i===_wallViewIdx?'1':'.65'}">${t.imageUrl?`<img src="${escHtml(t.imageUrl)}" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"/>`:''}</div>`).join('')}</div>`:'';
-  body.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:12px">${arrow(-1,'Previous','‹')}<div style="padding:4px;border-radius:16px;background:linear-gradient(145deg,#fff1b8,#ffd86b 40%,#b8860b);box-shadow:0 0 30px rgba(255,216,107,.4)">${img}</div>${arrow(1,'Next','›')}</div>
-    <div style="text-align:center;margin-top:12px;color:#ffd86b;font-weight:900;letter-spacing:1px;text-shadow:0 0 8px rgba(255,216,107,.45)">${nm}</div>
-    <div style="text-align:center;color:#8fa6d6;font-size:.72rem;margin-top:2px">${_wallViewIdx+1} / ${total}</div>${thumbs}`;
-}
-window.wallViewerStep=function(d){ const t=_wallHung.length; if(!t) return; _wallViewIdx=(_wallViewIdx+d+t)%t; renderWallViewer(); };
-window.wallViewerGo=function(i){ if(!_wallHung[i]) return; _wallViewIdx=i; renderWallViewer(); };
-window.openWallNft=function(i){
-  if(!_wallHung[i]) return;
-  _wallViewIdx=i;
-  profileModalShell('m-wall-nft','🖼️ The Wall','wallNftBody');
-  renderWallViewer();
-  document.removeEventListener('keydown',wallViewerKeys);
-  document.addEventListener('keydown',wallViewerKeys);
-};
 function renderProfileView(){
   if(!S.connected) return;
   const target=_profileNextTarget||S.principalText;
@@ -2990,7 +2931,7 @@ function renderProfileView(){
       if(!alive()) return;
       const byKey=new Map(owned.map(n=>[n.canisterId+':'+n.tokenId,n]));
       const hung=wall.map(k=>byKey.get(k)).filter(Boolean);
-      qs('profileShowroomGrid').innerHTML=renderWallStage(hung,own);
+      qs('profileShowroomGrid').innerHTML=hung.length?hung.map(n=>profileNftTile(n,140)).join(''):profileEmpty('Nothing hung on the wall yet.');
     }catch(e){ if(alive()) qs('profileShowroomGrid').innerHTML=profileEmpty('Nothing hung on the wall yet.'); }
     const owned=await nftsP;
     if(!alive()) return;
@@ -14326,7 +14267,7 @@ async function submitDaoThread(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('DAO forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{
@@ -15178,7 +15119,7 @@ async function submitForumPost(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{

@@ -1291,12 +1291,8 @@ window.addEventListener('message', (e) => {
 @media(prefers-reduced-motion:reduce){#view-profile .pf-avatar-frame,#view-profile .pf-rainbow-text{animation:none}}
 #view-profile .pf-wall{display:block;overflow:visible}
 #view-profile .pf-stage{position:relative;padding:6px 0 4px}
-#view-profile .pf-row-back{display:flex;justify-content:center;gap:56px}
-#view-profile .pf-row-front{display:flex;justify-content:center;gap:26px;margin-top:-14px;position:relative;z-index:2}
-#view-profile .pf-frame-click{cursor:pointer;transition:transform .15s ease,filter .15s ease}
-#view-profile .pf-frame-click:hover{transform:translateY(-3px) scale(1.03);filter:none}
-#view-profile .pf-back{position:relative;z-index:1}
-#view-profile .pf-back.pf-frame-click:hover{z-index:3}
+#view-profile .pf-row-back{display:flex;justify-content:center;gap:28px}
+#view-profile .pf-row-front{display:flex;justify-content:center;gap:48px;margin-top:16px;position:relative;z-index:2}
 #view-profile .pf-frame{border-radius:12px;padding:3px;background:linear-gradient(145deg,#fff1b8,#ffd86b 40%,#b8860b);box-shadow:0 0 16px rgba(255,216,107,.35)}
 #view-profile .pf-frame-img{border-radius:9px;overflow:hidden;background:#070b1c;display:grid;place-items:center}
 #view-profile .pf-frame-img img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1308,7 +1304,7 @@ window.addEventListener('message', (e) => {
 #view-profile .pf-frame-name{max-width:168px;font-size:.64rem;color:#2a1b02;font-weight:900;letter-spacing:.5px;text-align:center;padding:4px 6px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #view-profile .pf-frame-empty{background:rgba(255,216,107,.05);border:1px dashed rgba(255,216,107,.28);box-shadow:none;filter:none;padding:2px}
 #view-profile .pf-frame-empty .pf-frame-img{background:rgba(0,0,0,.25)}
-@media(max-width:640px){#view-profile .pf-back .pf-frame-img{width:80px;height:80px}#view-profile .pf-front .pf-frame-img{width:100px;height:100px}#view-profile .pf-row-back{gap:24px}#view-profile .pf-row-front{gap:4px;margin-top:-10px}#view-profile .pf-frame-name{max-width:100px}#view-profile .pf-back .pf-frame-name{max-width:80px}}
+@media(max-width:640px){#view-profile .pf-back .pf-frame-img{width:86px;height:86px}#view-profile .pf-front .pf-frame-img{width:112px;height:112px}#view-profile .pf-row-back{gap:12px}#view-profile .pf-row-front{gap:18px;margin-top:10px}#view-profile .pf-frame-name{max-width:112px}#view-profile .pf-back .pf-frame-name{max-width:86px}}
 </style>
 <section class='view' id='view-profile' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden'>
 <div id='profileBgLayer' class='pf-bg'></div>
@@ -2850,47 +2846,16 @@ window.openScoresPopup=async function(){
     if(body) body.innerHTML=rows||"<div style='color:#2d5a8a;font-size:.8rem;padding:10px 0'>No scores on Showroom ticket games yet.</div>";
   }catch(e){ console.warn('Scores load failed:',e); if(body) body.innerHTML="<div style='color:#ef4444;font-size:.8rem'>Could not load scores. Please try again.</div>"; }
 };
-let _wallHung=[];
 function renderWallStage(hung,own){
-  _wallHung=hung.slice(0,5);
-  if(!_wallHung.length) return profileEmpty(own?'Nothing hung yet. Use Edit to hang up to 5 NFTs.':'Nothing hung on the wall yet.');
-  const slot=(i,cls)=>{
-    const n=_wallHung[i];
+  if(!hung.length) return profileEmpty(own?'Nothing hung yet. Use Edit to hang up to 5 NFTs.':'Nothing hung on the wall yet.');
+  const slot=(n,cls,showName)=>{
     if(!n) return `<div class='pf-frame ${cls} pf-frame-empty'><div class='pf-frame-img'></div></div>`;
     const nm=escHtml(n.name||'NFT');
-    return `<div class='pf-frame ${cls} pf-frame-click' title="${nm}" onclick="openWallNft(${i})"><div class='pf-frame-img'>${n.imageUrl?`<img src="${escHtml(n.imageUrl)}" alt="${nm}"/>`:'<span style="color:#ffd86b">?</span>'}</div><div class='pf-frame-name'>${nm}</div></div>`;
+    return `<div class='pf-frame ${cls}' title="${nm}"><div class='pf-frame-img'>${n.imageUrl?`<img src="${escHtml(n.imageUrl)}" alt="${nm}"/>`:'<span style="color:#ffd86b">?</span>'}</div>${showName?`<div class='pf-frame-name'>${nm}</div>`:''}</div>`;
   };
-  return `<div class='pf-stage'><div class='pf-row-back'>${[2,3,4].map(i=>slot(i,'pf-back')).join('')}</div><div class='pf-row-front'>${[0,1].map(i=>slot(i,'pf-front')).join('')}</div></div>`;
+  const front=[hung[0],hung[1]], back=[hung[2],hung[3],hung[4]];
+  return `<div class='pf-stage'><div class='pf-row-back'>${back.map(n=>slot(n,'pf-back',true)).join('')}</div><div class='pf-row-front'>${front.map(n=>slot(n,'pf-front',true)).join('')}</div></div>`;
 }
-let _wallViewIdx=0;
-function wallViewerKeys(ev){
-  const m=document.getElementById('m-wall-nft');
-  if(!m){ document.removeEventListener('keydown',wallViewerKeys); return; }
-  if(ev.key==='ArrowRight') wallViewerStep(1);
-  else if(ev.key==='ArrowLeft') wallViewerStep(-1);
-  else if(ev.key==='Escape'){ m.remove(); document.removeEventListener('keydown',wallViewerKeys); }
-}
-function renderWallViewer(){
-  const body=document.getElementById('wallNftBody'); if(!body) return;
-  const total=_wallHung.length; const n=_wallHung[_wallViewIdx]; if(!n) return;
-  const nm=escHtml(n.name||'NFT');
-  const img=n.imageUrl?`<img src="${escHtml(n.imageUrl)}" alt="${nm}" onload="if(this.naturalWidth&&this.naturalWidth<=256)this.style.imageRendering='pixelated'" style="display:block;width:min(62vw,460px);max-height:60vh;object-fit:contain;border-radius:12px;background:#070b1c"/>`:`<div style="color:#ffd86b;font-size:3rem;padding:60px">?</div>`;
-  const arrow=(d,label,ch)=>total>1?`<button class='btn' onclick='wallViewerStep(${d})' aria-label='${label}' style='font-size:1.4rem;padding:8px 14px;border-color:#ffd86b;color:#ffd86b;flex-shrink:0'>${ch}</button>`:'';
-  const thumbs=total>1?`<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">${_wallHung.map((t,i)=>`<div onclick="wallViewerGo(${i})" title="${escHtml(t.name||'NFT')}" style="cursor:pointer;width:52px;height:52px;border-radius:8px;overflow:hidden;background:#070b1c;border:2px solid ${i===_wallViewIdx?'#ffd86b':'rgba(255,255,255,.12)'};box-shadow:${i===_wallViewIdx?'0 0 12px rgba(255,216,107,.5)':'none'};opacity:${i===_wallViewIdx?'1':'.65'}">${t.imageUrl?`<img src="${escHtml(t.imageUrl)}" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"/>`:''}</div>`).join('')}</div>`:'';
-  body.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:12px">${arrow(-1,'Previous','‹')}<div style="padding:4px;border-radius:16px;background:linear-gradient(145deg,#fff1b8,#ffd86b 40%,#b8860b);box-shadow:0 0 30px rgba(255,216,107,.4)">${img}</div>${arrow(1,'Next','›')}</div>
-    <div style="text-align:center;margin-top:12px;color:#ffd86b;font-weight:900;letter-spacing:1px;text-shadow:0 0 8px rgba(255,216,107,.45)">${nm}</div>
-    <div style="text-align:center;color:#8fa6d6;font-size:.72rem;margin-top:2px">${_wallViewIdx+1} / ${total}</div>${thumbs}`;
-}
-window.wallViewerStep=function(d){ const t=_wallHung.length; if(!t) return; _wallViewIdx=(_wallViewIdx+d+t)%t; renderWallViewer(); };
-window.wallViewerGo=function(i){ if(!_wallHung[i]) return; _wallViewIdx=i; renderWallViewer(); };
-window.openWallNft=function(i){
-  if(!_wallHung[i]) return;
-  _wallViewIdx=i;
-  profileModalShell('m-wall-nft','🖼️ The Wall','wallNftBody');
-  renderWallViewer();
-  document.removeEventListener('keydown',wallViewerKeys);
-  document.addEventListener('keydown',wallViewerKeys);
-};
 function renderProfileView(){
   if(!S.connected) return;
   const target=_profileNextTarget||S.principalText;
@@ -14326,7 +14291,7 @@ async function submitDaoThread(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('DAO forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{
@@ -15178,7 +15143,7 @@ async function submitForumPost(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{

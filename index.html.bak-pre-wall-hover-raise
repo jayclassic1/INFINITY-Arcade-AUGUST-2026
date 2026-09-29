@@ -1295,8 +1295,6 @@ window.addEventListener('message', (e) => {
 #view-profile .pf-row-front{display:flex;justify-content:center;gap:26px;margin-top:-14px;position:relative;z-index:2}
 #view-profile .pf-frame-click{cursor:pointer;transition:transform .15s ease,filter .15s ease}
 #view-profile .pf-frame-click:hover{transform:translateY(-3px) scale(1.03);filter:none}
-#view-profile .pf-back{position:relative;z-index:1}
-#view-profile .pf-back.pf-frame-click:hover{z-index:3}
 #view-profile .pf-frame{border-radius:12px;padding:3px;background:linear-gradient(145deg,#fff1b8,#ffd86b 40%,#b8860b);box-shadow:0 0 16px rgba(255,216,107,.35)}
 #view-profile .pf-frame-img{border-radius:9px;overflow:hidden;background:#070b1c;display:grid;place-items:center}
 #view-profile .pf-frame-img img{width:100%;height:100%;object-fit:cover;display:block}
@@ -14326,7 +14324,7 @@ async function submitDaoThread(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('DAO forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{
@@ -15178,7 +15176,7 @@ async function submitForumPost(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{

@@ -7079,21 +7079,6 @@ persistent actor ArcadeBackend {
     let normalizedImage = switch (validateForumImage(msg.caller, image)) { case (#ok(v)) v; case (#err(e)) return #err(e) };
     if (Text.size(Text.trim(body, #char ' ')) == 0 and Option.isNull(normalizedImage)) return #err("Body required for text-first forum posting");
     if (isDaoSection(section) and not hasDaoAccess(msg.caller)) return #err("Voting Power Badge required for DAO forum posting");
-    // One new thread per rolling 24h per player, counted separately for the forums and the DAO (admins exempt).
-    // Deleted threads still count, so delete-and-repost can't bypass it. No new storage: scans existing threads.
-    if (not isAdmin(msg.caller)) {
-      let now = Time.now();
-      let dayNs : Int = 86_400_000_000_000;
-      let wantDao = isDaoSection(section);
-      var lastAt : Int = 0;
-      for (t in forumThreadEntries.vals()) {
-        if (Principal.equal(t.author, msg.caller) and isDaoSection(t.section) == wantDao and t.createdAt > lastAt) { lastAt := t.createdAt };
-      };
-      if (lastAt > 0 and now - lastAt < dayNs) {
-        let remainMin : Nat = Nat64.toNat(Nat64.fromIntWrap((dayNs - (now - lastAt)) / 60_000_000_000)) + 1;
-        return #err("You can start one new " # (if (wantDao) "DAO thread" else "forum thread") # " per day. Try again in " # Nat.toText(remainMin / 60) # "h " # Nat.toText(remainMin % 60) # "m.");
-      };
-    };
     forumThreadCounter += 1;
     let id = "forum-" # Nat.toText(forumThreadCounter);
     let thread : ForumThread = {
@@ -7108,8 +7093,8 @@ persistent actor ArcadeBackend {
       replies = [];
       deleted = false;
     };
-    ensureForumIndexBuilt(); // build the index BEFORE adding the new thread; otherwise the first post after an upgrade is indexed twice
     forumThreadEntries := Array.append<ForumThread>([thread], forumThreadEntries);
+    ensureForumIndexBuilt();
     addThreadToIndex(thread);
     #ok(id)
   };

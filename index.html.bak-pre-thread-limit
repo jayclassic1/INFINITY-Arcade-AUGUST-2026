@@ -14326,7 +14326,7 @@ async function submitDaoThread(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('DAO forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{
@@ -15178,7 +15178,7 @@ async function submitForumPost(){
     const backendId=await createForumThreadOnBackend(currentForumSection,post);
     post.id=backendId;
   }catch(e){
-    alert(e&&e.message?e.message:'Could not create the thread. Please try again.');return;
+    console.warn('forum backend create failed; saving local fallback',e);
   }
   posts.unshift(post);
   try{
