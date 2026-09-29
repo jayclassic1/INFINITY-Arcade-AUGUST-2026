@@ -10914,7 +10914,6 @@ async function uploadGameToChain(){
 
       const safePath=cleanPath.split('/').map(seg=>seg.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9._-]/g,'')).join('/');
       const key='/games/'+gameId+'/'+safePath;
-      if(newKeys.has(key)){status.innerHTML='<span style="color:#ef4444">Two files in the zip end up with the same name after cleanup: <b>'+escHtml(safePath)+'</b>. Rename one and re-zip.</span>';progress.style.display='none';return;}
       const data=await entry.async('uint8array');
 
       // Reject individual files >2MB
@@ -10929,10 +10928,10 @@ async function uploadGameToChain(){
       // Upload as chunk
       const {chunk_id}=await assetActor.create_chunk({batch_id,content:Array.from(data)});
 
-      // Delete-then-create: always replace. list() is capped (first ~100 assets), so the existing-key
-      // check can miss real files (e.g. leftovers from a deleted game) and CreateAsset would trap.
-      operations.push({DeleteAsset:{key}});
-      operations.push({CreateAsset:{key,content_type:getMime(safePath),max_age:[],headers:[],enable_aliasing:[],allow_raw_access:[true]}});
+      // Only CreateAsset if it doesn't already exist (re-upload safe)
+      if(!existingKeys.has(key)){
+        operations.push({CreateAsset:{key,content_type:getMime(safePath),max_age:[],headers:[],enable_aliasing:[],allow_raw_access:[true]}});
+      }
       // Always update content (overwrites previous version)
       operations.push({SetAssetContent:{key,content_encoding:'identity',chunk_ids:[chunk_id],sha256:[]}});
       newKeys.add(key);
