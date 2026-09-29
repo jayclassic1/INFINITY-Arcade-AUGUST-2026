@@ -194,11 +194,15 @@ persistent actor NftCanister {
 
   public shared(msg) func icrc7_transfer(args : TransferArg) : async TransferResult {
     let caller = msg.caller;
+    let isOperatorCaller = isOperator(caller);
 
-    // Check each token
-    let successIds = Buffer.Buffer<Nat>(args.token_ids.size());
-
+    // Pass 1: validate EVERY token before moving any, so a multi-token transfer is all-or-nothing.
+    let seen = Buffer.Buffer<Nat>(args.token_ids.size());
     for (tokenId in args.token_ids.vals()) {
+      for (s in seen.vals()) {
+        if (s == tokenId) return #Err(#GenericError({ error_code = 2; message = "Token " # Nat.toText(tokenId) # " listed twice in one transfer" }));
+      };
+      seen.add(tokenId);
       switch (ownerMap.get(tokenId)) {
         case null {
           return #Err(#GenericError({ error_code = 1; message = "Token " # Nat.toText(tokenId) # " does not exist" }));
@@ -210,26 +214,26 @@ persistent actor NftCanister {
           // Official NFT. This is intentional: "not even admin" is the whole point of the
           // closed-loop policy, so admin is bound by the exact same rules as any other owner.
           let isOwner = Principal.equal(caller, currentOwner.owner);
-          let isOperatorCaller = isOperator(caller);
           if (not isOwner and not isOperatorCaller) {
             return #Err(#Unauthorized);
           };
           // Closed-loop rule: a plain token owner (including an admin who happens to own a
           // token personally) may only ever send it INTO arcade custody (i.e. to an approved
           // operator) — never to any other wallet or outside marketplace. Operator-initiated
-          // transfers (the arcade_backend canister itself moving a token from its own custody
-          // to a redeeming buyer) are the one exception, since that's the system fulfilling a
-          // real purchase, not a person sending an NFT.
+          // transfers (the arcade_backend canister moving a token from its own custody to a
+          // redeeming buyer, or back to a delisting seller) are the one exception.
           if (isOwner and not isOperatorCaller and not isOperator(args.to.owner)) {
             return #Err(#Unauthorized);
           };
-          ownerMap.put(tokenId, args.to);
-          successIds.add(tokenId);
         };
       };
     };
 
-    #Ok(Buffer.toArray(successIds))
+    // Pass 2: every token passed, so move them all (no await between passes: nothing can interleave).
+    for (tokenId in args.token_ids.vals()) {
+      ownerMap.put(tokenId, args.to);
+    };
+    #Ok(args.token_ids)
   };
 
   // ============ Minting (Admin only) ============

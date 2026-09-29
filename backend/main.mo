@@ -6093,38 +6093,6 @@ persistent actor ArcadeBackend {
     };
   };
 
-  /// Admin transfer NFT from vault to any principal
-  public shared(msg) func adminTransfer(tokenId : TokenId, to : Principal) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Not authorized");
-    hydrateRuntimeStateIfNeeded();
-
-    try {
-      let result = await nftCanister().icrc7_transfer({
-        to = { owner = to; subaccount = null };
-        spender_subaccount = null;
-        from = null;
-        memo = null;
-        is_atomic = null;
-        token_ids = [tokenId];
-        created_at_time = null;
-      });
-
-      switch (result) {
-        case (#Ok(_)) {
-          let log = Buffer.fromArray<(Principal, TokenId, Int)>(redemptionLog);
-          log.add((to, tokenId, Time.now()));
-          redemptionLog := Buffer.toArray(log);
-          #ok("NFT #" # Nat.toText(tokenId) # " transferred to " # Principal.toText(to));
-        };
-        case (#Err(_)) {
-          #err("Transfer failed");
-        };
-      };
-    } catch (e) {
-      #err("Transfer call failed: " # Error.message(e));
-    };
-  };
-
   // === ICP WITHDRAW ===
   // ICP Ledger interface for transfers
   type Icrc1TransferArg = {
