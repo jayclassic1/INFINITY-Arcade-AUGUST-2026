@@ -40,3 +40,6 @@ exports/
 Thumbs.db
 .vscode/
 .idea/
+
+# Session backup copies (e.g. index.html.bak-pre-*, main.mo.bak-pre-*, index.html.bak2)
+*.bak*
