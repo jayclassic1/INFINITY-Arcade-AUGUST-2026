@@ -1244,7 +1244,7 @@ window.addEventListener('message', (e) => {
 </div>
 </section>
 
-<section class='view' id='view-profile' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden'>
+<section class='view' id='view-profile' style='padding:0;min-height:100vh;position:relative;overflow:hidden'>
 <div style='position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,#080c18 0%,#0a1428 40%,#0d0520 100%)'></div>
 <div style='position:relative;z-index:1;max-width:800px;margin:0 auto;padding:14px 20px'>
 
@@ -1315,7 +1315,7 @@ window.addEventListener('message', (e) => {
 
 
 <!-- NFT Collection -->
-<div id='profileCollectionSection'>
+<div>
 <div style='font-size:.85rem;font-weight:800;color:var(--cyan,#00aaff);letter-spacing:2px;margin-bottom:10px'>COLLECTION</div>
 <div id='profileNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px'>
 <div style='color:#1a3050;font-size:.8rem;grid-column:1/-1;text-align:center;padding:20px'>Connect wallet to view</div>
@@ -2845,7 +2845,6 @@ function renderProfileView(){
   ['profileCfgBtn','profileEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display=own?'':'none';});
   ['profileDevDashBtn','profileRoyaltiesBtn','profileWallEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display='none';});
   if(own){const wb=qs('profileWallEditBtn'); if(wb) wb.style.display='';}
-  {const cs=qs('profileCollectionSection'); if(cs) cs.style.display='none'; const nc=qs('profileViewNftCount'); if(nc&&nc.parentElement) nc.parentElement.style.display=own?'':'none';}
   if(own){
     const devBtn=qs('profileDevDashBtn');
     if(devBtn) userHasSubmittedGames().then(h=>{ if(alive()) devBtn.style.display=h?'block':'none'; }).catch(()=>{});

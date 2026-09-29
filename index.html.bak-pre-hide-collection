@@ -2845,7 +2845,7 @@ function renderProfileView(){
   ['profileCfgBtn','profileEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display=own?'':'none';});
   ['profileDevDashBtn','profileRoyaltiesBtn','profileWallEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display='none';});
   if(own){const wb=qs('profileWallEditBtn'); if(wb) wb.style.display='';}
-  {const cs=qs('profileCollectionSection'); if(cs) cs.style.display='none'; const nc=qs('profileViewNftCount'); if(nc&&nc.parentElement) nc.parentElement.style.display=own?'':'none';}
+  {const cs=qs('profileCollectionSection'); if(cs) cs.style.display=own?'':'none'; const nc=qs('profileViewNftCount'); if(nc&&nc.parentElement) nc.parentElement.style.display=own?'':'none';}
   if(own){
     const devBtn=qs('profileDevDashBtn');
     if(devBtn) userHasSubmittedGames().then(h=>{ if(alive()) devBtn.style.display=h?'block':'none'; }).catch(()=>{});

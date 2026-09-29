@@ -1315,7 +1315,7 @@ window.addEventListener('message', (e) => {
 
 
 <!-- NFT Collection -->
-<div id='profileCollectionSection'>
+<div>
 <div style='font-size:.85rem;font-weight:800;color:var(--cyan,#00aaff);letter-spacing:2px;margin-bottom:10px'>COLLECTION</div>
 <div id='profileNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px'>
 <div style='color:#1a3050;font-size:.8rem;grid-column:1/-1;text-align:center;padding:20px'>Connect wallet to view</div>
@@ -2845,7 +2845,6 @@ function renderProfileView(){
   ['profileCfgBtn','profileEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display=own?'':'none';});
   ['profileDevDashBtn','profileRoyaltiesBtn','profileWallEditBtn'].forEach(id=>{const el=qs(id); if(el) el.style.display='none';});
   if(own){const wb=qs('profileWallEditBtn'); if(wb) wb.style.display='';}
-  {const cs=qs('profileCollectionSection'); if(cs) cs.style.display='none'; const nc=qs('profileViewNftCount'); if(nc&&nc.parentElement) nc.parentElement.style.display=own?'':'none';}
   if(own){
     const devBtn=qs('profileDevDashBtn');
     if(devBtn) userHasSubmittedGames().then(h=>{ if(alive()) devBtn.style.display=h?'block':'none'; }).catch(()=>{});
