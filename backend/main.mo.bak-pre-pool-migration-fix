@@ -1569,19 +1569,31 @@ persistent actor ArcadeBackend {
     let migratedRawPools = HashMap.HashMap<Text, Nat>(gameRawTicketPoolEntries.size() + 8, Text.equal, textHash);
     let migratedBackedPools = HashMap.HashMap<Text, Nat>(gameBackedTicketPoolEntries.size() + 8, Text.equal, textHash);
 
-    // Session #3 fix: keep EVERY pool. The old filter (live Ticket games only) silently erased the pool of
-    // any suspended / pending / monetization-less game on every upgrade - real ICP-backed value.
     for ((gameId, rawPool) in gameRawTicketPoolEntries.vals()) {
-      migratedRawPools.put(gameId, rawPool);
+      switch (gameSubmissions.get(gameId)) {
+        case (?game) {
+          if (game.status == "live" and isTicketGameSubmission(game)) {
+            migratedRawPools.put(gameId, rawPool);
+          };
+        };
+        case null {};
+      };
     };
 
     // Public/backed truth is one-way explicit. Never infer backed balances from
     // legacy raw counters, because that would leak pre-separation state into the
     // public liability surface after upgrade.
     for ((gameId, backedPool) in gameBackedTicketPoolEntries.vals()) {
-      let rawPool = switch (migratedRawPools.get(gameId)) { case (?value) value; case null 0 };
-      let sanitizedBackedPool = if (backedPool > rawPool) rawPool else backedPool;
-      migratedBackedPools.put(gameId, sanitizedBackedPool);
+      switch (gameSubmissions.get(gameId)) {
+        case (?game) {
+          if (game.status == "live" and isTicketGameSubmission(game)) {
+            let rawPool = switch (migratedRawPools.get(gameId)) { case (?value) value; case null 0 };
+            let sanitizedBackedPool = if (backedPool > rawPool) rawPool else backedPool;
+            migratedBackedPools.put(gameId, sanitizedBackedPool);
+          };
+        };
+        case null {};
+      };
     };
 
     gameRawTicketPools := migratedRawPools;
