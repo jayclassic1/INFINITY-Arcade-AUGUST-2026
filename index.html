@@ -5838,6 +5838,17 @@ function openQuickListNftPopup(jsonStr){
   document.body.appendChild(modal);
 }
 
+// Official Arcade NFTs must be listed under their real collection (from on-chain metadata), so a relisted
+// token rejoins its collection card in the Prize Booth instead of creating an "ICRC7: ..." card.
+async function officialNftCollectionName(tokenId){
+  try{
+    const a=await getNftMetadataActor();
+    const r=await a.icrc7_token_metadata(BigInt(tokenId));
+    const md=Array.isArray(r)&&r.length?r[0]:[];
+    for(const [k,v] of md){ if(k==='collection'&&v&&('Text' in v)) return String(v.Text).trim(); }
+  }catch(e){ console.warn('Official collection lookup failed:',e); }
+  return '';
+}
 async function quickListOwnedNft(jsonStr){
   const n=JSON.parse(jsonStr);
   const resEl=document.getElementById('quickListRes');
@@ -5863,7 +5874,8 @@ async function quickListOwnedNft(jsonStr){
 
     const numericTokenId=parseInt(n.tokenId)||0;
     const sourceTokenKey=String(numericTokenId);
-    const collectionLabel='ICRC7: '+(n.collection||'NFT');
+    let collectionLabel='ICRC7: '+(n.collection||'NFT');
+    if(n.canisterId===NFT_CANISTER){ const oc=await officialNftCollectionName(numericTokenId); if(oc) collectionLabel=oc; }
     const name=n.name||`${n.collection||'NFT'} #${n.index}`;
 
     const isAdm=isAdmin();
@@ -10403,7 +10415,8 @@ async function submitExistingNft(existingActor=null){
     // Store on-chain via backend canister - backend deducts the 2-token listing fee
     const limits=await getMyNftLimitStatusClient();
     if(Number(limits.activeListings||0) >= Number(limits.activeListingsCap||3)) throw new Error('Active NFT listing limit reached for your VP tier (max '+Number(limits.activeListingsCap||3)+')');
-    const listResult=await be.listExistingNftWithTokenKey(name,'',rarity,BigInt(price),imageUrl,canisterId,BigInt(numericTokenId),sourceTokenKey,collectionLabel,0n);
+    const _colLabel=(canisterId===NFT_CANISTER)?((await officialNftCollectionName(numericTokenId))||collectionLabel):collectionLabel;
+    const listResult=await be.listExistingNftWithTokenKey(name,'',rarity,BigInt(price),imageUrl,canisterId,BigInt(numericTokenId),sourceTokenKey,_colLabel,0n);
     if(listResult.err) throw new Error(listResult.err);
     window._lastListingId=listResult.ok;
     invalidateNftCache();
