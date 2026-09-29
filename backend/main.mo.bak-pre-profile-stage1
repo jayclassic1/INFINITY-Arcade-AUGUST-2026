@@ -908,8 +908,6 @@ persistent actor ArcadeBackend {
       );
       accountPlayCountEntries := Iter.toArray(accountPlayCount.entries());
       leaderboardEntries := Iter.toArray(leaderboards.entries());
-      playerBestEntries := Iter.toArray(playerBests.entries());
-      profileWallEntries := Iter.toArray(profileWalls.entries());
     };
   };
 
@@ -1141,8 +1139,6 @@ persistent actor ArcadeBackend {
     };
     accountPlayCount := HashMap.fromIter<Principal, Nat>(accountPlayCountEntries.vals(), accountPlayCountEntries.size(), Principal.equal, Principal.hash);
     leaderboards := HashMap.fromIter<Text, LeaderboardEntry>(leaderboardEntries.vals(), leaderboardEntries.size(), Text.equal, textHash);
-    playerBests := HashMap.fromIter<Principal, [(Text, Nat, Int)]>(playerBestEntries.vals(), playerBestEntries.size(), Principal.equal, Principal.hash);
-    profileWalls := HashMap.fromIter<Principal, [Text]>(profileWallEntries.vals(), profileWallEntries.size(), Principal.equal, Principal.hash);
     runtimeStateHydrated := true;
   };
 
@@ -2479,7 +2475,6 @@ persistent actor ArcadeBackend {
     };
 
     let baseTickets : Nat = ticketPayout;
-    updatePlayerBest(caller, gameId, score);
     let newRecord = if (isRetiredBreaker(gameId, caller)) { false } else { updateGameTopScores(gameId, caller, score); recordValidatedHighScore(caller, gameId, score) };
     let jackpotConfig = gameTicketJackpotConfigs.get(gameId);
     let remainingBackedAfterBase : Nat = availableBackedPool - baseTickets;
@@ -2724,102 +2719,6 @@ persistent actor ArcadeBackend {
 
   public query func getGameTopScores(gameId : Text) : async [(Principal, Nat, Int)] {
     gameTopScores(gameId)
-  };
-
-  // === PROFILE DATA (session #3, profile stage 1) ===
-  // Personal bests per player per Showroom Ticket game (submitGameScore only runs for Ticket games) and the
-  // public Hang-5 NFT wall ("<canisterId>:<tokenId>" refs; ownership is checked at view time in the browser).
-  stable var playerBestEntries : [(Principal, [(Text, Nat, Int)])] = [];
-  stable var profileWallEntries : [(Principal, [Text])] = [];
-  transient var playerBests = HashMap.HashMap<Principal, [(Text, Nat, Int)]>(32, Principal.equal, Principal.hash);
-  transient var profileWalls = HashMap.HashMap<Principal, [Text]>(32, Principal.equal, Principal.hash);
-
-  func updatePlayerBest(player : Principal, gameId : Text, score : Nat) {
-    let list = switch (playerBests.get(player)) { case null { [] }; case (?l) { l } };
-    let buf = Buffer.Buffer<(Text, Nat, Int)>(list.size() + 1);
-    var found = false;
-    for (e in list.vals()) {
-      if (e.0 == gameId) {
-        found := true;
-        if (score > e.1) { buf.add((gameId, score, Time.now())) } else { buf.add(e) };
-      } else { buf.add(e) };
-    };
-    if (not found) { buf.add((gameId, score, Time.now())) };
-    playerBests.put(player, Buffer.toArray(buf));
-  };
-
-  func playerBestsOf(player : Principal) : [(Text, Nat, Int)] {
-    if (runtimeStateHydrated) {
-      switch (playerBests.get(player)) { case null { [] }; case (?l) { l } };
-    } else {
-      for (e in playerBestEntries.vals()) { if (Principal.equal(e.0, player)) return e.1 };
-      [];
-    };
-  };
-
-  func profileWallOf(player : Principal) : [Text] {
-    if (runtimeStateHydrated) {
-      switch (profileWalls.get(player)) { case null { [] }; case (?l) { l } };
-    } else {
-      for (e in profileWallEntries.vals()) { if (Principal.equal(e.0, player)) return e.1 };
-      [];
-    };
-  };
-
-  public shared(msg) func setProfileWall(items : [Text]) : async Result.Result<[Text], Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    if (items.size() > 5) return #err("You can hang at most 5 NFTs");
-    let buf = Buffer.Buffer<Text>(5);
-    for (it in items.vals()) {
-      if (Text.size(it) == 0 or Text.size(it) > 200) return #err("Invalid NFT reference");
-      var dup = false;
-      for (x in buf.vals()) { if (x == it) { dup := true } };
-      if (dup) return #err("The same NFT can only be hung once");
-      buf.add(it);
-    };
-    let arr = Buffer.toArray(buf);
-    if (arr.size() == 0) { profileWalls.delete(caller) } else { profileWalls.put(caller, arr) };
-    #ok(arr);
-  };
-
-  public query func getProfileWall(player : Principal) : async [Text] {
-    profileWallOf(player)
-  };
-
-  public query func getPlayerBests(player : Principal) : async [(Text, Nat, Int)] {
-    playerBestsOf(player)
-  };
-
-  public query func getPlayerRankings(player : Principal) : async { records : [(Text, Nat)]; topTen : [(Text, Nat, Nat)]; breakers : [(Text, Nat, Int)] } {
-    let recs = Buffer.Buffer<(Text, Nat)>(4);
-    let lb = if (runtimeStateHydrated) { Iter.toArray(leaderboards.entries()) } else { leaderboardEntries };
-    for ((gid, e) in lb.vals()) { if (Principal.equal(e.player, player)) { recs.add((gid, e.score)) } };
-    let tops = Buffer.Buffer<(Text, Nat, Nat)>(4);
-    for ((gid, list) in gameTopScoreEntries.vals()) {
-      var rank : Nat = 0;
-      for (e in list.vals()) {
-        rank += 1;
-        if (Principal.equal(e.0, player)) { tops.add((gid, rank, e.1)) };
-      };
-    };
-    let brk = Buffer.Buffer<(Text, Nat, Int)>(2);
-    for (b in retiredBreakerEntries.vals()) { if (Principal.equal(b.1, player)) { brk.add((b.0, b.3, b.4)) } };
-    { records = Buffer.toArray(recs); topTen = Buffer.toArray(tops); breakers = Buffer.toArray(brk) };
-  };
-
-  public query func getPlayerJackpotWins(player : Principal, limit : Nat) : async [TicketJackpotWin] {
-    let cap = if (limit > 50) { 50 } else { limit };
-    let all = if (runtimeStateHydrated) { Buffer.toArray(ticketJackpotWins) } else { ticketJackpotWinEntries };
-    let out = Buffer.Buffer<TicketJackpotWin>(8);
-    var i = all.size();
-    while (i > 0 and out.size() < cap) {
-      i -= 1;
-      let w = all[i];
-      if (Principal.equal(w.player, player) and w.jackpotTickets > 0) { out.add(w) };
-    };
-    Buffer.toArray(out);
   };
 
   func recordValidatedHighScore(player : Principal, gameId : Text, score : Nat) : Bool {
@@ -5193,10 +5092,6 @@ persistent actor ArcadeBackend {
     leaderboards.delete(gameId);
     gameTopScoreEntries := Array.filter<(Text, [(Principal, Nat, Int)])>(gameTopScoreEntries, func(e) { e.0 != gameId });
     retiredBreakerEntries := Array.filter<(Text, Principal, Text, Nat, Int)>(retiredBreakerEntries, func(b) { b.0 != gameId });
-    for ((pb, pl) in Iter.toArray(playerBests.entries()).vals()) {
-      let kept = Array.filter<(Text, Nat, Int)>(pl, func(e) { e.0 != gameId });
-      if (kept.size() != pl.size()) { if (kept.size() == 0) { playerBests.delete(pb) } else { playerBests.put(pb, kept) } };
-    };
         #ok("Game permanently deleted.");
       };
     };
