@@ -13654,7 +13654,7 @@ async function renderGameAdminList(){
     categoryMap=new Map(catPairs);
     const monMap5=new Map(monEntries5.map(([id,v])=>[id,v]));
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
-    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status==='live'||s.status==='suspended');
+    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
     {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&v.thresholds.length===7).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
     {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}

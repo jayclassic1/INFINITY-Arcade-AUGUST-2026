@@ -2084,38 +2084,11 @@ persistent actor ArcadeBackend {
     };
   };
 
-  // === JACKPOT TIER MODES (session #3) ===
-  // Per game: (lowFixed, highFixed). Percent tiers are stored in basis points (1 = 0.01%);
-  // fixed tiers store a whole ticket amount. Kept in its own stable list so the config record type is unchanged.
-  stable var jackpotTierModeEntries : [(Text, (Bool, Bool))] = [];
-
-  func jackpotTierModes(gameId : Text) : (Bool, Bool) {
-    for (e in jackpotTierModeEntries.vals()) { if (e.0 == gameId) return e.1 };
-    (false, false)
-  };
-
-  func setJackpotTierModes(gameId : Text, lowFixed : Bool, highFixed : Bool) {
-    let others = Array.filter<(Text, (Bool, Bool))>(jackpotTierModeEntries, func(e) { e.0 != gameId });
-    jackpotTierModeEntries := Array.append<(Text, (Bool, Bool))>(others, [(gameId, (lowFixed, highFixed))]);
-  };
-
-  func jackpotTierUncapped(amount : Nat, isFixed : Bool, remainingBacked : Nat) : Nat {
-    if (isFixed) { amount } else { remainingBacked * amount / 10_000 }
-  };
-
-  func ticketJackpotTierAmount(tierLabel : Text, amount : Nat, isFixed : Bool, remainingBacked : Nat) : TicketJackpotTierPayout {
-    {
-      tierLabel = tierLabel;
-      percent = if (isFixed) { 0 } else { amount };
-      uncappedTickets = jackpotTierUncapped(amount, isFixed, remainingBacked);
-    };
-  };
-
   func ticketJackpotTierPayout(tierLabel : Text, percent : Nat, remainingBackedAfterBase : Nat) : TicketJackpotTierPayout {
     {
       tierLabel = tierLabel;
       percent = percent;
-      uncappedTickets = remainingBackedAfterBase * percent / 10_000;
+      uncappedTickets = remainingBackedAfterBase * percent / 100;
     };
   };
 
@@ -2126,7 +2099,7 @@ persistent actor ArcadeBackend {
     );
   };
 
-  func calculateTicketJackpotPayout(gameId : Text, config : GameTicketJackpotConfig, score : Nat, newRecord : Bool, remainingBackedAfterBase : Nat, remainingDailyAfterBase : Nat) : TicketJackpotCalculation {
+  func calculateTicketJackpotPayout(config : GameTicketJackpotConfig, score : Nat, newRecord : Bool, remainingBackedAfterBase : Nat, remainingDailyAfterBase : Nat) : TicketJackpotCalculation {
     if (not config.enabled or remainingBackedAfterBase == 0 or remainingDailyAfterBase == 0) {
       return emptyTicketJackpotCalculation();
     };
@@ -2136,12 +2109,12 @@ persistent actor ArcadeBackend {
     var uncappedTotal : Nat = 0;
 
     if (config.highPayoutPercent > 0 and score >= config.highScoreThreshold) {
-      let tier = ticketJackpotTierAmount("high", config.highPayoutPercent, jackpotTierModes(gameId).1, remainingBackedAfterBase);
+      let tier = ticketJackpotTierPayout("high", config.highPayoutPercent, remainingBackedAfterBase);
       labels.add("high");
       payouts.add(tier);
       uncappedTotal += tier.uncappedTickets;
     } else if (score >= config.lowScoreThreshold and config.lowPayoutPercent > 0) {
-      let tier = ticketJackpotTierAmount("low", config.lowPayoutPercent, jackpotTierModes(gameId).0, remainingBackedAfterBase);
+      let tier = ticketJackpotTierPayout("low", config.lowPayoutPercent, remainingBackedAfterBase);
       labels.add("low");
       payouts.add(tier);
       uncappedTotal += tier.uncappedTickets;
@@ -2247,10 +2220,10 @@ persistent actor ArcadeBackend {
     {
       enabled = legacy.enabled;
       lowScoreThreshold = legacy.scoreThreshold;
-      lowPayoutPercent = JACKPOT_POOL_PERCENT * 100;
+      lowPayoutPercent = JACKPOT_POOL_PERCENT;
       highScoreThreshold = 0;
       highPayoutPercent = 0;
-      newHighScorePayoutPercent = JACKPOT_POOL_PERCENT * 100;
+      newHighScorePayoutPercent = JACKPOT_POOL_PERCENT;
       updatedAt = legacy.updatedAt;
     };
   };
@@ -2322,46 +2295,6 @@ persistent actor ArcadeBackend {
     };
     gameTicketJackpotConfigs.put(gameId, config);
     #ok(gameTicketJackpotConfigView(gameId, config));
-  };
-
-  // Jackpot tiers V2: low/high tiers are either % of pool in basis points (1 = 0.01%) or fixed tickets (1..per-win cap).
-  public shared(msg) func setGameTicketJackpotConfigV2(gameId : Text, enabled : Bool, lowScoreThreshold : Nat, lowAmount : Nat, lowFixed : Bool, highScoreThreshold : Nat, highAmount : Nat, highFixed : Bool, newHighScoreBps : Nat) : async Result.Result<GameTicketJackpotConfigView, Text> {
-    if (not isAdmin(msg.caller)) return #err("Not authorized");
-    hydrateRuntimeStateIfNeeded();
-    if (Text.size(gameId) == 0) return #err("Game id is required");
-    switch (gameSubmissions.get(gameId)) {
-      case null { return #err("Unknown game: " # gameId) };
-      case (?game) {
-        if (game.status != "live" and game.status != "showroom-zip-pending" and game.status != "suspended") {
-          return #err("Game must be pending, live or suspended before ticket jackpot configuration: " # gameId);
-        };
-        if (not isTicketGameSubmission(game)) {
-          return #err("Game is not ticket-backed: " # gameId);
-        };
-      };
-    };
-    if (enabled and lowScoreThreshold == 0) return #err("Low score threshold must be greater than 0 when enabled");
-    if (enabled and lowAmount == 0) return #err("Low tier payout must be greater than 0 when enabled");
-    if (highAmount > 0 and highScoreThreshold <= lowScoreThreshold) return #err("High score threshold must be greater than low score threshold when the high tier pays");
-    if (lowFixed and lowAmount > JACKPOT_MAX_TICKETS_PER_WIN) return #err("Fixed low tier payout cannot exceed the per-win cap");
-    if (highFixed and highAmount > JACKPOT_MAX_TICKETS_PER_WIN) return #err("Fixed high tier payout cannot exceed the per-win cap");
-    if ((not lowFixed and lowAmount > 10_000) or (not highFixed and highAmount > 10_000) or newHighScoreBps > 10_000) return #err("Percent payouts must be between 0% and 100%");
-    let config : GameTicketJackpotConfig = {
-      enabled = enabled;
-      lowScoreThreshold = lowScoreThreshold;
-      lowPayoutPercent = lowAmount;
-      highScoreThreshold = highScoreThreshold;
-      highPayoutPercent = highAmount;
-      newHighScorePayoutPercent = newHighScoreBps;
-      updatedAt = Time.now();
-    };
-    gameTicketJackpotConfigs.put(gameId, config);
-    setJackpotTierModes(gameId, lowFixed, highFixed);
-    #ok(gameTicketJackpotConfigView(gameId, config));
-  };
-
-  public query func getGameTicketJackpotModes(gameId : Text) : async (Bool, Bool) {
-    jackpotTierModes(gameId)
   };
 
   public query func getGameTicketJackpotConfig(gameId : Text) : async ?GameTicketJackpotConfigView {
@@ -2487,7 +2420,7 @@ persistent actor ArcadeBackend {
       case null emptyTicketJackpotCalculation();
       case (?config) {
         if (config.enabled) {
-          calculateTicketJackpotPayout(gameId, config, score, newRecord, remainingBackedAfterBase, remainingDailyAfterBase);
+          calculateTicketJackpotPayout(config, score, newRecord, remainingBackedAfterBase, remainingDailyAfterBase);
         } else {
           emptyTicketJackpotCalculation();
         };
@@ -5004,7 +4937,6 @@ persistent actor ArcadeBackend {
         gamePricing.delete(gameId);
         gamePayoutConfigs.delete(gameId);
         gameTicketJackpotConfigs.delete(gameId);
-    jackpotTierModeEntries := Array.filter<(Text, (Bool, Bool))>(jackpotTierModeEntries, func(e) { e.0 != gameId });
         #ok("Game permanently deleted.");
       };
     };
@@ -5184,12 +5116,12 @@ persistent actor ArcadeBackend {
     let maxPossibleJackpot = switch (if (runtimeStateHydrated) { gameTicketJackpotConfigs.get(gameId) } else { stableGameTicketJackpotConfig(gameId) }) {
       case null 0;
       case (?config) {
-        let modes = jackpotTierModes(gameId);
-        let lowAmt = jackpotTierUncapped(config.lowPayoutPercent, modes.0, backedTicketPool);
-        let highAmt = if (config.highPayoutPercent > 0) { jackpotTierUncapped(config.highPayoutPercent, modes.1, backedTicketPool) } else { 0 };
-        let tierMax = if (highAmt > lowAmt) { highAmt } else { lowAmt };
-        let recordAmt = backedTicketPool * config.newHighScorePayoutPercent / 10_000;
-        capTicketJackpotPayout(tierMax + recordAmt, backedTicketPool, DAILY_TICKET_CAP);
+        let maxPercent = if (config.highPayoutPercent > config.lowPayoutPercent) {
+          config.highPayoutPercent + config.newHighScorePayoutPercent;
+        } else {
+          config.lowPayoutPercent + config.newHighScorePayoutPercent;
+        };
+        capTicketJackpotPayout(backedTicketPool * maxPercent / 100, backedTicketPool, DAILY_TICKET_CAP);
       };
     };
     {

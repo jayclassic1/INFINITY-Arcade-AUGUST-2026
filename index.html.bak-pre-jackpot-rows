@@ -6510,17 +6510,6 @@ function jackpotAmountField(domId,tier,label,stored,isFixed,help,pctOnly){
   return `<div>${base}${sel}</div>`;
 }
 
-function jackpotTierRowHtml(domId,tier,title,threshold,stored,isFixed,bonusOnly,help){
-  const inp="padding:6px 8px;background:#071224;border:1px solid #22c55e;color:#fff;border-radius:6px;font-size:.72rem;width:100%;box-sizing:border-box";
-  const lab="font-size:.58rem;color:#9fb0d6;margin-bottom:3px;text-transform:uppercase;letter-spacing:.8px";
-  const note="font-size:.64rem;color:#64748b;align-self:end;padding-bottom:8px";
-  const shown=isFixed?Number(stored||0):Number(stored||0)/100;
-  const thr=bonusOnly?`<div style='${note}'>On a validated new personal best</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Score threshold</span><input id='jackpot${tier}ScoreThreshold_${domId}' type='number' min='0' step='1' value='${Number(threshold||0)}' style='${inp}'/></label>`;
-  const amt=`<label style='display:flex;flex-direction:column'><span style='${lab}'>Payout</span><input id='jackpot${tier}PayoutPercent_${domId}' type='number' min='0' step='any' value='${shown}' style='${inp}'/></label>`;
-  const mode=bonusOnly?`<div style='${note}'>% of pool (0.01% steps)</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Type</span><select id='jackpot${tier}Mode_${domId}' style='${inp}'><option value='pct' ${isFixed?'':'selected'}>% of pool (0.01% steps)</option><option value='fixed' ${isFixed?'selected':''}>🎟️ Fixed tickets (1-25)</option></select></label>`;
-  return `<div style='padding:8px 10px;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(0,0,0,.18)'><div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px'><b style='font-size:.72rem;color:#d8fbe4'>${title}</b><span style='font-size:.6rem;color:#64748b'>${help}</span></div><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px'>${thr}${amt}${mode}</div></div>`;
-}
-
 function renderTicketJackpotAdmin(gameId,cfg){
   const domId=payoutDomId(gameId);
   const enabled=!!cfg?.enabled;
@@ -6531,13 +6520,15 @@ function renderTicketJackpotAdmin(gameId,cfg){
   const newHighScorePayoutPercent=Number(cfg?.newHighScorePayoutPercent??10);
   return `<div style='padding:10px;border:1px solid rgba(34,197,94,.22);border-radius:10px;background:rgba(34,197,94,.05)' class='ticket-jackpot-config'>
     <div style='display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px'>
-      <div><div style='font-size:.68rem;color:#86efac;letter-spacing:1.2px;text-transform:uppercase'>Ticket Jackpot Tiers</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Configured low/high/new-high jackpot tiers for the backend contract. Current: Low ${jackpotAmountText(lowPayoutPercent,!!cfg?.lowFixed)}, High ${jackpotAmountText(highPayoutPercent,!!cfg?.highFixed)}, New high score ${jackpotAmountText(newHighScorePayoutPercent,false)}. Stacking preview: high replaces low; new-high stacks only after a validated new record; backend pool/daily/per-play caps can reduce the final payout.</div></div>
+      <div><div style='font-size:.68rem;color:#86efac;letter-spacing:1.2px;text-transform:uppercase'>Ticket Jackpot Tiers</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Configured low/high/new-high jackpot tiers for the backend contract. Current configured percentages: Low ${Number(lowPayoutPercent||0)}%, High ${Number(highPayoutPercent||0)}%, New high score ${Number(newHighScorePayoutPercent||0)}%. Stacking preview: high replaces low; new-high stacks only after a validated new record; backend pool/daily/per-play caps can reduce the final payout.</div></div>
       <label style='font-size:.68rem;color:#d8fbe4;display:flex;align-items:center;gap:5px'><input id='jackpotEnabled_${domId}' type='checkbox' ${enabled?'checked':''}/> Enabled</label>
     </div>
-    <div style='display:flex;flex-direction:column;gap:8px'>
-      ${jackpotTierRowHtml(domId,'low','Low tier',lowScoreThreshold,lowPayoutPercent,!!cfg?.lowFixed,false,'Required when enabled')}
-      ${jackpotTierRowHtml(domId,'high','High tier',highScoreThreshold,highPayoutPercent,!!cfg?.highFixed,false,'Optional · threshold above low · payout 0 disables')}
-      ${jackpotTierRowHtml(domId,'newHighScore','New high score bonus',0,newHighScorePayoutPercent,false,true,'Stacks on top of low/high')}
+    <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px'>
+      ${jackpotNumberInput(`jackpotlowScoreThreshold_${domId}`,'Low score threshold',lowScoreThreshold,'Required when enabled')}
+      ${jackpotAmountField(domId,'low','Low tier payout',lowPayoutPercent,!!cfg?.lowFixed,'Required when enabled')}
+      ${jackpotNumberInput(`jackpothighScoreThreshold_${domId}`,'High score threshold',highScoreThreshold,'Optional; required above low if high payout > 0')}
+      ${jackpotAmountField(domId,'high','High tier payout',highPayoutPercent,!!cfg?.highFixed,'0 disables the high tier')}
+      ${jackpotAmountField(domId,'newHighScore','New high score bonus',newHighScorePayoutPercent,false,'Stacks with low/high on a validated new personal best',true)}
     </div>
     <div style='display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap'>
       <button class='btn' onclick='saveGameTicketJackpotConfig("${gameId}")' style='font-size:.68rem;padding:5px 9px;border-color:#22c55e;color:#86efac'>Save Jackpot Tiers</button>
@@ -13654,7 +13645,7 @@ async function renderGameAdminList(){
     categoryMap=new Map(catPairs);
     const monMap5=new Map(monEntries5.map(([id,v])=>[id,v]));
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
-    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status==='live'||s.status==='suspended');
+    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
     {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&v.thresholds.length===7).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
     {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}

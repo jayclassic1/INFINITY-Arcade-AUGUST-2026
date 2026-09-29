@@ -6017,7 +6017,7 @@ function backendIdl({IDL}){
     setGamePayoutConfig:IDL.Func([IDL.Text,IDL.Bool,IDL.Vec(IDL.Nat)],[IDL.Variant({ok:GamePayoutConfigView,err:IDL.Text})],[]),
     getGamePayoutConfig:IDL.Func([IDL.Text],[IDL.Opt(GamePayoutConfigView)],['query']),
     getAllGamePayoutConfigs:IDL.Func([],[IDL.Vec(GamePayoutConfigView)],['query']),
-    setGameTicketJackpotConfigV2:IDL.Func([IDL.Text,IDL.Bool,IDL.Nat,IDL.Nat,IDL.Bool,IDL.Nat,IDL.Nat,IDL.Bool,IDL.Nat],[IDL.Variant({ok:GameTicketJackpotConfigView,err:IDL.Text})],[]),getGameTicketJackpotModes:IDL.Func([IDL.Text],[IDL.Tuple(IDL.Bool,IDL.Bool)],['query']),setGameTicketJackpotConfig:IDL.Func([IDL.Text,IDL.Bool,IDL.Nat,IDL.Nat,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:GameTicketJackpotConfigView,err:IDL.Text})],[]),
+    setGameTicketJackpotConfig:IDL.Func([IDL.Text,IDL.Bool,IDL.Nat,IDL.Nat,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:GameTicketJackpotConfigView,err:IDL.Text})],[]),
     getGameTicketJackpotConfig:IDL.Func([IDL.Text],[IDL.Opt(GameTicketJackpotConfigView)],['query']),
     getAllGameTicketJackpotConfigs:IDL.Func([],[IDL.Vec(GameTicketJackpotConfigView)],['query']),
     getRecentTicketJackpotWins:IDL.Func([IDL.Nat],[IDL.Vec(IDL.Record({player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,jackpotTickets:IDL.Nat,baseTickets:IDL.Nat,timestamp:IDL.Int}))],['query']),
@@ -6485,7 +6485,6 @@ function formatTicketJackpotHistoryRow(win){
   </div>`;
 }
 
-function jackpotAmountText(stored,isFixed){const n=Number(stored||0);return isFixed?(n.toLocaleString()+' tickets'):((n/100).toLocaleString(undefined,{maximumFractionDigits:2})+'% of pool');}
 function renderTicketJackpotStatus(gameId,cfg,opts={}){
   const admin=!!opts.admin;
   const domId=payoutDomId(gameId);
@@ -6495,30 +6494,11 @@ function renderTicketJackpotStatus(gameId,cfg,opts={}){
   if(!cfg.enabled){
     return `<div id='ticketJackpotStatus_${domId}' style='margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(148,163,184,.07);border:1px solid rgba(148,163,184,.18);font-size:.76rem;color:#cbd5e1;line-height:1.45'><b style='color:#e2e8f0'>Ticket jackpot tiers disabled.</b> Scores can still earn normal ladder tickets, but no jackpot tickets are paid for this game.</div>`;
   }
-  return `<div id='ticketJackpotStatus_${domId}' style='margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);font-size:.76rem;color:#d8fbe4;line-height:1.45'><b style='color:#ffffff'>Ticket jackpot tiers configured: low ${Number(cfg.lowScoreThreshold||0).toLocaleString()}+ score (${jackpotAmountText(cfg.lowPayoutPercent,cfg.lowFixed)}), high ${Number(cfg.highScoreThreshold||0).toLocaleString()}+ score (${jackpotAmountText(cfg.highPayoutPercent,cfg.highFixed)}), new high score ${jackpotAmountText(cfg.newHighScorePayoutPercent,false)}.</b> The low score jackpot is score-threshold based. High score jackpot replaces the low jackpot; the new high score bonus can stack only when a validated new record is set. All jackpot payouts are backend capped by pool, daily, and per-play safety, so final tickets may be lower than configured percentages imply.${admin?` <span style='color:#9dd6ff'>Admin source: canister jackpot config for ${escHtml(gameId)}.</span>`:''}</div>`;
+  return `<div id='ticketJackpotStatus_${domId}' style='margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);font-size:.76rem;color:#d8fbe4;line-height:1.45'><b style='color:#ffffff'>Ticket jackpot tiers configured: low ${Number(cfg.lowScoreThreshold||0).toLocaleString()}+ score (${Number(cfg.lowPayoutPercent||0)}%), high ${Number(cfg.highScoreThreshold||0).toLocaleString()}+ score (${Number(cfg.highPayoutPercent||0)}%), new high score ${Number(cfg.newHighScorePayoutPercent||0)}%.</b> The low score jackpot is score-threshold based. High score jackpot replaces the low jackpot; the new high score bonus can stack only when a validated new record is set. All jackpot payouts are backend capped by pool, daily, and per-play safety, so final tickets may be lower than configured percentages imply.${admin?` <span style='color:#9dd6ff'>Admin source: canister jackpot config for ${escHtml(gameId)}.</span>`:''}</div>`;
 }
 
 function jackpotNumberInput(id,label,value,help,min='0'){
   return `<label style='display:flex;flex-direction:column;gap:4px;font-size:.64rem;color:#9fb0d6'>${label}<input id='${id}' type='number' min='${min}' max='1000000000' step='1' value='${Number(value||0)}' style='max-width:220px;padding:5px 7px;background:#071224;border:1px solid #22c55e;color:#fff;border-radius:5px;font-size:.72rem'/><span style='font-size:.58rem;color:#64748b'>${help}</span></label>`;
-}
-
-function jackpotAmountField(domId,tier,label,stored,isFixed,help,pctOnly){
-  const shown=isFixed?Number(stored):Number(stored)/100;
-  const base=jackpotNumberInput(`jackpot${tier}PayoutPercent_${domId}`,pctOnly?label+' (% of pool)':label,shown,help).replace('<input ',"<input step='any' ");
-  if(pctOnly) return base;
-  const sel=`<select id='jackpot${tier}Mode_${domId}' style='margin-top:4px;width:100%;background:#0b1020;color:#d8fbe4;border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:.64rem;padding:3px 4px'><option value='pct' ${isFixed?'':'selected'}>% of pool (0.01% steps)</option><option value='fixed' ${isFixed?'selected':''}>🎟️ Fixed tickets (1-25)</option></select>`;
-  return `<div>${base}${sel}</div>`;
-}
-
-function jackpotTierRowHtml(domId,tier,title,threshold,stored,isFixed,bonusOnly,help){
-  const inp="padding:6px 8px;background:#071224;border:1px solid #22c55e;color:#fff;border-radius:6px;font-size:.72rem;width:100%;box-sizing:border-box";
-  const lab="font-size:.58rem;color:#9fb0d6;margin-bottom:3px;text-transform:uppercase;letter-spacing:.8px";
-  const note="font-size:.64rem;color:#64748b;align-self:end;padding-bottom:8px";
-  const shown=isFixed?Number(stored||0):Number(stored||0)/100;
-  const thr=bonusOnly?`<div style='${note}'>On a validated new personal best</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Score threshold</span><input id='jackpot${tier}ScoreThreshold_${domId}' type='number' min='0' step='1' value='${Number(threshold||0)}' style='${inp}'/></label>`;
-  const amt=`<label style='display:flex;flex-direction:column'><span style='${lab}'>Payout</span><input id='jackpot${tier}PayoutPercent_${domId}' type='number' min='0' step='any' value='${shown}' style='${inp}'/></label>`;
-  const mode=bonusOnly?`<div style='${note}'>% of pool (0.01% steps)</div>`:`<label style='display:flex;flex-direction:column'><span style='${lab}'>Type</span><select id='jackpot${tier}Mode_${domId}' style='${inp}'><option value='pct' ${isFixed?'':'selected'}>% of pool (0.01% steps)</option><option value='fixed' ${isFixed?'selected':''}>🎟️ Fixed tickets (1-25)</option></select></label>`;
-  return `<div style='padding:8px 10px;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(0,0,0,.18)'><div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px'><b style='font-size:.72rem;color:#d8fbe4'>${title}</b><span style='font-size:.6rem;color:#64748b'>${help}</span></div><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px'>${thr}${amt}${mode}</div></div>`;
 }
 
 function renderTicketJackpotAdmin(gameId,cfg){
@@ -6531,13 +6511,15 @@ function renderTicketJackpotAdmin(gameId,cfg){
   const newHighScorePayoutPercent=Number(cfg?.newHighScorePayoutPercent??10);
   return `<div style='padding:10px;border:1px solid rgba(34,197,94,.22);border-radius:10px;background:rgba(34,197,94,.05)' class='ticket-jackpot-config'>
     <div style='display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px'>
-      <div><div style='font-size:.68rem;color:#86efac;letter-spacing:1.2px;text-transform:uppercase'>Ticket Jackpot Tiers</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Configured low/high/new-high jackpot tiers for the backend contract. Current: Low ${jackpotAmountText(lowPayoutPercent,!!cfg?.lowFixed)}, High ${jackpotAmountText(highPayoutPercent,!!cfg?.highFixed)}, New high score ${jackpotAmountText(newHighScorePayoutPercent,false)}. Stacking preview: high replaces low; new-high stacks only after a validated new record; backend pool/daily/per-play caps can reduce the final payout.</div></div>
+      <div><div style='font-size:.68rem;color:#86efac;letter-spacing:1.2px;text-transform:uppercase'>Ticket Jackpot Tiers</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Configured low/high/new-high jackpot tiers for the backend contract. Current configured percentages: Low ${Number(lowPayoutPercent||0)}%, High ${Number(highPayoutPercent||0)}%, New high score ${Number(newHighScorePayoutPercent||0)}%. Stacking preview: high replaces low; new-high stacks only after a validated new record; backend pool/daily/per-play caps can reduce the final payout.</div></div>
       <label style='font-size:.68rem;color:#d8fbe4;display:flex;align-items:center;gap:5px'><input id='jackpotEnabled_${domId}' type='checkbox' ${enabled?'checked':''}/> Enabled</label>
     </div>
-    <div style='display:flex;flex-direction:column;gap:8px'>
-      ${jackpotTierRowHtml(domId,'low','Low tier',lowScoreThreshold,lowPayoutPercent,!!cfg?.lowFixed,false,'Required when enabled')}
-      ${jackpotTierRowHtml(domId,'high','High tier',highScoreThreshold,highPayoutPercent,!!cfg?.highFixed,false,'Optional · threshold above low · payout 0 disables')}
-      ${jackpotTierRowHtml(domId,'newHighScore','New high score bonus',0,newHighScorePayoutPercent,false,true,'Stacks on top of low/high')}
+    <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px'>
+      ${jackpotNumberInput(`jackpotlowScoreThreshold_${domId}`,'Low score threshold',lowScoreThreshold,'Required when enabled')}
+      ${jackpotNumberInput(`jackpotlowPayoutPercent_${domId}`,'Low payout %',lowPayoutPercent,'0..100; required when enabled')}
+      ${jackpotNumberInput(`jackpothighScoreThreshold_${domId}`,'High score threshold',highScoreThreshold,'Optional; required above low if high payout > 0')}
+      ${jackpotNumberInput(`jackpothighPayoutPercent_${domId}`,'High payout %',highPayoutPercent,'0..100; 0 disables high tier')}
+      ${jackpotNumberInput(`jackpotnewHighScorePayoutPercent_${domId}`,'New high score payout %',newHighScorePayoutPercent,'0..100; stacks with low/high only on a validated new high score')}
     </div>
     <div style='display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap'>
       <button class='btn' onclick='saveGameTicketJackpotConfig("${gameId}")' style='font-size:.68rem;padding:5px 9px;border-color:#22c55e;color:#86efac'>Save Jackpot Tiers</button>
@@ -6551,7 +6533,6 @@ async function hydrateTicketJackpotAdmin(gameId){
   const mount=document.getElementById('jackpotAdmin_'+domId);
   if(!mount) return;
   const cfg=await loadGameTicketJackpotConfig(gameId);
-  if(cfg){try{const be=await getBackendActor(false);if(be.getGameTicketJackpotModes){const m=await be.getGameTicketJackpotModes(gameId);cfg.lowFixed=!!m[0];cfg.highFixed=!!m[1];}}catch(e){console.warn('Jackpot modes fetch failed:',e);}}
   mount.innerHTML=renderTicketJackpotAdmin(gameId,cfg);
 }
 
@@ -6566,43 +6547,31 @@ async function saveGameTicketJackpotConfig(gameId){
   if(!isAdmin()) return;
   const domId=payoutDomId(gameId);
   const status=document.getElementById('jackpotConfigStatus_'+domId);
-  const fail=m=>{if(status)status.innerHTML='<span style="color:#ef4444">'+escHtml(String(m))+'</span>';};
   const enabled=!!document.getElementById('jackpotEnabled_'+domId)?.checked;
-  const modeOf=t=>document.getElementById('jackpot'+t+'Mode_'+domId)?.value==='fixed';
-  const lowFixed=modeOf('low'), highFixed=modeOf('high');
-  const readAmt=(name,fixed,label)=>{
-    const raw=String(document.getElementById('jackpot'+name+'_'+domId)?.value??'').trim();
-    const v=Number(raw===''?'0':raw);
-    if(!Number.isFinite(v)||v<0) throw new Error(label+' must be a number >= 0');
-    if(fixed){ if(Math.floor(v)!==v) throw new Error(label+' must be a whole number of tickets'); if(v>25) throw new Error(label+' can be at most 25 tickets (the per-win cap)'); return v; }
-    const bps=Math.round(v*100);
-    if(Math.abs(bps-v*100)>1e-6) throw new Error(label+' allows at most 2 decimal places (0.01% steps)');
-    if(bps>10000) throw new Error(label+' must be at most 100%');
-    return bps;
-  };
-  let lowScoreThreshold,lowAmt,highScoreThreshold,highAmt,newHighBps;
+  let lowScoreThreshold,lowPayoutPercent,highScoreThreshold,highPayoutPercent,newHighScorePayoutPercent;
   try{
     lowScoreThreshold=readJackpotNat(domId,'lowScoreThreshold');
+    lowPayoutPercent=readJackpotNat(domId,'lowPayoutPercent');
     highScoreThreshold=readJackpotNat(domId,'highScoreThreshold');
-    lowAmt=readAmt('lowPayoutPercent',lowFixed,'Low tier payout');
-    highAmt=readAmt('highPayoutPercent',highFixed,'High tier payout');
-    newHighBps=readAmt('newHighScorePayoutPercent',false,'New high score bonus');
-  }catch(e){return fail(e.message);}
-  if(enabled&&lowScoreThreshold<=0) return fail('Enabled low score threshold must be greater than 0.');
-  if(enabled&&lowAmt<=0) return fail('Enabled low tier payout must be greater than 0.');
-  if(highAmt>0&&highScoreThreshold<=lowScoreThreshold) return fail('High threshold must be greater than low threshold when the high tier pays.');
+    highPayoutPercent=readJackpotNat(domId,'highPayoutPercent');
+    newHighScorePayoutPercent=readJackpotNat(domId,'newHighScorePayoutPercent');
+  }catch(e){if(status)status.innerHTML='<span style="color:#ef4444">'+escHtml(e.message)+'</span>';return;}
+  if(enabled&&lowScoreThreshold<=0){if(status)status.innerHTML='<span style="color:#ef4444">Enabled low score threshold must be greater than 0.</span>';return;}
+  if(enabled&&lowPayoutPercent<=0){if(status)status.innerHTML='<span style="color:#ef4444">Enabled low payout percent must be greater than 0.</span>';return;}
+  if(highPayoutPercent>0&&highScoreThreshold<=lowScoreThreshold){if(status)status.innerHTML='<span style="color:#ef4444">High threshold must be greater than low threshold when high payout is enabled.</span>';return;}
+  if([lowPayoutPercent,highPayoutPercent,newHighScorePayoutPercent].some(v=>v>100)){if(status)status.innerHTML='<span style="color:#ef4444">Payout percents must be in the 0..100 range.</span>';return;}
   if(status) status.innerHTML='<span style="color:#9dd6ff">Saving...</span>';
   try{
     const be=await getBackendActor(true);
-    const res=await be.setGameTicketJackpotConfigV2(gameId,enabled,BigInt(lowScoreThreshold),BigInt(lowAmt),lowFixed,BigInt(highScoreThreshold),BigInt(highAmt),highFixed,BigInt(newHighBps));
-    if(res.err) return fail(safeUserErrorMessage(res.err,'ticket jackpot config'));
-    const cfg=normalizeGameTicketJackpotConfig(res.ok); if(cfg){cfg.lowFixed=lowFixed;cfg.highFixed=highFixed;}
+    const res=await be.setGameTicketJackpotConfig(gameId,enabled,BigInt(lowScoreThreshold),BigInt(lowPayoutPercent),BigInt(highScoreThreshold),BigInt(highPayoutPercent),BigInt(newHighScorePayoutPercent));
+    if(res.err){if(status)status.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(res.err,'ticket jackpot config'))+'</span>';return;}
+    const cfg=normalizeGameTicketJackpotConfig(res.ok);
     if(status) status.innerHTML='<span style="color:#22c55e">Saved jackpot tiers.</span>';
     const publicStatus=document.getElementById('ticketJackpotStatus_'+domId);
     if(publicStatus) publicStatus.outerHTML=renderTicketJackpotStatus(gameId,cfg,{admin:true});
   }catch(e){
     console.error('Ticket jackpot config save failed:',e);
-    fail('Save failed. Check admin wallet and try again.');
+    if(status) status.innerHTML='<span style="color:#ef4444">Save failed. Check admin wallet and try again.</span>';
   }
 }
 
@@ -13654,7 +13623,7 @@ async function renderGameAdminList(){
     categoryMap=new Map(catPairs);
     const monMap5=new Map(monEntries5.map(([id,v])=>[id,v]));
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
-    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status==='live'||s.status==='suspended');
+    subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status!=='removed');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
     {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&v.thresholds.length===7).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
     {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
