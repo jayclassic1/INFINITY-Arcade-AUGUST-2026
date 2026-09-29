@@ -5746,10 +5746,8 @@ persistent actor ArcadeBackend {
           if (balance < cost) {
             return #err("Not enough tickets. Need " # Nat.toText(cost) # " but have " # Nat.toText(balance));
           };
-          // Reserve BEFORE the await (session #3 fix): debit tickets and lock the listing so a concurrent
-          // redeem can't reuse a stale balance or grab the same listing; refunded/unlocked if the transfer fails.
-          tickets.put(caller, balance - cost);
-          nftListings.put(listingId, { listing with status = "redeeming" });
+          // Transfer the real ICRC-7 token from the Arcade's own custody to the buyer FIRST;
+          // only deduct tickets once that succeeds (fail-safe ordering, matching the escrow path below).
           let mintTransferOk : Result.Result<Text, Text> = try {
             let r = await nftCanister().icrc7_transfer({
               to = { owner = caller; subaccount = null };
@@ -5763,12 +5761,9 @@ persistent actor ArcadeBackend {
             switch (r) { case (#Ok(_)) { #ok("ok") }; case (#Err(_)) { #err("ICRC-7 transfer failed") }; };
           } catch (e) { #err("ICRC-7 call failed: " # Error.message(e)) };
           switch (mintTransferOk) {
-            case (#err(errMsg)) {
-              tickets.put(caller, getTicketBalance(caller) + cost);
-              nftListings.put(listingId, { listing with status = "live" });
-              return #err(errMsg);
-            };
+            case (#err(errMsg)) { return #err(errMsg) };
             case (#ok(_)) {
+              tickets.put(caller, balance - cost);
               let updList : NftListing = { id = listing.id; listingType = listing.listingType; name = listing.name; description = listing.description; rarity = listing.rarity; ticketCost = listing.ticketCost; imageUrl = listing.imageUrl; creator = listing.creator; tier = listing.tier; status = "sold"; feePaid = listing.feePaid; showroomFeePaid = listing.showroomFeePaid; txId = listing.txId; createdAt = listing.createdAt; sourceCanisterId = listing.sourceCanisterId; sourceTokenId = listing.sourceTokenId; sourceTokenKey = listing.sourceTokenKey; collectionName = listing.collectionName; };
               nftListings.put(listingId, updList);
               logRevenue("official-nft-redeem", ticketCostToSellerPayoutE8s(cost), caller, 7);
@@ -5791,10 +5786,7 @@ persistent actor ArcadeBackend {
               return #err("Not enough tickets. Need " # Nat.toText(cost) # " but have " # Nat.toText(balance));
             };
 
-            // Reserve BEFORE the await (session #3 fix): debit tickets, lock escrow + listing; undone on failure.
-            tickets.put(caller, balance - cost);
-            escrows.put(listingId, { escrow with status = "redeeming" });
-            nftListings.put(listingId, { listing with status = "redeeming" });
+            // Attempt transfer based on standard
             // Transfer NFT based on standard
             let transferOk : Result.Result<Text, Text> = if (escrow.standard == "dip721") {
               try {
@@ -5820,7 +5812,8 @@ persistent actor ArcadeBackend {
             switch (transferOk) {
               case (#ok(_)) {
                 let sellerPayoutE8s = ticketCostToSellerPayoutE8s(cost);
-                // Buyer tickets were already debited before the transfer; credit seller only after success.
+                // Burn buyer Tickets and credit seller claimable ICP only after NFT transfer success.
+                tickets.put(caller, balance - cost);
                 ignore creditNftSellerEarnings(listing.creator, sellerPayoutE8s);
                 // Update escrow
                 let updEsc : EscrowedNft = { listingId = escrow.listingId; canisterId = escrow.canisterId; tokenId = escrow.tokenId; standard = escrow.standard; depositor = escrow.depositor; depositedAt = escrow.depositedAt; status = "redeemed"; redeemedBy = ?caller; redeemedAt = ?Time.now(); };
@@ -5835,12 +5828,7 @@ persistent actor ArcadeBackend {
                 addMxp(listing.creator, 12);
                 #ok("🎉 NFT redeemed! " # listing.name # " transferred to your wallet. Seller credited " # Nat.toText(sellerPayoutE8s) # " e8s claimable ICP.");
               };
-              case (#err(errMsg)) {
-                tickets.put(caller, getTicketBalance(caller) + cost);
-                escrows.put(listingId, { escrow with status = "held" });
-                nftListings.put(listingId, { listing with status = "live" });
-                #err(errMsg);
-              };
+              case (#err(errMsg)) { #err(errMsg) };
             };
           };
         };

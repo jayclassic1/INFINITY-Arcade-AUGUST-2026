@@ -15827,7 +15827,6 @@ async function showUserNftDetail(id){
      })();}
    }}
   const btn=document.getElementById('nftDetailRedeem');
-  btn.disabled=false; // reset: a successful redeem leaves the shared popup button disabled
 
   // Detect if this is an official collection NFT (minted by arcade, not escrowed)
   const isOfficialCollection=s.listingType==='mint'&&s.collection&&s.collection.trim().length>0;
