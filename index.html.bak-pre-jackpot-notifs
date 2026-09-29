@@ -3575,7 +3575,6 @@ async function checkJackpotNotifications(){
       const type=n[0];
       const amount=Number(n[1]);
       let msg='';
-      if(typeof type==='string'&&type.startsWith('ticket:')){const gid=type.slice(7);let gname='a Ticket game';try{if(typeof getSubmissions==='function'){const g=(getSubmissions()||[]).find(x=>x.id===gid);if(g&&g.name)gname=g.name;}}catch(_){}showJackpotPopup('🎉 JACKPOT! You won '+amount.toLocaleString()+' bonus Tickets on '+gname+'!','ticket');continue;}
       if(type==='token') msg='You won '+amount.toLocaleString()+' Tokens in the DAO Jackpot!';
       else if(type==='ticket') msg='You won '+amount.toLocaleString()+' Tickets in the DAO Jackpot!';
       else if(type==='boost') msg='You won a Spotlight Boost in the DAO Jackpot! Use it to feature your game for 7 days.';

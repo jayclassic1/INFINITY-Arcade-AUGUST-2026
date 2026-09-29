@@ -3778,45 +3778,6 @@ persistent actor ArcadeBackend {
     }
   };
 
-  // === JACKPOT NOTIFICATIONS (session #3) ===
-  // Built on the existing ticketJackpotWins records: each player has a "last seen" time; wins newer than
-  // it are announced once via claimJackpotNotifications, which then advances it. Returns
-  // ("ticket:<gameId>", bonusTickets, timestamp) per unseen win, matching the frontend's existing IDL.
-  stable var jackpotSeenEntries : [(Principal, Int)] = [];
-
-  func jackpotLastSeen(p : Principal) : Int {
-    for (e in jackpotSeenEntries.vals()) { if (Principal.equal(e.0, p)) return e.1 };
-    0
-  };
-
-  public query func hasJackpotNotifications(p : Principal) : async Bool {
-    let seen = jackpotLastSeen(p);
-    for (w in ticketJackpotWins.vals()) {
-      if (Principal.equal(w.player, p) and w.jackpotTickets > 0 and w.timestamp > seen) return true;
-    };
-    false
-  };
-
-  public shared(msg) func claimJackpotNotifications() : async [(Text, Nat, Int)] {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return [];
-    hydrateRuntimeStateIfNeeded();
-    let seen = jackpotLastSeen(caller);
-    let out = Buffer.Buffer<(Text, Nat, Int)>(4);
-    var latest : Int = seen;
-    for (w in ticketJackpotWins.vals()) {
-      if (Principal.equal(w.player, caller) and w.jackpotTickets > 0 and w.timestamp > seen) {
-        out.add(("ticket:" # w.gameId, w.jackpotTickets, w.timestamp));
-        if (w.timestamp > latest) latest := w.timestamp;
-      };
-    };
-    if (latest > seen) {
-      let others = Array.filter<(Principal, Int)>(jackpotSeenEntries, func(e) { not Principal.equal(e.0, caller) });
-      jackpotSeenEntries := Array.append<(Principal, Int)>(others, [(caller, latest)]);
-    };
-    Buffer.toArray(out)
-  };
-
   // === LOCAL MULTIPLAYER (creator-designated, session #3) ===
   // Set from the submission form and the Details editor; decides the Local Multiplayer home row.
   stable var localMultiplayerGameIds : [Text] = [];
