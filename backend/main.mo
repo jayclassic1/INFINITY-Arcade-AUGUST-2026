@@ -6649,7 +6649,7 @@ persistent actor ArcadeBackend {
   public shared(msg) func voteHoleSubmission(id : Text, isLike : Bool) : async Result.Result<Text, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Connect wallet to vote");
-    if (votingPowerOf(caller) == 0) return #err("Only Voting Power holders can vote on Blackhole submissions");
+    if (votingPowerOf(caller) == 0 and not isAdmin(caller)) return #err("Only Voting Power holders can vote on Blackhole submissions");
     switch (findHoleSubmission(id)) {
       case null { return #err("Submission not found") };
       case (?s) { if (s.status != "active") return #err("Submission not found") };
@@ -6942,9 +6942,39 @@ persistent actor ArcadeBackend {
   };
 
   func votingPowerOf(owner : Principal) : Nat {
-    var total : Nat = 0;
-    for (badge in getBadgesForOwner(owner).vals()) { total += badge.votingPower };
-    total;
+    // Session #3 rules: admin holds no VP; 1 VP per VP Badge; Dev and Artist contributor badges add 1 each
+    // (each type counted once, ignoring the old stored weight of 5 and any duplicates).
+    if (isAdmin(owner)) return 0;
+    var vp : Nat = 0;
+    var dev = false;
+    var artist = false;
+    for (badge in getBadgesForOwner(owner).vals()) {
+      if (Text.startsWith(badge.badgeType, #text "vp-badge-")) { vp += 1 }
+      else if (badge.badgeType == "dev-contributor") { dev := true }
+      else if (badge.badgeType == "artist-contributor") { artist := true };
+    };
+    vp + (if (dev) 1 else 0) + (if (artist) 1 else 0);
+  };
+
+  // DAO forum access by section. Base DAO sections need any VP; tiers count VP Badges only (5 / 7 / 10);
+  // contributor sections need that contributor badge. Admin can access every section.
+  func daoSectionAllowed(p : Principal, section : Text) : Bool {
+    if (not isDaoSection(section)) return true;
+    if (isAdmin(p)) return true;
+    if (votingPowerOf(p) == 0) return false;
+    let n = vpBadgeCountOf(p);
+    if (section == "dao-voting" or section == "dao-treasury") return n >= 5;
+    if (section == "dao-player-portal") return n >= 7;
+    if (section == "dao-core") return n >= 10;
+    if (section == "dao-game-developers") {
+      for (b in getBadgesForOwner(p).vals()) { if (b.badgeType == "dev-contributor") return true };
+      return false;
+    };
+    if (section == "dao-artists") {
+      for (b in getBadgesForOwner(p).vals()) { if (b.badgeType == "artist-contributor") return true };
+      return false;
+    };
+    true
   };
 
   // Raw count of VP Badges held, distinct from votingPowerOf's weighted total (currently 5 per
@@ -7021,7 +7051,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared query (msg) func getForumThreads(section : Text) : async [ForumThread] {
-    if (isDaoSection(section) and not hasDaoAccess(msg.caller)) return [];
+    if (not daoSectionAllowed(msg.caller, section)) return [];
     ensureForumIndexBuilt();
     switch (threadIdsBySection.get(section)) {
       case null { [] };
@@ -7046,7 +7076,7 @@ persistent actor ArcadeBackend {
     switch (validateForumText(authorName, "Author", FORUM_AUTHOR_MAX_CHARS, false)) { case (#err(e)) return #err(e); case (#ok(())) {} };
     let normalizedImage = switch (validateForumImage(msg.caller, image)) { case (#ok(v)) v; case (#err(e)) return #err(e) };
     if (Text.size(Text.trim(body, #char ' ')) == 0 and Option.isNull(normalizedImage)) return #err("Body required for text-first forum posting");
-    if (isDaoSection(section) and not hasDaoAccess(msg.caller)) return #err("Voting Power Badge required for DAO forum posting");
+    if (not daoSectionAllowed(msg.caller, section)) return #err("You don't have access to post in this DAO section");
     // One new thread per rolling 24h per player, counted separately for the forums and the DAO (admins exempt).
     // Deleted threads still count, so delete-and-repost can't bypass it. No new storage: scans existing threads.
     if (not isAdmin(msg.caller)) {
@@ -7098,7 +7128,7 @@ persistent actor ArcadeBackend {
     forumThreadEntries := Array.map<ForumThread, ForumThread>(forumThreadEntries, func(thread) {
       if (thread.id != threadId or thread.deleted) return thread;
       found := true;
-      if (isDaoSection(thread.section) and not hasDaoAccess(msg.caller)) {
+      if (not daoSectionAllowed(msg.caller, thread.section)) {
         rejected := ?"Voting Power Badge required for DAO replies";
         return thread;
       };
@@ -7242,8 +7272,10 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func awardDevContributorBadge(owner : Principal, gameId : Text) : async Result.Result<Text, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (isAdmin(owner)) return #err("Admin accounts don't hold badges");
+    for (b in getBadgesForOwner(owner).vals()) { if (b.badgeType == "dev-contributor") return #err("This account already has a Dev Contributor badge") };
     gamerBadgeCounter += 1;
-    let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "dev-contributor"; owner = owner; gameId = ?gameId; votingPower = 5; soulbound = true; createdAt = Time.now() };
+    let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "dev-contributor"; owner = owner; gameId = ?gameId; votingPower = 1; soulbound = true; createdAt = Time.now() };
     gamerBadgeEntries := Array.append<GamerBadge>(gamerBadgeEntries, [badge]);
     ensureBadgeIndexBuilt();
     addBadgeToIndex(badge);
@@ -7252,8 +7284,10 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func awardArtistContributorBadge(owner : Principal) : async Result.Result<Text, Text> {
     if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (isAdmin(owner)) return #err("Admin accounts don't hold badges");
+    for (b in getBadgesForOwner(owner).vals()) { if (b.badgeType == "artist-contributor") return #err("This account already has an Artist Contributor badge") };
     gamerBadgeCounter += 1;
-    let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "artist-contributor"; owner = owner; gameId = null; votingPower = 5; soulbound = true; createdAt = Time.now() };
+    let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "artist-contributor"; owner = owner; gameId = null; votingPower = 1; soulbound = true; createdAt = Time.now() };
     gamerBadgeEntries := Array.append<GamerBadge>(gamerBadgeEntries, [badge]);
     ensureBadgeIndexBuilt();
     addBadgeToIndex(badge);
@@ -7272,6 +7306,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func buyStandardBadge() : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to buy a badge");
+    if (isAdmin(msg.caller)) return #err("Admin accounts don't hold Voting Power Badges");
     let owned = vpBadgeCountOf(msg.caller);
     if (owned >= 10) return #err("All 10 Voting Power Badges already owned");
     let cost = VP_BADGE_COSTS[owned];
@@ -7284,20 +7319,6 @@ persistent actor ArcadeBackend {
     ensureBadgeIndexBuilt();
     addBadgeToIndex(badge);
     #ok(badge.id)
-  };
-
-  public shared(msg) func adminGrantAllVpBadges() : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Not authorized");
-    var i = vpBadgeCountOf(msg.caller);
-    while (i < 10) {
-      gamerBadgeCounter += 1;
-      let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "vp-badge-" # Nat.toText(i + 1); owner = msg.caller; gameId = null; votingPower = 1; soulbound = true; createdAt = Time.now() };
-      gamerBadgeEntries := Array.append<GamerBadge>(gamerBadgeEntries, [badge]);
-      ensureBadgeIndexBuilt();
-      addBadgeToIndex(badge);
-      i += 1;
-    };
-    #ok("All 10 Voting Power Badges granted")
   };
 
   public shared(msg) func adminResetVpBadges() : async Result.Result<Text, Text> {
@@ -7356,8 +7377,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func createProposal(title : Text, body : Text, category : Text, duration : Text, images : [Text], paymentLane : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to create a proposal");
-    let vp = votingPowerOf(msg.caller);
-    if (vp < 3 and not isAdmin(msg.caller)) return #err("3 Voting Power required to create proposals");
+    if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
     if (not isAdmin(msg.caller)) {
@@ -7416,7 +7436,7 @@ persistent actor ArcadeBackend {
           return proposal;
         };
       };
-      let effectiveWeight = if (isAdmin(msg.caller) and weight == 0) 1 else weight;
+      let effectiveWeight = if (isAdmin(msg.caller)) 0 else weight; // admin votes are recorded and visible but carry zero weight
       let newVote : ProposalVote = { voter = msg.caller; vote = vote; weight = effectiveWeight; timestamp = Time.now() };
       {
         id = proposal.id;
@@ -7439,7 +7459,7 @@ persistent actor ArcadeBackend {
     });
     switch (rejected) { case (?reason) { return #err(reason) }; case null {} };
     if (not found) return #err("Proposal not found");
-    addDxp(msg.caller, badgeCountOf(msg.caller));
+    if (weight > 0) { addDxp(msg.caller, weight) };
     #ok("Vote recorded")
   };
 
