@@ -3750,6 +3750,18 @@ window.adminLotterySaveSpeed=async function(){
 window.adminLotteryRunNow=async function(){ _lotMsg('Running…'); try{ const r=await (await getBackendActor(true)).adminRunLottery(); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); } renderLotteryPanel(); };
 window.adminLotteryDraw=async function(kind){ _lotMsg('Drawing…'); try{ const r=await (await getBackendActor(true)).adminLotteryDrawNow(kind); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); } renderLotteryPanel(); };
 async function checkJackpotNotifications(){
+  // Mute notice: shown once per mute (remembers the mute's end time)
+  try{
+    const beM=await getBackendActor();
+    if(S.principalText&&typeof beM.getMuteStatus==='function'){
+      const until=Number(await beM.getMuteStatus(Principal.fromText(S.principalText)))/1e6;
+      const key='muteSeen:'+S.principalText;
+      if(until>Date.now()&&localStorage.getItem(key)!==String(until)){
+        localStorage.setItem(key,String(until));
+        showJackpotPopup({title:'🔇 MUTED FROM POSTING',body:'You\'re muted from posting until '+new Date(until).toLocaleString()+'.',detail:'You can still play games and use everything else. You just can\'t post in the forums, the DAO, or any comment or reply section.',cta:'Click anywhere to continue'},'ticket');
+      }
+    }
+  }catch(_){}
   // DAO lottery wins: cheap query first, then claim (each win is announced once)
   try{
     const beQ=await getBackendActor();
@@ -6272,7 +6284,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -14351,6 +14363,8 @@ const PROPOSAL_TYPES=[
   {id:'ban-user',name:'Ban User',desc:'Ask the Dev Team to ban a toxic user. Advisory: the Dev Team reviews and decides.',who:'2+ VP Badges',cost:'5 Tokens',target:'user'},
   {id:'dao-favourite',name:'Add to DAO Favourites',desc:'Binding: if it passes (5+ voters, majority), the Showroom game is added to DAO Favourites after a 24h timelock, unless the Dev Team vetoes.',who:'2+ VP Badges',cost:'5 Tokens',target:'showroom'},
   {id:'dao-favourite-remove',name:'Remove from DAO Favourites',desc:'Binding: if it passes (5+ voters, majority), the game is removed from DAO Favourites after a 24h timelock, unless the Dev Team vetoes.',who:'2+ VP Badges',cost:'5 Tokens',target:'showroom'},
+  {id:'mute-user',name:'Mute User',desc:'Binding: if it passes (5+ voters, majority), the user can\'t post in the forums, DAO or comment sections for 7 days, after a 24h timelock, unless the Dev Team vetoes. They can still play games.',who:'2+ VP Badges',cost:'5 Tokens',target:'user'},
+  {id:'content-removal',name:'Content Removal',desc:'Binding: if it passes (5+ voters, majority), the Blackhole entry is hidden after a 24h timelock, unless the Dev Team vetoes. Blacklisting the uploader stays a Dev Team decision.',who:'2+ VP Badges',cost:'5 Tokens',target:'hole'},
   {id:'bug-report',name:'Glitch / Bug Report',desc:'Bring serious attention to a problem that needs fixing.',who:'Any DAO member',cost:'Free'},
   {id:'contest',name:'Contest',desc:'Dev Team contest: the community picks one of up to 4 options.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
   {id:'community-choice',name:'Community Choice',desc:'The Dev Team asks the community to choose, e.g. an aesthetic upgrade.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
@@ -14401,9 +14415,9 @@ function _proposalTargetHtml(p){
   const t=String(p.target||''); if(!t) return '';
   const box=(icon,label,val)=>`<div style="margin-bottom:12px;padding:8px 12px;border-radius:10px;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.3);font-size:.78rem;color:#cbd5e1">${icon} ${label}: ${val}</div>`;
   if(t.startsWith('game:')){ const gid=t.slice(5); const g=((typeof getSubmissions==='function'?getSubmissions():[])||[]).find(x=>x&&x.id===gid); return box('🎮','Recommended game',`<b style="color:#22d3ee">${escHtml(g&&g.name?g.name:gid)}</b>`); }
-  if(t.startsWith('hole:')) return box('🕳️','Recommended Blackhole entry',`<b style="color:#22d3ee">${escHtml(t.slice(5))}</b>`);
+  if(t.startsWith('hole:')) return box('🕳️',p.kind==='content-removal'?'Blackhole entry to remove':'Recommended Blackhole entry',`<b style="color:#22d3ee">${escHtml(t.slice(5))}</b>`);
   const nm=_proposalAuthorNames[t]||(t.slice(0,10)+'…');
-  return box('👤','User',`<span onclick="closeProposalPopup();viewPublicProfile('${escHtml(t)}')" style="cursor:pointer;color:#22d3ee;font-weight:800">${escHtml(nm)}</span>`);
+  return box('👤',p.kind==='mute-user'?'User to mute':p.kind==='ban-user'?'User to ban':'User',`<span onclick="closeProposalPopup();viewPublicProfile('${escHtml(t)}')" style="cursor:pointer;color:#22d3ee;font-weight:800">${escHtml(nm)}</span>`);
 }
 async function submitProposalReplyPopup(id){
   const el=document.getElementById('popupProposalReply');
@@ -14494,10 +14508,20 @@ async function updateProposalTypeFields(){
   if(payIn&&payIn.parentElement){ const box=payIn.parentElement, lbl=box.previousElementSibling, show=kind!=='bug-report'; box.style.display=show?'':'none'; if(lbl) lbl.style.display=show?'':'none'; }
   const ch=document.getElementById('propChoicesBox'); if(ch) ch.style.display=(t.mode==='multi'||t.mode==='opt')?'block':'none';
   const chLbl=document.getElementById('propChoicesLabel'); if(chLbl) chLbl.textContent=t.mode==='multi'?'CHOICES (2 to 4)':'CHOICES (optional: leave empty for For/Against, or add 2 to 4)';
-  const g=document.getElementById('propTargetGameBox'); if(g) g.style.display=(t.target==='game'||t.target==='showroom')?'block':'none';
-  const gl=document.querySelector('#propTargetGameBox > div'); if(gl) gl.textContent=t.target==='showroom'?'SHOWROOM GAME':'GAME TO RECOMMEND';
+  const g=document.getElementById('propTargetGameBox'); if(g) g.style.display=(t.target==='game'||t.target==='showroom'||t.target==='hole')?'block':'none';
+  const gl=document.querySelector('#propTargetGameBox > div'); if(gl) gl.textContent=t.target==='showroom'?'SHOWROOM GAME':t.target==='hole'?'BLACKHOLE ENTRY':'GAME TO RECOMMEND';
   /*load-games-for-picker*/ if((t.target==='game'||t.target==='showroom')&&typeof getSubmissions==='function'&&!(getSubmissions()||[]).length&&typeof refreshGameCache==='function'){ try{ await refreshGameCache(); }catch(_){} }
   const u=document.getElementById('propTargetUserBox'); if(u) u.style.display=t.target==='user'?'block':'none';
+  const un=document.querySelector('#propTargetUserBox > div:last-child'); if(un) un.textContent=kind==='mute-user'?'Binding: if it passes, this user can\'t post for 7 days.':'Advisory: the Dev Team reviews and decides.';
+  if(t.target==='hole'){
+    const sel=document.getElementById('propTargetGame');
+    if(sel&&sel.dataset.loaded!=='hole'){
+      sel.dataset.loaded='hole';
+      let holes=[]; try{ holes=await (await getBackendActor()).getHoleSubmissions('new'); }catch(_){}
+      holes=(holes||[]).filter(h=>h&&h.status==='active');
+      sel.innerHTML=(holes.length?'<option value="">Choose a Blackhole entry…</option>':'<option value="">No active Blackhole entries</option>')+holes.map(h=>`<option value="hole:${escHtml(h.id)}">🕳️ ${escHtml(h.title||h.id)}</option>`).join('');
+    }
+  }
   if(t.target==='showroom'){
     const sel=document.getElementById('propTargetGame');
     if(sel&&sel.dataset.loaded!==kind){
@@ -14526,21 +14550,21 @@ function collectProposalTypeFields(kind){
   if(t.mode==='multi'&&choices.length<2){ arcadeAlert('Choices Needed','Add at least 2 choices (up to 4).'); return null; }
   if(t.mode==='opt'&&choices.length===1){ arcadeAlert('Choices','Add a second choice, or leave all choices empty for a For/Against vote.'); return null; }
   let target='';
-  if(t.target==='game'||t.target==='showroom'){ target=document.getElementById('propTargetGame')?.value||''; if(!target){ arcadeAlert('Pick a Game','Choose a game for this proposal.'); return null; } }
+  if(t.target==='game'||t.target==='showroom'||t.target==='hole'){ target=document.getElementById('propTargetGame')?.value||''; if(!target){ arcadeAlert('Pick a Game','Choose a game for this proposal.'); return null; } }
   if(t.target==='user'){ target=(document.getElementById('propTargetUser')?.value||'').trim(); try{ Principal.fromText(target); }catch(_){ arcadeAlert('Invalid User ID','Paste the user\'s principal ID (shown on their profile).'); return null; } }
   return {choices:(t.mode==='multi'||t.mode==='opt')?choices:[], target};
 }
-function _isBindingKind(k){ return k==='dao-favourite'||k==='dao-favourite-remove'; }
+function _isBindingKind(k){ return k==='dao-favourite'||k==='dao-favourite-remove'||k==='mute-user'||k==='content-removal'; }
 function _propExecBadge(p){
   const st=String(p.execStatus||'none'); const q=Number((window._bindingSettings||{}).quorum||5);
   const pill=(txt,col)=>`<div style="margin:0 0 10px;padding:6px 10px;border-radius:8px;font-size:.72rem;font-weight:800;color:${col};border:1px solid ${col}66;background:${col}14">${txt}</div>`;
   if(st.startsWith('vetoed')){ const r=st.slice(7); return pill('⛔ Vetoed by Dev Team'+(r?': '+escHtml(r):''),'#f97316'); }
   if(st==='closed') return pill('🔒 Closed by Dev Team','#94a3b8');
   if(!_isBindingKind(p.kind)) return '';
-  if(st==='executed') return pill('✅ Executed · '+(p.kind==='dao-favourite'?'added to':'removed from')+' DAO Favourites','#22c55e');
+  if(st==='executed') return pill('✅ Executed · '+(p.kind==='mute-user'?'user muted from posting for 7 days':p.kind==='content-removal'?'Blackhole entry hidden':(p.kind==='dao-favourite'?'added to':'removed from')+' DAO Favourites'),'#22c55e');
   if(st==='pending'){ const ms=Number(p.executeAfter||0)-Date.now(); const lbl=ms>3600000?Math.ceil(ms/3600000)+'h':Math.max(0,Math.ceil(ms/60000))+'m'; return pill('⏳ Passed · executes in '+lbl+' unless vetoed','#ffd86b'); }
   if(st.startsWith('failed')){
-    const why={'failed:quorum':'not enough voters (needs '+q+')','failed:rejected':'rejected by vote','failed:full':'DAO Favourites were full','failed:already-favourite':'already a DAO Favourite','failed:not-favourite':'no longer a DAO Favourite','failed:game-not-live':'game is no longer live','failed:game-missing':'game not found'}[st]||'could not be applied';
+    const why={'failed:quorum':'not enough voters (needs '+q+')','failed:rejected':'rejected by vote','failed:full':'DAO Favourites were full','failed:already-favourite':'already a DAO Favourite','failed:not-favourite':'no longer a DAO Favourite','failed:game-not-live':'game is no longer live','failed:game-missing':'game not found','failed:protected':'that user is protected (Dev Team or moderator)','failed:entry-missing':'entry not found','failed:entry-gone':'entry was already removed'}[st]||'could not be applied';
     return pill('❌ Failed · '+why,'#ef4444');
   }
   const open=Date.now()<p.endsAt&&!p.closed;

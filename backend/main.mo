@@ -6932,6 +6932,7 @@ persistent actor ArcadeBackend {
   public shared(msg) func submitHoleLink(title : Text, description : Text, url : Text) : async Result.Result<Text, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Connect wallet to submit to Blackhole");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     switch (holePunishmentReason(caller)) {
       case (?reason) { return #err("You are restricted from submitting to Blackhole: " # reason) };
       case null {};
@@ -7486,6 +7487,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func createForumThread(section : Text, title : Text, body : Text, image : ?Text, authorName : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to post");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     switch (validateForumText(section, "Section", FORUM_SECTION_MAX_CHARS, true)) { case (#err(e)) return #err(e); case (#ok(())) {} };
     switch (validateForumText(title, "Title", FORUM_TITLE_MAX_CHARS, true)) { case (#err(e)) return #err(e); case (#ok(())) {} };
     switch (validateForumText(body, "Body", FORUM_BODY_MAX_CHARS, false)) { case (#err(e)) return #err(e); case (#ok(())) {} };
@@ -7530,6 +7532,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func addForumReply(threadId : Text, body : Text, image : ?Text, authorName : Text, parentReplyId : ?Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to reply");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     switch (validateForumText(threadId, "Thread", FORUM_SECTION_MAX_CHARS, true)) { case (#err(e)) return #err(e); case (#ok(())) {} };
     switch (validateForumText(body, "Reply body", FORUM_REPLY_BODY_MAX_CHARS, false)) { case (#err(e)) return #err(e); case (#ok(())) {} };
     switch (validateForumText(authorName, "Author", FORUM_AUTHOR_MAX_CHARS, false)) { case (#err(e)) return #err(e); case (#ok(())) {} };
@@ -7799,6 +7802,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func createProposal(title : Text, body : Text, category : Text, duration : Text, images : [Text], paymentLane : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to create a proposal");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
@@ -7871,12 +7875,13 @@ persistent actor ArcadeBackend {
   public shared(msg) func createProposalV2(kind : Text, title : Text, body : Text, duration : Text, images : [Text], choices : [Text], target : Text) : async Result.Result<Text, Text> {
     let caller = msg.caller;
     if (isAnonymousPrincipal(caller)) return #err("Connect wallet to create a proposal");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     hydrateRuntimeStateIfNeeded();
     let admin = isAdmin(caller);
     let advisory : [Text] = ["recommend-game", "recommendation", "game-design-request", "general", "ban-user", "bug-report"];
     let devOnly : [Text] = ["contest", "community-choice", "artist-commission"];
-    let controlling : [Text] = ["dao-favourite", "dao-favourite-remove"];
-    let lockedKinds : [Text] = ["mute-user", "content-removal"];
+    let controlling : [Text] = ["dao-favourite", "dao-favourite-remove", "mute-user", "content-removal"];
+    let lockedKinds : [Text] = [];
     func inList(l : [Text]) : Bool { for (x in l.vals()) { if (x == kind) return true }; false };
     if (inList(lockedKinds)) return #err("This proposal type is coming soon");
     if (not inList(advisory) and not inList(devOnly) and not inList(controlling)) return #err("Unknown proposal type");
@@ -7941,6 +7946,33 @@ persistent actor ArcadeBackend {
       };
       tgt := "game:" # gid;
     };
+    if (kind == "mute-user") {
+      let who = Principal.fromText(target); // malformed text traps and nothing is saved; the UI validates first
+      if (isAdmin(who) or isModerator(who)) return #err("The Dev Team and moderators can't be targeted");
+      if (Principal.equal(who, caller)) return #err("You can't target yourself");
+      if (mutedUntil(who) > now) return #err("That user is already muted");
+      let whoText = Principal.toText(who);
+      for ((pid, m) in proposalMetaEntries.vals()) {
+        if (m.kind == "mute-user" and m.target == whoText) {
+          switch (findProposalById(pid)) {
+            case (?pp) { if (pp.endsAt + MUTE_VOTE_COOLDOWN_NS > now) return #err("That user was the subject of a mute vote recently (7-day cooldown)") };
+            case null {};
+          };
+        };
+      };
+      tgt := whoText;
+    };
+    if (kind == "content-removal") {
+      let hid : Text = switch (Text.stripStart(target, #text "hole:")) { case (?h) { h }; case null { return #err("Pick a Blackhole entry") } };
+      switch (findHoleSubmission(hid)) {
+        case null { return #err("Blackhole entry not found") };
+        case (?h) { if (h.status != "active") return #err("That Blackhole entry is no longer active") };
+      };
+      for ((_, m) in proposalMetaEntries.vals()) {
+        if (m.kind == "content-removal" and m.target == "hole:" # hid and (m.execStatus == "none" or m.execStatus == "pending")) return #err("There's already an open removal vote for that entry");
+      };
+      tgt := "hole:" # hid;
+    };
     if (kind != "bug-report" and not admin) {
       let tokenBal = getTokenBalance(caller);
       if (tokenBal < 5) return #err("Not enough tokens. Creating a proposal costs 5 Tokens. Have " # Nat.toText(tokenBal));
@@ -7987,7 +8019,7 @@ persistent actor ArcadeBackend {
   // === BINDING (CONTROLLING) PROPOSALS (stage 2) ===
   stable var bindingQuorum : Nat = 5;                         // PRE-MAINNET: keep at 5 (test tool can lower it)
   stable var bindingTimelockNs : Int = 86_400_000_000_000;    // PRE-MAINNET: keep at 24h
-  func isBindingKind(k : Text) : Bool { k == "dao-favourite" or k == "dao-favourite-remove" };
+  func isBindingKind(k : Text) : Bool { k == "dao-favourite" or k == "dao-favourite-remove" or k == "mute-user" or k == "content-removal" };
   func findProposalById(id : Text) : ?Proposal {
     for (p in proposalEntries.vals()) { if (p.id == id) return ?p };
     null
@@ -8011,6 +8043,62 @@ persistent actor ArcadeBackend {
     }
   };
   // Called by the 10-minute timer. Iterates a snapshot, so status updates mid-loop are safe.
+  // === MUTES + CONTENT REMOVAL (stage 3) ===
+  stable var userMuteEntries : [(Principal, Int)] = [];          // (user, muted until ns)
+  transient let MUTE_DURATION_NS : Int = 604_800_000_000_000;     // 7 days
+  transient let MUTE_VOTE_COOLDOWN_NS : Int = 604_800_000_000_000; // 7 days after a mute vote ends
+  func mutedUntil(p : Principal) : Int {
+    for ((q, t) in userMuteEntries.vals()) { if (Principal.equal(q, p)) return t };
+    0
+  };
+  func setMute(p : Principal, until : Int) {
+    let rest = Array.filter<(Principal, Int)>(userMuteEntries, func(e) { not Principal.equal(e.0, p) });
+    userMuteEntries := if (until > 0) { Array.append<(Principal, Int)>(rest, [(p, until)]) } else { rest };
+  };
+  // Muting only blocks posting (forums, DAO, proposals, replies, Blackhole uploads) - never games, votes or anything else.
+  func muteBlockMessage(p : Principal) : ?Text {
+    if (isAdmin(p)) return null;
+    if (mutedUntil(p) > Time.now()) ?"You're muted from posting after a community vote. You can still play games and use everything else." else null
+  };
+  public query func getMuteStatus(p : Principal) : async Int {
+    let t = mutedUntil(p);
+    if (t > Time.now()) t else 0
+  };
+  public shared(msg) func adminSetMute(p : Principal, days : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (days == 0) { setMute(p, 0); return #ok("Unmuted") };
+    if (days > 30) return #err("Mute length must be 1-30 days (0 to unmute)");
+    setMute(p, Time.now() + days * 86_400_000_000_000);
+    #ok("Muted for " # Nat.toText(days) # " day(s)")
+  };
+  public shared(msg) func adminRestoreHoleSubmission(id : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    switch (findHoleSubmission(id)) {
+      case null { return #err("Submission not found") };
+      case (?h) { if (h.status != "hidden") return #err("Only hidden entries can be restored") };
+    };
+    holeSubmissionEntries := Array.map<HoleSubmission, HoleSubmission>(holeSubmissionEntries, func(item) { if (item.id == id) { { item with status = "active" } } else { item } });
+    #ok("Blackhole entry restored")
+  };
+  func executeBindingProposal(m : ProposalMeta) : Text {
+    if (m.kind == "mute-user") {
+      let who = Principal.fromText(m.target);
+      if (isAdmin(who) or isModerator(who)) return "failed:protected";
+      let until = Time.now() + MUTE_DURATION_NS;
+      setMute(who, if (mutedUntil(who) > until) { mutedUntil(who) } else { until });
+      return "executed";
+    };
+    if (m.kind == "content-removal") {
+      let hid : Text = switch (Text.stripStart(m.target, #text "hole:")) { case (?h) { h }; case null { return "failed:bad-target" } };
+      switch (findHoleSubmission(hid)) {
+        case null { return "failed:entry-missing" };
+        case (?h) { if (h.status != "active") return "failed:entry-gone" };
+      };
+      holeSubmissionEntries := Array.map<HoleSubmission, HoleSubmission>(holeSubmissionEntries, func(item) { if (item.id == hid) { { item with status = "hidden" } } else { item } });
+      return "executed";
+    };
+    executeDaoFavouriteProposal(m)
+  };
   func processBindingProposals() {
     let now = Time.now();
     for ((id, m) in proposalMetaEntries.vals()) {
@@ -8023,7 +8111,7 @@ persistent actor ArcadeBackend {
               else if (p.votesFor <= p.votesAgainst) { putProposalMeta(id, { m with execStatus = "failed:rejected" }) }
               else { putProposalMeta(id, { m with execStatus = "pending"; executeAfter = now + bindingTimelockNs }) };
             } else if (m.execStatus == "pending" and now >= m.executeAfter) {
-              putProposalMeta(id, { m with execStatus = executeDaoFavouriteProposal(m) });
+              putProposalMeta(id, { m with execStatus = executeBindingProposal(m) });
             };
           };
         };
@@ -8131,6 +8219,7 @@ persistent actor ArcadeBackend {
 
   public shared(msg) func addProposalReply(proposalId : Text, body : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to reply");
+    switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     if (votingPowerOf(msg.caller) == 0 and not isAdmin(msg.caller)) return #err("Voting Power Badge required for proposal discussion");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Reply required");
     var found = false;
