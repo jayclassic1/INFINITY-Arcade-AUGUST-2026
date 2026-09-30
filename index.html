@@ -6272,7 +6272,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -7274,10 +7274,10 @@ async function handleHoleLegendaryToggle(id,nextValue){
   const statusEl=qs('holeSubmitStatus');
   try{
     await setHoleLegendary(id,!!nextValue);
-    if(statusEl) statusEl.innerHTML=`<span style="color:#ffd86b">${nextValue?'DAO Favorite granted.':'DAO Favorite removed.'}</span>`;
+    if(statusEl) statusEl.innerHTML=`<span style="color:#ffd86b">${nextValue?'Legendary granted.':'Legendary removed.'}</span>`;
     await renderHole();
   }catch(e){
-    if(statusEl) statusEl.innerHTML=`<span style="color:#ff9eb8">${escHtml(holeFriendlyErrorMessage(e,'Could not update DAO Favorite status.'))}</span>`;
+    if(statusEl) statusEl.innerHTML=`<span style="color:#ff9eb8">${escHtml(holeFriendlyErrorMessage(e,'Could not update Legendary status.'))}</span>`;
   }
 }
 
@@ -7340,7 +7340,7 @@ async function openBlackholeAdminPanel(id){
     <div style='display:grid;gap:10px'>
       <button class='btn' onclick='closeBlackholeAdminPanel();handleBlackholeOpen(${sid})' style='padding:10px 12px;font-size:.82rem'>Open Link</button>
       <button class='btn red' onclick='closeBlackholeAdminPanel();handleHoleDelete(${sid})' style='padding:10px 12px;font-size:.82rem'>Delete Submission</button>
-      <button class='btn' onclick='closeBlackholeAdminPanel();handleHoleLegendaryToggle(${sid},${submission.isLegendary?'false':'true'})' style='padding:10px 12px;font-size:.82rem;border-color:${submission.isLegendary?'#ffd86b':'#5f74a5'};color:${submission.isLegendary?'#ffd86b':'#d6def5'}'>${submission.isLegendary?'Remove DAO Favorite':'Make DAO Favorite'}</button>
+      <button class='btn' onclick='closeBlackholeAdminPanel();handleHoleLegendaryToggle(${sid},${submission.isLegendary?'false':'true'})' style='padding:10px 12px;font-size:.82rem;border-color:${submission.isLegendary?'#ffd86b':'#5f74a5'};color:${submission.isLegendary?'#ffd86b':'#d6def5'}'>${submission.isLegendary?'Remove Legendary':'Make Legendary'}</button>
       <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'>
         <button class='btn' onclick='closeBlackholeAdminPanel();handleBlackholeSoftPunish(${creatorText})' style='padding:10px 12px;font-size:.82rem;border-color:#ff9eb8;color:#ff9eb8'>Soft Punish 7d</button>
         <button class='btn red' onclick='closeBlackholeAdminPanel();handleBlackholeHardBan(${creatorText})' style='padding:10px 12px;font-size:.82rem'>Hard Ban</button>
@@ -14349,6 +14349,8 @@ const PROPOSAL_TYPES=[
   {id:'game-design-request',name:'Game Design Request',desc:'Request a type of game you want to see built. Advisory.',who:'2+ VP Badges',cost:'5 Tokens'},
   {id:'general',name:'General',desc:'Anything else. Leave choices empty for For/Against, or add 2 to 4 choices. Advisory.',who:'2+ VP Badges',cost:'5 Tokens',mode:'opt'},
   {id:'ban-user',name:'Ban User',desc:'Ask the Dev Team to ban a toxic user. Advisory: the Dev Team reviews and decides.',who:'2+ VP Badges',cost:'5 Tokens',target:'user'},
+  {id:'dao-favourite',name:'Add to DAO Favourites',desc:'Binding: if it passes (5+ voters, majority), the Showroom game is added to DAO Favourites after a 24h timelock, unless the Dev Team vetoes.',who:'2+ VP Badges',cost:'5 Tokens',target:'showroom'},
+  {id:'dao-favourite-remove',name:'Remove from DAO Favourites',desc:'Binding: if it passes (5+ voters, majority), the game is removed from DAO Favourites after a 24h timelock, unless the Dev Team vetoes.',who:'2+ VP Badges',cost:'5 Tokens',target:'showroom'},
   {id:'bug-report',name:'Glitch / Bug Report',desc:'Bring serious attention to a problem that needs fixing.',who:'Any DAO member',cost:'Free'},
   {id:'contest',name:'Contest',desc:'Dev Team contest: the community picks one of up to 4 options.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
   {id:'community-choice',name:'Community Choice',desc:'The Dev Team asks the community to choose, e.g. an aesthetic upgrade.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
@@ -14361,7 +14363,7 @@ function proposalTypeName(p){
 }
 function _propTimeLabel(p){
   const ms=p.endsAt-Date.now();
-  if(ms<=0) return 'ENDED';
+  if(ms<=0||p.closed) return p.closed?'CLOSED':'ENDED';
   return ms>86400000?Math.ceil(ms/86400000)+'d left':Math.ceil(ms/3600000)+'h left';
 }
 function _propAuthor(p){
@@ -14369,7 +14371,7 @@ function _propAuthor(p){
   return prof?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'…');
 }
 function renderMultiChoiceCard(p){
-  const active=Date.now()<p.endsAt;
+  const active=Date.now()<p.endsAt&&!p.closed;
   const totals=p.choiceTotals||[]; const sum=totals.reduce((a,b)=>a+b,0);
   let lead=-1,best=-1; totals.forEach((t,i)=>{ if(t>best){best=t;lead=i;} });
   const myV=(p.votes||[]).find(v=>v.voter===S.principalText);
@@ -14385,6 +14387,7 @@ function renderMultiChoiceCard(p){
     <div style='font-weight:800;font-size:.95rem;color:#e0e6f0;margin-bottom:4px'>${escHtml(p.title)}</div>
     <div style='font-size:.7rem;color:#5a8ab8;margin-bottom:8px'>${escHtml(_propAuthor(p))}</div>
     <div style='font-size:.72rem;color:#cbd5e1;margin-bottom:10px'>${p.choices.length} choices · ${sum?`${active?'Leading':'Winner'}: <b style="color:#ffd86b">${escHtml(p.choices[lead]||'')}</b> (${Math.round(best/sum*100)}%)`:'No votes yet'}</div>
+    ${_propExecBadge(p)}
     <div style='display:flex;justify-content:space-between;align-items:center'>
       <span style='font-size:.65rem;color:#2d5a8a'>${(p.votes||[]).length} vote${(p.votes||[]).length!==1?'s':''}</span>
       ${myIdx>=0?`<span class='my-vote-pill' style='font-size:.7rem;color:#22c55e;font-weight:800;padding:4px 12px;border-radius:6px;border:1px solid rgba(34,197,94,.75);background:rgba(34,197,94,.1);box-shadow:0 0 12px rgba(34,197,94,.45)'>You picked: ${escHtml(p.choices[myIdx]||'')}</span>`
@@ -14426,7 +14429,7 @@ function openProposalPopup(id){
     o.addEventListener('click',e=>{ if(e.target===o) closeProposalPopup(); });
     document.body.appendChild(o);
   }
-  const active=Date.now()<p.endsAt;
+  const active=Date.now()<p.endsAt&&!p.closed;
   const multi=!!(p.choices&&p.choices.length);
   const myV=(p.votes||[]).find(v=>v.voter===S.principalText);
   const my=myV?myV.vote:null;
@@ -14467,12 +14470,14 @@ function openProposalPopup(id){
     <h2 style="margin:0 0 6px;font-size:1.25rem;color:#f1f5f9">${escHtml(p.title)}</h2>
     <div style="font-size:.74rem;color:#64748b;margin-bottom:14px"><span onclick="closeProposalPopup();viewPublicProfile('${p.author}')" style="cursor:pointer;color:#5a8ab8;font-weight:700">${escHtml(_propAuthor(p))}</span> · ${getTimeAgo(new Date(p.createdAt))}</div>
     ${_proposalTargetHtml(p)}
+    ${_propExecBadge(p)}
     <div style="font-size:.86rem;color:#b8c6e0;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin-bottom:14px">${escHtml(p.body)}</div>
     ${imgs}
     <div style="font-size:.68rem;font-weight:900;letter-spacing:2px;color:#9fb0d6;margin-bottom:8px">${multi?'RESULTS':'VOTES'}</div>
     ${results}
     ${voteArea}
     <div style="font-size:.66rem;color:#64748b;margin-top:8px">${nVotes} vote${nVotes!==1?'s':''} · ${multi?'Most votes wins':'Simple majority wins'}</div>
+    ${_propAdminControls(p)}
     <div style="font-size:.7rem;font-weight:900;letter-spacing:2px;color:#fca5a5;margin:18px 0 8px">DISCUSSION</div>
     ${disc}${reply}
   </div>`;
@@ -14489,12 +14494,24 @@ async function updateProposalTypeFields(){
   if(payIn&&payIn.parentElement){ const box=payIn.parentElement, lbl=box.previousElementSibling, show=kind!=='bug-report'; box.style.display=show?'':'none'; if(lbl) lbl.style.display=show?'':'none'; }
   const ch=document.getElementById('propChoicesBox'); if(ch) ch.style.display=(t.mode==='multi'||t.mode==='opt')?'block':'none';
   const chLbl=document.getElementById('propChoicesLabel'); if(chLbl) chLbl.textContent=t.mode==='multi'?'CHOICES (2 to 4)':'CHOICES (optional: leave empty for For/Against, or add 2 to 4)';
-  const g=document.getElementById('propTargetGameBox'); if(g) g.style.display=t.target==='game'?'block':'none';
+  const g=document.getElementById('propTargetGameBox'); if(g) g.style.display=(t.target==='game'||t.target==='showroom')?'block':'none';
+  const gl=document.querySelector('#propTargetGameBox > div'); if(gl) gl.textContent=t.target==='showroom'?'SHOWROOM GAME':'GAME TO RECOMMEND';
+  /*load-games-for-picker*/ if((t.target==='game'||t.target==='showroom')&&typeof getSubmissions==='function'&&!(getSubmissions()||[]).length&&typeof refreshGameCache==='function'){ try{ await refreshGameCache(); }catch(_){} }
   const u=document.getElementById('propTargetUserBox'); if(u) u.style.display=t.target==='user'?'block':'none';
+  if(t.target==='showroom'){
+    const sel=document.getElementById('propTargetGame');
+    if(sel&&sel.dataset.loaded!==kind){
+      sel.dataset.loaded=kind;
+      let crowned=new Set();
+      try{ crowned=new Set(((await (await getBackendActor()).getDaoFavourites())||[]).filter(f=>f.crowned).map(f=>f.gameId)); }catch(_){}
+      const subs=((typeof getSubmissions==='function'?getSubmissions():[])||[]).filter(x=>x&&(x.tier==='showroom'||x.gameTier==='showroom')&&(x.status||'live')==='live'&&(kind==='dao-favourite'?!crowned.has(x.id):crowned.has(x.id)));
+      sel.innerHTML=(subs.length?'<option value="">Choose a Showroom game…</option>':'<option value="">'+(kind==='dao-favourite'?'No eligible Showroom games':'No crowned DAO Favourites')+'</option>')+subs.map(x=>`<option value="game:${escHtml(x.id)}">🎮 ${escHtml(x.name||x.id)}</option>`).join('');
+    }
+  }
   if(t.target==='game'){
     const sel=document.getElementById('propTargetGame');
-    if(sel&&!sel.dataset.loaded){
-      sel.dataset.loaded='1';
+    if(sel&&sel.dataset.loaded!=='game'){
+      sel.dataset.loaded='game';
       const games=((typeof getSubmissions==='function'?getSubmissions():[])||[]).filter(x=>x&&(x.tier==='backroom'||x.gameTier==='backroom')&&(x.status||'live')==='live');
       let holes=[]; try{ holes=await (await getBackendActor()).getHoleSubmissions('new'); }catch(_){}
       sel.innerHTML='<option value="">Choose a game from The Back or a Blackhole entry…</option>'
@@ -14509,10 +14526,56 @@ function collectProposalTypeFields(kind){
   if(t.mode==='multi'&&choices.length<2){ arcadeAlert('Choices Needed','Add at least 2 choices (up to 4).'); return null; }
   if(t.mode==='opt'&&choices.length===1){ arcadeAlert('Choices','Add a second choice, or leave all choices empty for a For/Against vote.'); return null; }
   let target='';
-  if(t.target==='game'){ target=document.getElementById('propTargetGame')?.value||''; if(!target){ arcadeAlert('Pick a Game','Choose the game or Blackhole entry you are recommending.'); return null; } }
+  if(t.target==='game'||t.target==='showroom'){ target=document.getElementById('propTargetGame')?.value||''; if(!target){ arcadeAlert('Pick a Game','Choose a game for this proposal.'); return null; } }
   if(t.target==='user'){ target=(document.getElementById('propTargetUser')?.value||'').trim(); try{ Principal.fromText(target); }catch(_){ arcadeAlert('Invalid User ID','Paste the user\'s principal ID (shown on their profile).'); return null; } }
   return {choices:(t.mode==='multi'||t.mode==='opt')?choices:[], target};
 }
+function _isBindingKind(k){ return k==='dao-favourite'||k==='dao-favourite-remove'; }
+function _propExecBadge(p){
+  const st=String(p.execStatus||'none'); const q=Number((window._bindingSettings||{}).quorum||5);
+  const pill=(txt,col)=>`<div style="margin:0 0 10px;padding:6px 10px;border-radius:8px;font-size:.72rem;font-weight:800;color:${col};border:1px solid ${col}66;background:${col}14">${txt}</div>`;
+  if(st.startsWith('vetoed')){ const r=st.slice(7); return pill('⛔ Vetoed by Dev Team'+(r?': '+escHtml(r):''),'#f97316'); }
+  if(st==='closed') return pill('🔒 Closed by Dev Team','#94a3b8');
+  if(!_isBindingKind(p.kind)) return '';
+  if(st==='executed') return pill('✅ Executed · '+(p.kind==='dao-favourite'?'added to':'removed from')+' DAO Favourites','#22c55e');
+  if(st==='pending'){ const ms=Number(p.executeAfter||0)-Date.now(); const lbl=ms>3600000?Math.ceil(ms/3600000)+'h':Math.max(0,Math.ceil(ms/60000))+'m'; return pill('⏳ Passed · executes in '+lbl+' unless vetoed','#ffd86b'); }
+  if(st.startsWith('failed')){
+    const why={'failed:quorum':'not enough voters (needs '+q+')','failed:rejected':'rejected by vote','failed:full':'DAO Favourites were full','failed:already-favourite':'already a DAO Favourite','failed:not-favourite':'no longer a DAO Favourite','failed:game-not-live':'game is no longer live','failed:game-missing':'game not found'}[st]||'could not be applied';
+    return pill('❌ Failed · '+why,'#ef4444');
+  }
+  const open=Date.now()<p.endsAt&&!p.closed;
+  return open?pill('⚙️ Binding vote · needs '+q+' voters ('+Number(p.voterCount||0)+' so far) and a majority · executes after a timelock unless vetoed','#22d3ee')
+             :pill('⏳ Voting ended · result is being counted','#94a3b8');
+}
+function _propAdminControls(p){
+  if(!isAdmin()) return '';
+  const st=String(p.execStatus||'none'); const open=Date.now()<p.endsAt&&!p.closed;
+  const btn=(label,fn,col)=>`<button onclick='${fn}("${p.id}")' style="padding:6px 12px;border-radius:8px;background:${col}14;border:1px solid ${col}66;color:${col};font-weight:800;font-size:.72rem;cursor:pointer">${label}</button>`;
+  const b=[];
+  if(open) b.push(btn('🔒 Close proposal','adminCloseFromPopup','#94a3b8'));
+  if(_isBindingKind(p.kind)&&(open||st==='pending')) b.push(btn('⛔ Veto','adminVetoFromPopup','#f97316'));
+  if(open) b.push(btn('⏱ End voting now (test)','adminEndVotingFromPopup','#22d3ee'));
+  return b.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding:10px;border-radius:10px;border:1px dashed rgba(239,68,68,.4);background:rgba(239,68,68,.05)"><span style="font-size:.62rem;font-weight:900;letter-spacing:2px;color:#ef4444;width:100%">DEV TEAM</span>${b.join('')}</div>`:'';
+}
+async function _afterAdminProposalAction(id){ await renderDaoPage(); await renderDaoMain(); openProposalPopup(id); }
+window.adminVetoFromPopup=async function(id){
+  const reason=prompt('Veto reason (shown publicly on the proposal):','');
+  if(reason===null) return;
+  try{ const r=await (await getBackendActor(true)).adminVetoProposal(id,String(reason).slice(0,200)); if(r.err) return arcadeAlert('Veto',escHtml(safeUserErrorMessage(r.err,'veto'))); }
+  catch(e){ return arcadeAlert('Veto',escHtml(safeUserErrorMessage(e,'veto'))); }
+  await _afterAdminProposalAction(id);
+};
+window.adminCloseFromPopup=async function(id){
+  if(!await arcadeConfirm('Close Proposal','Close voting on this proposal now?')) return;
+  try{ const r=await (await getBackendActor(true)).closeProposal(id); if(r.err) return arcadeAlert('Close Proposal',escHtml(safeUserErrorMessage(r.err,'close proposal'))); }
+  catch(e){ return arcadeAlert('Close Proposal',escHtml(safeUserErrorMessage(e,'close proposal'))); }
+  await _afterAdminProposalAction(id);
+};
+window.adminEndVotingFromPopup=async function(id){
+  try{ const r=await (await getBackendActor(true)).adminTestEndProposalVoting(id); if(r.err) return arcadeAlert('End Voting',escHtml(safeUserErrorMessage(r.err,'end voting'))); }
+  catch(e){ return arcadeAlert('End Voting',escHtml(safeUserErrorMessage(e,'end voting'))); }
+  await _afterAdminProposalAction(id);
+};
 // Make the new proposal UI reachable from inline onclick handlers (the app's scripts run in a private scope)
 Object.assign(window,{openProposalPopup,closeProposalPopup,submitProposalReplyPopup,updateProposalTypeFields});
 const VOTE_DURATIONS=[
@@ -14539,6 +14602,7 @@ async function fetchProposalsFromChain(){
       createdAt:Number(p.createdAt)/1000000,
       endsAt:Number(p.endsAt)/1000000,
       duration:p.duration,
+      closed:!!p.closed,
       votesFor:Number(p.votesFor),
       votesAgainst:Number(p.votesAgainst),
       votes:(p.votes||[]).map(v=>({voter:v.voter.toText(),vote:v.vote,weight:Number(v.weight),timestamp:Number(v.timestamp)/1000000})),
@@ -14550,7 +14614,8 @@ async function fetchProposalsFromChain(){
     try{
       const metas=await be.getProposalMetas();
       const mm=new Map((metas||[]).map(e=>[e[0],e[1]]));
-      _proposalCache.forEach(p=>{const m=mm.get(p.id);if(m){p.kind=m.kind;p.choices=m.choices||[];p.choiceTotals=(m.choiceTotals||[]).map(Number);p.target=m.target||'';p.voterCount=Number(m.voterCount||0);}});
+      _proposalCache.forEach(p=>{const m=mm.get(p.id);if(m){p.kind=m.kind;p.choices=m.choices||[];p.choiceTotals=(m.choiceTotals||[]).map(Number);p.target=m.target||'';p.voterCount=Number(m.voterCount||0);p.execStatus=m.execStatus||'none';p.executeAfter=Number(m.executeAfter||0)/1e6;}});
+      try{ window._bindingSettings=await be.getBindingSettings(); }catch(_){}
     }catch(_){}
     _proposalCacheTime=Date.now();
     return _proposalCache;
@@ -14566,7 +14631,7 @@ function saveProposals(p){
 
 function getProposalStatus(p){
   const now=Date.now();
-  if(now<p.endsAt) return 'active';
+  if(now<p.endsAt&&!p.closed) return 'active';
   const yes=p.votesFor||0;
   const no=p.votesAgainst||0;
   if(yes+no===0) return 'expired';
@@ -15093,6 +15158,7 @@ function renderProposalCard(p){
       </div>
     </div>
     ${devTeamVerdictHtml(p)}
+    ${_propExecBadge(p)}
     <div style='display:flex;align-items:center;justify-content:space-between'>
       <span style='font-size:.65rem;color:#2d5a8a'>${total} total votes</span>
       ${status==='active'?`<div style='display:flex;gap:6px'>

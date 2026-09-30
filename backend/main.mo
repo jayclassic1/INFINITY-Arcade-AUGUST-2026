@@ -3957,6 +3957,20 @@ persistent actor ArcadeBackend {
     for (id in daoFavouriteGameIds.vals()) { if (id == gameId) return true };
     false
   };
+  // Games admin removed from DAO Favourites (incl. auto Back picks) - never auto-picked again until re-added.
+  stable var daoFavExcludedIds : [Text] = [];
+  transient let DAO_FAV_PROPOSAL_CAP : Nat = 10; // community proposals can crown while fewer than 10 are crowned
+  func isDaoFavExcluded(gameId : Text) : Bool {
+    for (id in daoFavExcludedIds.vals()) { if (id == gameId) return true };
+    false
+  };
+  func crownedLiveCount() : Nat {
+    var n : Nat = 0;
+    for (id in daoFavouriteGameIds.vals()) {
+      switch (gameSubmissions.get(id)) { case (?g) { if (g.status == "live") { n += 1 } }; case null {} };
+    };
+    n
+  };
 
   public query func getDaoFavourites() : async [DaoFavourite] {
     let out = Buffer.Buffer<DaoFavourite>(32);
@@ -3986,11 +4000,12 @@ persistent actor ArcadeBackend {
     };
     let cands = Buffer.Buffer<(Text, Nat, Nat)>(16); // (gameId, score, likes)
     for ((id, (l, d)) in tally.entries()) {
-      if (l >= 1 and l > d and not isDaoCrowned(id)) cands.add((id, l - d, l));
+      if (l >= 1 and l > d and not isDaoCrowned(id) and not isDaoFavExcluded(id)) cands.add((id, l - d, l));
     };
     let taken = HashMap.HashMap<Text, Bool>(16, Text.equal, Text.hash);
     var picked = 0;
-    label pickLoop while (picked < DAO_FAV_BACK_TOP_N) {
+    let crownedShown = out.size(); // crowned games take their slots first; auto Back picks fill the rest of the 15
+    label pickLoop while (crownedShown + picked < DAO_FAV_BACK_TOP_N) {
       var best : ?(Text, Nat, Nat) = null;
       for (c in cands.vals()) {
         if (taken.get(c.0) == null) {
@@ -4019,12 +4034,18 @@ persistent actor ArcadeBackend {
         case (?g) { if (g.status != "live") return #err("Only live games can be DAO Favourites") };
       };
       if (isDaoCrowned(gameId)) return #err("Already a DAO Favourite");
+      if (crownedLiveCount() >= DAO_FAV_BACK_TOP_N) return #err("DAO Favourites are full (15). Remove one first");
+      daoFavExcludedIds := Array.filter<Text>(daoFavExcludedIds, func(x) { x != gameId });
       daoFavouriteGameIds := Array.append<Text>(daoFavouriteGameIds, [gameId]);
       #ok("Added to DAO Favourites")
     } else {
       let before = daoFavouriteGameIds.size();
       daoFavouriteGameIds := Array.filter<Text>(daoFavouriteGameIds, func(id) { id != gameId });
-      if (daoFavouriteGameIds.size() == before) return #err("Not a crowned DAO Favourite");
+      if (daoFavouriteGameIds.size() == before) {
+        if (isDaoFavExcluded(gameId)) return #err("Already removed from DAO Favourites");
+        daoFavExcludedIds := Array.append<Text>(daoFavExcludedIds, [gameId]);
+        return #ok("Removed from DAO Favourites (it won't return automatically until you add it back)");
+      };
       #ok("Removed from DAO Favourites")
     }
   };
@@ -4644,6 +4665,7 @@ persistent actor ArcadeBackend {
         case null {};
       };
     };
+    processBindingProposals();
     ignore tryStartLotteryCycle("token");
     ignore tryStartLotteryCycle("ticket");
     lotteryTickRunning := false;
@@ -7101,7 +7123,7 @@ persistent actor ArcadeBackend {
             }
           } else { item }
         });
-        #ok(if (isLegendary) "DAO Favorite granted" else "DAO Favorite removed")
+        #ok(if (isLegendary) "Legendary granted" else "Legendary removed")
       };
     }
   };
@@ -7853,10 +7875,11 @@ persistent actor ArcadeBackend {
     let admin = isAdmin(caller);
     let advisory : [Text] = ["recommend-game", "recommendation", "game-design-request", "general", "ban-user", "bug-report"];
     let devOnly : [Text] = ["contest", "community-choice", "artist-commission"];
-    let lockedKinds : [Text] = ["dao-favourite", "mute-user", "content-removal"];
+    let controlling : [Text] = ["dao-favourite", "dao-favourite-remove"];
+    let lockedKinds : [Text] = ["mute-user", "content-removal"];
     func inList(l : [Text]) : Bool { for (x in l.vals()) { if (x == kind) return true }; false };
     if (inList(lockedKinds)) return #err("This proposal type is coming soon");
-    if (not inList(advisory) and not inList(devOnly)) return #err("Unknown proposal type");
+    if (not inList(advisory) and not inList(devOnly) and not inList(controlling)) return #err("Unknown proposal type");
     if (inList(devOnly) and not admin) return #err("Only the Dev Team can create this proposal type");
     if (kind == "bug-report") {
       if (votingPowerOf(caller) == 0 and not admin) return #err("DAO membership (1 Voting Power) required to file a bug report");
@@ -7901,6 +7924,23 @@ persistent actor ArcadeBackend {
       if (Principal.equal(who, caller)) return #err("You can't target yourself");
       tgt := Principal.toText(who);
     };
+    if (kind == "dao-favourite" or kind == "dao-favourite-remove") {
+      let gid : Text = switch (Text.stripStart(target, #text "game:")) { case (?g) { g }; case null { return #err("Pick a Showroom game") } };
+      switch (gameSubmissions.get(gid)) {
+        case null { return #err("Game not found") };
+        case (?g) {
+          if (g.status != "live" or g.gameTier != "showroom") return #err("Only live Showroom games can be DAO Favourites");
+          if (Principal.equal(g.creator, caller)) return #err("You can't propose your own game");
+        };
+      };
+      if (kind == "dao-favourite") {
+        if (isDaoCrowned(gid)) return #err("That game is already a DAO Favourite");
+        if (crownedLiveCount() >= DAO_FAV_PROPOSAL_CAP) return #err("DAO Favourites are full for community proposals (10)");
+      } else {
+        if (not isDaoCrowned(gid)) return #err("That game isn't a DAO Favourite");
+      };
+      tgt := "game:" # gid;
+    };
     if (kind != "bug-report" and not admin) {
       let tokenBal = getTokenBalance(caller);
       if (tokenBal < 5) return #err("Not enough tokens. Creating a proposal costs 5 Tokens. Have " # Nat.toText(tokenBal));
@@ -7943,6 +7983,92 @@ persistent actor ArcadeBackend {
   };
 
   public query func getProposalMetas() : async [(Text, ProposalMeta)] { proposalMetaEntries };
+
+  // === BINDING (CONTROLLING) PROPOSALS (stage 2) ===
+  stable var bindingQuorum : Nat = 5;                         // PRE-MAINNET: keep at 5 (test tool can lower it)
+  stable var bindingTimelockNs : Int = 86_400_000_000_000;    // PRE-MAINNET: keep at 24h
+  func isBindingKind(k : Text) : Bool { k == "dao-favourite" or k == "dao-favourite-remove" };
+  func findProposalById(id : Text) : ?Proposal {
+    for (p in proposalEntries.vals()) { if (p.id == id) return ?p };
+    null
+  };
+  func executeDaoFavouriteProposal(m : ProposalMeta) : Text {
+    let gid : Text = switch (Text.stripStart(m.target, #text "game:")) { case (?g) { g }; case null { return "failed:bad-target" } };
+    switch (gameSubmissions.get(gid)) {
+      case null { return "failed:game-missing" };
+      case (?g) { if (g.status != "live") return "failed:game-not-live" };
+    };
+    if (m.kind == "dao-favourite") {
+      if (isDaoCrowned(gid)) return "failed:already-favourite";
+      if (crownedLiveCount() >= DAO_FAV_PROPOSAL_CAP) return "failed:full";
+      daoFavouriteGameIds := Array.append<Text>(daoFavouriteGameIds, [gid]);
+      daoFavExcludedIds := Array.filter<Text>(daoFavExcludedIds, func(x) { x != gid });
+      "executed"
+    } else {
+      if (not isDaoCrowned(gid)) return "failed:not-favourite";
+      daoFavouriteGameIds := Array.filter<Text>(daoFavouriteGameIds, func(x) { x != gid });
+      "executed"
+    }
+  };
+  // Called by the 10-minute timer. Iterates a snapshot, so status updates mid-loop are safe.
+  func processBindingProposals() {
+    let now = Time.now();
+    for ((id, m) in proposalMetaEntries.vals()) {
+      if (isBindingKind(m.kind)) {
+        switch (findProposalById(id)) {
+          case null {};
+          case (?p) {
+            if (m.execStatus == "none" and not proposalIsActive(p, now)) {
+              if (m.voterCount < bindingQuorum) { putProposalMeta(id, { m with execStatus = "failed:quorum" }) }
+              else if (p.votesFor <= p.votesAgainst) { putProposalMeta(id, { m with execStatus = "failed:rejected" }) }
+              else { putProposalMeta(id, { m with execStatus = "pending"; executeAfter = now + bindingTimelockNs }) };
+            } else if (m.execStatus == "pending" and now >= m.executeAfter) {
+              putProposalMeta(id, { m with execStatus = executeDaoFavouriteProposal(m) });
+            };
+          };
+        };
+      };
+    };
+  };
+  func closeProposalWithStatus(proposalId : Text, status : Text) : Result.Result<Text, Text> {
+    let meta = findProposalMeta(proposalId);
+    switch (meta) { case (?m) { if (m.execStatus == "executed") return #err("Already executed; it can't be vetoed or closed") }; case null {} };
+    var found = false;
+    proposalEntries := Array.map<Proposal, Proposal>(proposalEntries, func(p) { if (p.id != proposalId) return p; found := true; { p with closed = true } });
+    if (not found) return #err("Proposal not found");
+    switch (meta) { case (?m) { putProposalMeta(proposalId, { m with execStatus = status }) }; case null {} };
+    #ok("Proposal closed")
+  };
+  public shared(msg) func adminVetoProposal(proposalId : Text, reason : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    let r = if (Text.size(reason) > 200) { "vetoed" } else { "vetoed:" # reason };
+    closeProposalWithStatus(proposalId, r)
+  };
+  public shared(msg) func closeProposal(proposalId : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    closeProposalWithStatus(proposalId, "closed")
+  };
+  // TESTING ONLY (lock before mainnet): lower quorum / timelock, and end a proposal's voting now.
+  public shared(msg) func adminSetBindingTestMode(quorum : Nat, timelockMinutes : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (quorum < 1 or quorum > 50) return #err("Quorum must be 1-50");
+    if (timelockMinutes > 10_080) return #err("Timelock must be 0-10080 minutes");
+    bindingQuorum := quorum;
+    bindingTimelockNs := timelockMinutes * 60_000_000_000;
+    #ok("Binding proposals: quorum " # Nat.toText(quorum) # ", timelock " # Nat.toText(timelockMinutes) # " min")
+  };
+  public shared(msg) func adminTestEndProposalVoting(proposalId : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    var found = false;
+    let now = Time.now();
+    proposalEntries := Array.map<Proposal, Proposal>(proposalEntries, func(p) { if (p.id != proposalId) return p; found := true; { p with endsAt = now } });
+    if (not found) return #err("Proposal not found");
+    processBindingProposals();
+    #ok("Voting ended; result evaluated")
+  };
+  public query func getBindingSettings() : async { quorum : Nat; timelockNs : Int; crownedCount : Nat; proposalCap : Nat; totalCap : Nat } {
+    { quorum = bindingQuorum; timelockNs = bindingTimelockNs; crownedCount = crownedLiveCount(); proposalCap = DAO_FAV_PROPOSAL_CAP; totalCap = DAO_FAV_BACK_TOP_N }
+  };
 
   public shared(msg) func castVote(proposalId : Text, vote : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to vote");
