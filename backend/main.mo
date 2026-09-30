@@ -554,6 +554,9 @@ persistent actor ArcadeBackend {
   transient let TICKETS_PER_ICP : Nat = 1_000;
   transient let TOKEN_LIABILITY_E8S : Nat = 1_000_000;
   transient let TICKET_LIABILITY_E8S : Nat = 100_000;
+  // PRE-MAINNET: set to false. Admin mint tools (creditTokens, addTickets, winTickets, awardTickets,
+  // creditRoyalty, adminSetTickets increases) create balances with no ICP behind them - local testing only.
+  transient let ALLOW_TEST_MINTING : Bool = true;
   transient let TREASURY_SAFETY_BUFFER_E8S : Nat = 10_000;
 
   func ticketCostToSellerPayoutE8s(ticketCost : Nat) : Nat {
@@ -1701,6 +1704,7 @@ persistent actor ArcadeBackend {
 
   /// Credit tokens after ICP deposit (admin only)
   public shared(msg) func creditTokens(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     let current = getTokenBalance(player);
@@ -1925,6 +1929,7 @@ persistent actor ArcadeBackend {
 
   /// Win tickets from a game
   public shared(msg) func winTickets(amount : Nat) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     // Only callable by admin or the game canister in the future
     if (not isAdmin(msg.caller)) return #err("Not authorized — game payout must be admin-verified");
     hydrateRuntimeStateIfNeeded();
@@ -2876,6 +2881,7 @@ persistent actor ArcadeBackend {
 
   /// Award tickets to a player (admin only for manual awards)
   public shared(msg) func awardTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized — use submitGameScore for game rewards");
     hydrateRuntimeStateIfNeeded();
     let current = getTicketBalance(player);
@@ -4673,6 +4679,44 @@ persistent actor ArcadeBackend {
 
   public query func getLotteryHistory() : async [(Int, Text, [Text], Nat)] { lotteryHistoryEntries };
 
+  // Admin solvency report: everything the arcade owes (valued in ICP) vs the real ICP ledger
+  // balance of the canister's main account - the account deposits land in and claims pay from.
+  // Dedicated treasury subaccounts and users' own deposit subaccounts are separate and excluded.
+  public shared(msg) func adminGetSolvencyReport() : async Result.Result<{
+    tokensE8s : Nat; ticketsE8s : Nat; gameTicketPoolsE8s : Nat;
+    creatorRoyaltiesE8s : Nat; nftSellerEarningsE8s : Nat; tipEarningsE8s : Nat; refundsE8s : Nat;
+    arcadeSharesE8s : Nat; daoTreasuryE8s : Nat; lotteryLockedE8s : Nat;
+    totalLiabilitiesE8s : Nat; ledgerBalanceE8s : Nat; surplusE8s : Nat; shortfallE8s : Nat;
+  }, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    var tok : Nat = 0; for (v in tokens.vals()) { tok += v };
+    var tix : Nat = 0; for (v in tickets.vals()) { tix += v };
+    var pools : Nat = 0; for (v in gameBackedTicketPools.vals()) { pools += v };
+    var roy : Nat = 0; for (v in royalties.vals()) { roy += v };
+    var sel : Nat = 0; for (v in nftSellerEarningsE8s.vals()) { sel += v };
+    var tipSum : Nat = 0; for (v in tipEarnings.vals()) { tipSum += v };
+    var refundSum : Nat = 0; for (v in refundsE8s.vals()) { refundSum += v };
+    let arcade = showroomTicketArcadeShareE8s + showroomNonTicketArcadeShareE8s + showroomPurchaseArcadeShareE8s + prizeBoothArcadeShareE8s;
+    let lockedTok : Nat = switch (tokenLotteryCycle) { case null { 0 }; case (?c) { c.perWin * c.remaining.size() * TOKEN_LIABILITY_E8S } };
+    let lockedTix : Nat = switch (ticketLotteryCycle) { case null { 0 }; case (?c) { c.perWin * c.remaining.size() * TICKET_LIABILITY_E8S } };
+    let tokensE8s = tok * TOKEN_LIABILITY_E8S;
+    let ticketsE8s = tix * TICKET_LIABILITY_E8S;
+    let poolsE8s = pools * TICKET_LIABILITY_E8S;
+    let total = tokensE8s + ticketsE8s + poolsE8s + roy + sel + tipSum + refundSum + arcade + daoTreasuryE8s + lockedTok + lockedTix;
+    let ledger : Nat = try {
+      await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = Principal.fromActor(ArcadeBackend); subaccount = null })
+    } catch (e) { return #err("Ledger balance check failed: " # Error.message(e)) };
+    #ok({
+      tokensE8s = tokensE8s; ticketsE8s = ticketsE8s; gameTicketPoolsE8s = poolsE8s;
+      creatorRoyaltiesE8s = roy; nftSellerEarningsE8s = sel; tipEarningsE8s = tipSum; refundsE8s = refundSum;
+      arcadeSharesE8s = arcade; daoTreasuryE8s = daoTreasuryE8s; lotteryLockedE8s = lockedTok + lockedTix;
+      totalLiabilitiesE8s = total; ledgerBalanceE8s = ledger;
+      surplusE8s = if (ledger > total) { ledger - total } else { 0 };
+      shortfallE8s = if (total > ledger) { total - ledger } else { 0 };
+    })
+  };
+
   public query func getDaoTreasuryOverview() : async {
     balanceE8s : Nat; lockedTokenE8s : Nat; lockedTicketE8s : Nat;
     inGamesE8s : Nat; inProposalsE8s : Nat; inOfficialNftE8s : Nat; inPlayerNftE8s : Nat; inVpBadgeE8s : Nat;
@@ -5755,6 +5799,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: credit game creator earnings to a creator. This intentionally does not credit NFT seller earnings.
   public shared(msg) func creditRoyalty(creator : Principal, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     let current = getGameCreatorEarningsBalance(creator);
@@ -6284,6 +6329,7 @@ persistent actor ArcadeBackend {
 
   /// Credit tickets to a player (admin only)
   public shared(msg) func addTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     let current = getTicketBalance(player);
@@ -6296,12 +6342,14 @@ persistent actor ArcadeBackend {
   public shared(msg) func adminSetTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
+    if (not ALLOW_TEST_MINTING and amount > getTicketBalance(player)) return #err("Raising ticket balances is disabled on this network (reductions still allowed)");
     tickets.put(player, amount);
     #ok(amount);
   };
 
   /// Batch credit tickets (admin only)
   public shared(msg) func batchAddTickets(entries : [(Principal, Nat)]) : async Result.Result<Nat, Text> {
+    if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     var count = 0;
