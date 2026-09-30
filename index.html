@@ -358,7 +358,7 @@ new MutationObserver(mutations=>{
 })();
 </script>
 
-<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' id='nftDetailSpotlight' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ffd700;color:#ffd700'>⭐ Spotlight</button><button class='btn' id='nftDetailGrail' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ff44aa;color:#ff44aa'>Grail NFT</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← RETURN</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Scan</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
+<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' id='nftDetailSpotlight' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ffd700;color:#ffd700'>⭐ Spotlight</button><button class='btn' id='nftDetailGrail' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ff44aa;color:#ff44aa'>Grail NFT</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← HOME</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Refresh</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
 <button id='playerManualBtn' onclick='openPlayerManual()' style='position:fixed;bottom:16px;left:14px;z-index:80;display:none;padding:6px 16px;background:rgba(4,8,20,.85);border:1px solid rgba(0,170,255,.3);border-radius:8px;color:#00aaff;font-size:.72rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.borderColor="rgba(0,170,255,.7)";this.style.color="#fff"' onmouseleave='this.style.borderColor="rgba(0,170,255,.3)";this.style.color="#00aaff"'>Player Manual</button>
 <div id='legalFooterBtn' style='position:fixed;top:72px;left:14px;z-index:80;display:flex;gap:8px'>
 <button onclick="showView('legal-tos')" style='padding:5px 12px;background:rgba(4,8,20,.75);border:1px solid #1a2848;border-radius:7px;color:#3d6090;font-size:.65rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.color="#00aaff";this.style.borderColor="#0066ff44"' onmouseleave='this.style.color="#3d6090";this.style.borderColor="#1a2848"'>Terms</button>
@@ -1086,7 +1086,7 @@ window.addEventListener('message', (e) => {
 <div style='font-size:1rem;font-weight:800;color:#fca5a5' id='daoVpCount'>0</div>
 <div style='font-size:.55rem;color:#5a2020;letter-spacing:1px'>Voting Power Badges</div>
 </div>
-<div style='font-size:.7rem;color:#5a3d3d;display:flex;align-items:center;gap:6px;padding:0 8px'>1 VP to vote · 3 VP to create · Each VP = 1 vote weight</div>
+<div style='font-size:.7rem;color:#5a3d3d;display:flex;align-items:center;gap:6px;padding:0 8px'>1 VP to vote · 2 VP Badges to create · Each VP = 1 vote weight</div>
 </div>
 <div id='daoSections' style='display:grid;gap:8px'></div>
 </div>
@@ -1812,7 +1812,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What is the DAO?</button><div class='faq-a'>The DAO is the community governance system. Voting Power Badge holders can vote on proposals that shape the arcade - which games get promoted, what features get built, how the treasury is managed. It\'s a glorified polling machine: proposals that pass go to the dev team for implementation.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power Badge. Enter through the DAO door on the landing page. Higher VP levels unlock restricted discussion areas: Level 1 (1+ VP) gets basic access, Level 2 (4+ VP) gets voting discussion, Level 3 (7+ VP) gets treasury talk, Level 4 (10 VP) gets Core Council.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power: a Voting Power Badge from the Prize Booth, or a Dev/Artist Contributor badge. Enter through the DAO door on the landing page. Voting Power Badges unlock more as you collect them: 2 badges = create proposals, 3 = Ticket Lottery #1, 4 = Token Lottery #1, 5 = DAO forum tier 1 (Voting and Treasury Talk), 6 = Token Lottery #2, 7 = tier 2 (Elite’s Corner), 8 = Ticket Lottery #2, 9 = Token Lottery #3, 10 = tier 3 (Diplomat’s Only). Lotteries are coming soon.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Does the DAO control the platform?</button><div class='faq-a'>No. The DAO is advisory. All passed proposals are reviewed by the development team before implementation. The arcade reserves the right to reject proposals that would harm the platform, its economy, or its users. Think of it as a strong suggestion box, not a boardroom.</div></div>
 </div>
@@ -2449,7 +2449,7 @@ function sBallClick(intensity=1){note(800+rnd(120),0.015,'square',0.02*intensity
 
 window._viewHistory=[];window._skipHistory=false;
 function showView(view){showViewHooked(view);}
-function goBack(){const po=document.getElementById('proposalOverlay');if(po&&po.style.display!=='none'){hideCreateProposal();return;}const cat=document.getElementById('fullCatalogOverlay');if(cat&&cat.style.display==='block'){cat.style.display='none';const pbb=document.getElementById('prizeBoothBtns');if(pbb)pbb.style.display='flex';return;}if(S.view==='arcade'||S.view==='backroom'||S.view==='hole'){window._skipHistory=true;window.showView('landing');window._skipHistory=false;return;}const prev=window._viewHistory.pop()||'landing';window._skipHistory=true;window.showView(prev);window._skipHistory=false;}
+function goBack(){const po=document.getElementById('proposalOverlay');if(po&&po.style.display!=='none'){hideCreateProposal();return;}const cat=document.getElementById('fullCatalogOverlay');if(cat&&cat.style.display==='block'){cat.style.display='none';const pbb=document.getElementById('prizeBoothBtns');if(pbb)pbb.style.display='flex';return;}if(S.view==='arcade'||S.view==='backroom'||S.view==='hole'){window._skipHistory=true;window.showView('landing');window._skipHistory=false;return;}window._viewHistory.length=0;window._skipHistory=true;window.showView('landing');window._skipHistory=false;}
 window.goBack=goBack;
 function toggleGamesCatalog(){ qs('gamesCatalog')?.classList.toggle('show'); }
 
@@ -3000,13 +3000,13 @@ function renderProfileView(){
     const be=await getBackendActor();
     const badges=await be.getGamerBadges(P);
     if(!alive()) return;
-    qs('profileViewVp').textContent=badges.filter(b=>String(b.badgeType).startsWith('vp-badge-')).length;
+    qs('profileViewVp').textContent=(()=>{if(typeof ADMIN_PRINCIPALS!=='undefined'&&ADMIN_PRINCIPALS.includes(target)) return 0; const t=badges.map(b=>String(b.badgeType)); return t.filter(x=>x.startsWith('vp-badge-')).length+(t.includes('dev-contributor')?1:0)+(t.includes('artist-contributor')?1:0);})();
     const showcase=qs('profileBadgeShowcase'), grid=qs('profileBadgeGrid');
     if(!showcase||!grid||!badges.length) return;
     const colors={'standard':'#00aaff','hsh':'#ffd700','dev-contributor':'#22c55e','artist-contributor':'#a855f7','breaker':'#a855f7'};
     const labels={'standard':'Standard','hsh':'High Score Holder','dev-contributor':'Game Contributor NFT','artist-contributor':'Artist Contributor','breaker':'Breaker'};
     grid.innerHTML=badges.map(b=>{const c=colors[b.badgeType]||'#888'; const l=labels[b.badgeType]||b.badgeType;
-      return `<div style='background:rgba(0,0,0,.4);border:2px solid ${c};border-radius:10px;padding:10px 14px;text-align:center;min-width:100px;box-shadow:0 0 8px ${c}33'><div style='font-size:.65rem;font-weight:800;color:${c};letter-spacing:1px'>${escHtml(l)}</div><div style='font-size:.55rem;color:#4a6080;margin-top:2px'>${Number(b.votingPower)} VP</div></div>`;}).join('');
+      return `<div style='background:rgba(0,0,0,.4);border:2px solid ${c};border-radius:10px;padding:10px 14px;text-align:center;min-width:100px;box-shadow:0 0 8px ${c}33'><div style='font-size:.65rem;font-weight:800;color:${c};letter-spacing:1px'>${escHtml(l)}</div><div style='font-size:.55rem;color:#4a6080;margin-top:2px'>${(String(b.badgeType).startsWith('vp-badge-')||b.badgeType==='dev-contributor'||b.badgeType==='artist-contributor')?1:0} VP</div></div>`;}).join('');
     showcase.style.display='block';
   }catch(_){}})();
   // Records & Rankings, Jackpot wins, Games made
@@ -4977,7 +4977,7 @@ const MANIFESTO_BOOKS = {
 <p>The Infinity Arcade DAO is a lightweight governance system. No SNS. No token launches. No hostile takeover vectors. Just players voting on proposals.</p>
 <p><b style="color:#fff">Voting Power</b> comes from Voting Power Badges. Standard badges give 1 VP each (up to 10). Special badges - High Score Holder, Game Contributor, Artist Contributor - give additional VP.</p>
 <p><b style="color:#fff">Who can vote:</b> Anyone with at least 1 VP.</p>
-<p><b style="color:#fff">Who can propose:</b> Anyone with 3+ VP and 5 Tokens (or 10 Tickets). Admin is exempt from costs.</p>
+<p><b style="color:#fff">Who can propose:</b> Anyone with 2+ VP Badges and 5 Tokens. Admin is exempt from costs.</p>
 <p><b style="color:#fff">Proposal categories:</b> Arcade upgrades, treasury grants, game approvals, community initiatives, dev team questions, artist showcases, and more.</p>
 <p><b style="color:#fff">What the DAO controls:</b> Advisory votes. Game approval to "DAO Favourites" tier. Community direction. Aesthetic decisions. The DAO can recommend - it cannot unilaterally execute.</p>
 <p><b style="color:#fff">What the DAO cannot do:</b> Drain the treasury. Modify smart contracts. Override admin safety decisions. Ban users. The DAO is deliberately limited to prevent capture by bad actors.</p>
@@ -6248,7 +6248,6 @@ function backendIdl({IDL}){
     setGameUrl:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     buyStandardBadge:IDL.Func([],[Result],[]),
     addTickets:IDL.Func([IDL.Principal,IDL.Nat],[ResultNat],[]),
-    adminGrantAllVpBadges:IDL.Func([],[Result],[]),
     adminResetVpBadges:IDL.Func([],[Result],[]),
     getProposals:IDL.Func([],[IDL.Vec(IDL.Record({
       id:IDL.Text,title:IDL.Text,body:IDL.Text,category:IDL.Text,
@@ -7471,7 +7470,9 @@ async function renderNftShop(){
 
   // Voting Power Badge row
   const vpRow=qs('vpNftRow');
-  if(vpRow){
+  if(vpRow&&isAdmin()){
+    vpRow.innerHTML='<div style="font-size:.7rem;font-weight:800;color:#ef4444;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(239,68,68,.4)">Voting Power Badges &mdash; Admin accounts hold no VP (full access)</div>';
+  } else if(vpRow){
     const ownedVp=VP_NFTS.slice(0,getUserVpCount()).map(v=>v.id);
     const availableVp=VP_NFTS.filter(v=>!ownedVp.includes(v.id));
     const nextVp=availableVp.length>0?availableVp[0]:null;
@@ -7497,7 +7498,7 @@ async function renderNftShop(){
       vpHtml+=`</div>`;
       vpRow.innerHTML=vpHtml;
     } else if(S.connected && ownedVp.length>=10){
-      vpRow.innerHTML='<div style="font-size:.7rem;font-weight:800;color:#ef4444;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(239,68,68,.4)">Voting Power Badges (10/10) - Core Council</div>';
+      vpRow.innerHTML='<div style="font-size:.7rem;font-weight:800;color:#ef4444;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(239,68,68,.4)">Voting Power Badges (10/10) - All unlocks earned</div>';
     } else { vpRow.innerHTML=''; }
   }
 
@@ -12223,17 +12224,6 @@ async function adminWithdrawTreasury(){
   }catch(_e){setTreasuryWithdrawBusy(false);if(statusEl) statusEl.innerHTML=renderBackendSlicePending('Withdrawal could not be started. Backend treasury update methods are pending or unavailable.');}
 }
 
-async function adminGiveAllVp(){
-  if(!isAdmin()||!S.principalText) return;
-  try{
-    const be=await getBackendActor(true);
-    const r=await be.adminGrantAllVpBadges();
-    if(r.err){alert(safeUserErrorMessage(r.err,'admin action'));return;}
-    _userBadgeTypes=null;_userBadgeTypesTime=0;
-    await getUserBadgeTypes();
-    alert('All 10 Voting Power Badges granted. VP Level: '+getUserVpLevel());
-  }catch(e){alert(safeUserErrorMessage(e,'admin action'));}
-}
 async function adminResetVp(){
   if(!isAdmin()||!S.principalText) return;
   if(!confirm('Reset all Voting Power Badges?')) return;
@@ -13934,16 +13924,16 @@ const DAO_LEVELS={
 };
 // Voting Power Badge Definitions - 10 unique soulbound governance tokens
 const VP_NFTS=[
-  {id:'vp-1', vpNum:1, name:'Initiate Badge',    desc:'Your first step into governance. Welcome to the DAO.',                ticketCost:1000,   rarity:'Common',    emoji:'🔰'},
-  {id:'vp-2', vpNum:2, name:'Voice Token',        desc:'Your voice carries weight now. Speak up.',                            ticketCost:2000,   rarity:'Common',    emoji:'🗣️'},
-  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks the power to create proposals. Use it wisely.',               ticketCost:3000,   rarity:'Uncommon',  emoji:'🔑'},
-  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Recognized by the community. Level 2 access granted.',                ticketCost:5000,   rarity:'Uncommon',  emoji:'📜'},
-  {id:'vp-5', vpNum:5, name:'Guardian Crest',      desc:'A true guardian of the arcade. Your commitment shows.',               ticketCost:7500,   rarity:'Rare',      emoji:'🛡️'},
-  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'You see the bigger picture. The arcade benefits from your vision.',    ticketCost:10000,  rarity:'Rare',      emoji:'♟️'},
-  {id:'vp-7', vpNum:7, name:'Treasury Sigil',     desc:'Access to the vault. Level 3 clearance confirmed.',                   ticketCost:15000,  rarity:'Rare',      emoji:'💎'},
-  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'You shape the future of the arcade. Build wisely.',                   ticketCost:20000,  rarity:'Legendary', emoji:'🏗️'},
-  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'You see what others cannot. Near-maximum influence.',                 ticketCost:25000,  rarity:'Legendary', emoji:'👁️'},
-  {id:'vp-10',vpNum:10,name:'Infinity Crown',     desc:'The final VP. Core Council access. You are the arcade.',              ticketCost:50000,  rarity:'Legendary', emoji:'👑'},
+  {id:'vp-1', vpNum:1, name:'Initiate Badge',    desc:'Opens the DAO Boardroom and Player Portal. Welcome to the DAO.',                ticketCost:1000,   rarity:'Common',    emoji:'🔰'},
+  {id:'vp-2', vpNum:2, name:'Voice Token',        desc:'Unlocks: create proposals. Your voice carries weight now.',                            ticketCost:2000,   rarity:'Common',    emoji:'🗣️'},
+  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks: Ticket Lottery #1 eligibility (lotteries coming soon).',               ticketCost:3000,   rarity:'Uncommon',  emoji:'🔑'},
+  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Unlocks: Token Lottery #1 eligibility (lotteries coming soon).',                ticketCost:5000,   rarity:'Uncommon',  emoji:'📜'},
+  {id:'vp-5', vpNum:5, name:'Guardian Crest',      desc:'Unlocks: DAO forum tier 1 (Voting and Treasury Talk).',               ticketCost:7500,   rarity:'Rare',      emoji:'🛡️'},
+  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'Unlocks: Token Lottery #2 eligibility (lotteries coming soon).',    ticketCost:10000,  rarity:'Rare',      emoji:'♟️'},
+  {id:'vp-7', vpNum:7, name:'Treasury Sigil',     desc:'Unlocks: DAO forum tier 2 (Elite’s Corner).',                   ticketCost:15000,  rarity:'Rare',      emoji:'💎'},
+  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'Unlocks: Ticket Lottery #2 eligibility (lotteries coming soon).',                   ticketCost:20000,  rarity:'Legendary', emoji:'🏗️'},
+  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'Unlocks: Token Lottery #3 eligibility (lotteries coming soon).',                 ticketCost:25000,  rarity:'Legendary', emoji:'👁️'},
+  {id:'vp-10',vpNum:10,name:'Infinity Crown',     desc:'Unlocks: DAO forum tier 3 (Diplomat’s Only). The final VP badge.',              ticketCost:50000,  rarity:'Legendary', emoji:'👑'},
 ];
 
 function getOwnedVpNfts(){
@@ -13956,21 +13946,28 @@ function saveOwnedVpNfts(owned){
   localStorage.setItem('vp_nft_count_'+S.principalText,String(owned.length));
 }
 function getUserVpCount(){
-  if(isAdmin()) return 10;
+  if(isAdmin()) return 0; // admin holds no VP (but has full access via isAdmin checks)
   const types=_userBadgeTypes||[];
   return types.filter(t=>t.startsWith('vp-badge-')).length;
 }
+function getUserVotingPower(){
+  if(isAdmin()) return 0;
+  const t=_userBadgeTypes||[];
+  return t.filter(x=>x.startsWith('vp-badge-')).length+(t.includes('dev-contributor')?1:0)+(t.includes('artist-contributor')?1:0);
+}
+function hasDaoEntry(){ return isAdmin()||getUserVotingPower()>=1; }
 
 function getUserVpLevel(){
   if(isAdmin()) return 4;
   const vpCount=getUserVpCount();
   if(vpCount>=10) return 4;
   if(vpCount>=7) return 3;
-  if(vpCount>=4) return 2;
-  if(vpCount>=1) return 1;
+  if(vpCount>=5) return 2;
+  if(getUserVotingPower()>=1) return 1;
   return 0;
 }
 
+let _buyingVp=false;
 async function buyVpNft(vpId){
   if(!S.connected){alert('Connect your wallet first!');return;}
   const vp=VP_NFTS.find(v=>v.id===vpId);
@@ -13979,7 +13976,10 @@ async function buyVpNft(vpId){
   if(owned>=10){alert('You already own all 10 Voting Power Badges!');return;}
   const ticketsHave=Number(S.tickets||0);
   if(ticketsHave<vp.ticketCost){alert('Not enough tickets! You need '+vp.ticketCost.toLocaleString()+' tickets but only have '+ticketsHave.toLocaleString());return;}
-  if(!confirm('Purchase '+vp.emoji+' '+vp.name+' for '+vp.ticketCost.toLocaleString()+' Tickets?\n\n Voting Power Badges are soulbound - they cannot be transferred, sold, or withdrawn.')){return;}
+  if(isAdmin()){await arcadeAlert('Admin','Admin accounts hold no Voting Power and already have full access.');return;}
+  if(_buyingVp) return;
+  if(!await arcadeConfirm('Buy Voting Power Badge',vp.emoji+' <b>'+escHtml(vp.name)+'</b> for <b>'+vp.ticketCost.toLocaleString()+' Tickets</b><br><br>'+escHtml(vp.desc)+'<br><br>Voting Power Badges are soulbound: they cannot be transferred, sold, or withdrawn.')) return;
+  _buyingVp=true;
   try{
     const be=await getBackendActor(true);
     const r=await be.buyStandardBadge();
@@ -13997,7 +13997,7 @@ async function buyVpNft(vpId){
   }catch(e){
     console.error('buyVpNft error:',e);
     await arcadeAlert('Error',escHtml(safeUserErrorMessage(e,'badge purchase')));
-  }
+  }finally{_buyingVp=false;}
 }
 
 const _forumThreadCache={};
@@ -14223,7 +14223,7 @@ function closeForumSection(){
 }
 // ─── DAO PROPOSAL SYSTEM ───
 // Glorified polling machine. All passed proposals go to dev team for implementation.
-// 1 Voting Power Badge = 1 vote. Need 1 VP to vote, 3 VP to create proposals.
+// 1 Voting Power Badge = 1 vote. Need 1 VP to vote, 2 VP Badges to create proposals.
 
 const PROPOSAL_CATEGORIES=[
   {id:'game-approval',name:'Game Approval',desc:'Promote a game from The Back to Showroom'},
@@ -14291,7 +14291,7 @@ function getProposalStatus(p){
 function openDaoView(){
   if(!S.connected){showConnect();return;}
   const vpCount=getUserVpCount();
-  if(vpCount<1){
+  if(!hasDaoEntry()){
     showDaoRestricted();
     return;
   }
@@ -14326,14 +14326,16 @@ function closeDaoView(){
 async function renderDaoPage(){
   // VP gate - kick out anyone without VP
   const vpCount=getUserVpCount();
-  if(!S.connected||vpCount<1){
+  if(!S.connected||!hasDaoEntry()){
     showViewHooked('landing');
     arcadeConfirm('Restricted','You need at least 1 Voting Power Badge to access the DAO Boardroom.');
     return;
   }
+  { const _sb=document.getElementById('forumScanBtn'); if(_sb) _sb.style.display='block'; }
 
   // Fetch proposals from chain
   await fetchProposalsFromChain();
+  await prefetchProposalAuthorNames();
 
   // Render proposals in left panel
   const proposalPanel=document.getElementById('daoProposalPanel');
@@ -14352,16 +14354,16 @@ async function renderDaoPage(){
     let html=`<div style='display:flex;align-items:center;gap:12px;margin-bottom:12px'>
       <div style='font-size:.85rem;font-weight:800;color:#c084fc;letter-spacing:2px;text-shadow:0 0 12px rgba(160,80,255,.4)'>PROPOSALS</div>
       <div style='display:flex;gap:8px;align-items:center'>
-        <div style='background:rgba(160,80,255,.1);border:1px solid rgba(160,80,255,.2);border-radius:6px;padding:3px 10px;font-size:.65rem;color:#c084fc;font-weight:700'>VP ${vpCount} / Level ${getUserVpLevel()}</div>
+        <div style='background:rgba(160,80,255,.1);border:1px solid rgba(160,80,255,.2);border-radius:6px;padding:3px 10px;font-size:.65rem;color:#c084fc;font-weight:700'>VP ${getUserVotingPower()} / Level ${getUserVpLevel()}${isAdmin()?' · Admin':''}</div>
       </div>
     </div>`;
 
     // Create proposal button
-    if(vpCount>=3||isAdmin()){
-      const costLabel=isAdmin()?'Free':'5 Tokens or 10 Tickets';
+    if(vpCount>=2||isAdmin()){
+      const costLabel=isAdmin()?'Free':'5 Tokens';
       html+=`<button onclick='showCreateProposal()' style='width:100%;padding:12px;background:rgba(160,80,255,.06);border:2px solid rgba(160,80,255,.25);border-radius:10px;color:#c084fc;font-weight:800;font-size:.85rem;cursor:pointer;margin-bottom:12px;letter-spacing:1px;transition:all .3s' onmouseenter='this.style.borderColor="#c084fc";this.style.background="rgba(160,80,255,.12)"' onmouseleave='this.style.borderColor="rgba(160,80,255,.25)";this.style.background="rgba(160,80,255,.06)"'>+ CREATE PROPOSAL <span style="font-weight:400;font-size:.65rem;color:rgba(160,80,255,.5)">(${costLabel})</span></button>`;
     } else {
-      html+=`<div style='padding:8px;background:rgba(160,80,255,.04);border:1px solid rgba(160,80,255,.12);border-radius:8px;margin-bottom:12px;font-size:.7rem;color:rgba(160,80,255,.4);text-align:center'>Need 3 VP + 5 Tokens to create proposals</div>`;
+      html+=`<div style='padding:8px;background:rgba(160,80,255,.04);border:1px solid rgba(160,80,255,.12);border-radius:8px;margin-bottom:12px;font-size:.7rem;color:rgba(160,80,255,.4);text-align:center'>Need 2 VP Badges + 5 Tokens to create proposals</div>`;
     }
 
     // Create form (reuse existing)
@@ -14645,10 +14647,12 @@ async function deleteDaoReply(postIndex,replyIndex){
 }
 
 async function renderDaoMain(){
+  window._openProposalId=null;
   const container=qs('daoSections');
   const vpCount=getUserVpCount();
   const vpLevel=getUserVpLevel();
   await fetchProposalsFromChain();
+  await prefetchProposalAuthorNames();
   const proposals=getProposals();
   const active=proposals.filter(p=>getProposalStatus(p)==='active');
   const passed=proposals.filter(p=>getProposalStatus(p)==='passed');
@@ -14660,11 +14664,11 @@ async function renderDaoMain(){
   html+=`<button onclick='showView("dao-dashboard")' style='width:100%;padding:10px 14px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25);border-radius:10px;color:#a78bfa;font-weight:700;font-size:.8rem;cursor:pointer;margin-bottom:12px;letter-spacing:1px;text-align:left;transition:all .2s' onmouseenter='this.style.background="rgba(167,139,250,.12)"' onmouseleave='this.style.background="rgba(167,139,250,.06)"'>DAO Dashboard &nbsp;·&nbsp; <span style="font-weight:400;font-size:.72rem;color:#6b5fa0">Treasury · Jackpot · Lottery History</span></button>`;
 
   // Create proposal button (3+ VP)
-  if(vpCount>=3||isAdmin()){
-    const costLabel=isAdmin()?'<span style="font-weight:400;font-size:.7rem;color:#7f3d3d">(Free)</span>':'<span style="font-weight:400;font-size:.7rem;color:#7f3d3d">(5 Tokens or 10 Tickets)</span>';
+  if(vpCount>=2||isAdmin()){
+    const costLabel=isAdmin()?'<span style="font-weight:400;font-size:.7rem;color:#7f3d3d">(Free)</span>':'<span style="font-weight:400;font-size:.7rem;color:#7f3d3d">(5 Tokens)</span>';
     html+=`<button onclick='showCreateProposal()' style='width:100%;padding:14px;background:rgba(239,68,68,.06);border:2px solid rgba(239,68,68,.25);border-radius:12px;color:#ef4444;font-weight:800;font-size:.95rem;cursor:pointer;margin-bottom:14px;letter-spacing:1px;transition:all .3s' onmouseenter='this.style.borderColor="#ef4444";this.style.background="rgba(239,68,68,.12)"' onmouseleave='this.style.borderColor="rgba(239,68,68,.25)";this.style.background="rgba(239,68,68,.06)"'>+ CREATE PROPOSAL ${costLabel}</button>`;
   } else {
-    html+=`<div style='padding:10px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.15);border-radius:10px;margin-bottom:14px;font-size:.75rem;color:#7f3d3d;text-align:center'>Need 3 Voting Power Badges to create proposals (you have ${vpCount} VP)</div>`;
+    html+=`<div style='padding:10px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.15);border-radius:10px;margin-bottom:14px;font-size:.75rem;color:#7f3d3d;text-align:center'>Need 2 Voting Power Badges to create proposals (you have ${vpCount} VP)</div>`;
   }
 
   // Create proposal form (hidden)
@@ -14747,6 +14751,22 @@ async function renderDaoMain(){
   container.innerHTML=html;
 }
 
+const _proposalAuthorNames={};
+async function prefetchProposalAuthorNames(){
+  try{
+    const ids=[...new Set(getProposals().map(p=>String(p.author||'')).filter(a=>a&&!_proposalAuthorNames[a]))];
+    if(!ids.length) return;
+    const be=await getBackendActor();
+    await Promise.all(ids.map(async a=>{try{const o=await be.getPlayerProfile(Principal.fromText(a)); if(o&&o.length&&o[0].name) _proposalAuthorNames[a]=o[0].name;}catch(_){}}));
+  }catch(_){}
+}
+function devTeamVerdictHtml(p){
+  const av=(p.votes||[]).find(v=>typeof ADMIN_PRINCIPALS!=='undefined'&&ADMIN_PRINCIPALS.includes(v.voter));
+  if(!av) return '';
+  const yes=av.vote==='for';
+  const c=yes?'34,197,94':'239,68,68';
+  return `<div style='margin:4px 0 8px;padding:7px 12px;border-radius:8px;text-align:center;font-size:.78rem;font-weight:900;letter-spacing:1px;color:${yes?'#22c55e':'#ef4444'};background:rgba(${c},.1);border:1px solid rgba(${c},.45);box-shadow:0 0 12px rgba(${c},.2)'>${yes?'✅ Dev Team Recommends!':'⛔ Dev Team Doesn’t Recommend'}</div>`;
+}
 function renderProposalCard(p){
   const status=getProposalStatus(p);
   const yes=p.votesFor||0;
@@ -14760,14 +14780,14 @@ function renderProposalCard(p){
   const statusColor=status==='active'?'#ef4444':status==='passed'?'#22c55e':'#3e537d';
   const statusLabel=status==='active'?(timeLeft>86400000?Math.ceil(timeLeft/86400000)+'d left':Math.ceil(timeLeft/3600000)+'h left'):status==='passed'?'PASSED - Awaiting Dev Review':status==='failed'?'FAILED':'EXPIRED';
   const profile=getProfileFor(p.author);
-  const authorName=profile?.name||p.authorName||p.author?.slice(0,8)+'...';
+  const authorName=profile?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'...');
 
   const isOfficial=p.official;
   const cardBorder=isOfficial?'2px solid rgba(160,80,255,.5)':('1px solid '+(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)'));
   const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'';
   const hoverBorder=isOfficial?'rgba(180,100,255,.7)':(status==='active'?'rgba(239,68,68,.4)':'');
 
-  return `<div style='background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
+  return `<div data-proposal-id='${p.id}' style='background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
       ${isOfficial?`<span style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,rgba(160,80,255,.15),rgba(100,50,200,.15));color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.3)'>DEV TEAM</span>`:''}
       <span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700;letter-spacing:.5px'>${cat?.name||'General'}</span>
@@ -14779,17 +14799,18 @@ function renderProposalCard(p){
 
     <!-- Vote bar -->
     <div style='background:rgba(0,0,0,.4);border-radius:6px;height:24px;overflow:hidden;position:relative;margin-bottom:6px'>
-      <div style='position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:linear-gradient(90deg,rgba(34,197,94,.4),rgba(34,197,94,.2));transition:width .3s'></div>
-      <div style='position:absolute;right:0;top:0;bottom:0;width:${100-pct}%;background:linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.4));transition:width .3s'></div>
+      <div style='position:absolute;left:0;top:0;bottom:0;width:${total?pct:50}%;background:${total?'linear-gradient(90deg,rgba(34,197,94,.4),rgba(34,197,94,.2))':'rgba(148,163,184,.12)'};transition:width .3s'></div>
+      <div style='position:absolute;right:0;top:0;bottom:0;width:${total?100-pct:50}%;background:${total?'linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.4))':'rgba(148,163,184,.08)'};transition:width .3s'></div>
       <div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:.7rem;font-weight:700'>
-        <span style='color:#22c55e'>FOR ${yes}</span>
-        <span style='color:#ef4444'>AGAINST ${no}</span>
+        <span style='color:#22c55e'>FOR ${yes} · ${total?pct:0}%</span>
+        <span style='color:#ef4444'>AGAINST ${no} · ${total?100-pct:0}%</span>
       </div>
     </div>
+    ${devTeamVerdictHtml(p)}
     <div style='display:flex;align-items:center;justify-content:space-between'>
       <span style='font-size:.65rem;color:#2d5a8a'>${total} total votes</span>
       ${status==='active'?`<div style='display:flex;gap:6px'>
-        ${myVote?`<span style='font-size:.7rem;color:${myVote==='for'?'#22c55e':'#ef4444'};font-weight:700'>Voted ${myVote==='for'?'FOR':'AGAINST'} (${myVoteObj?.weight||1})</span>`:`
+        ${myVote?`<span class='my-vote-pill' style='font-size:.7rem;color:${myVote==='for'?'#22c55e':'#ef4444'};font-weight:800;padding:4px 12px;border-radius:6px;border:1px solid ${myVote==='for'?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)'};background:${myVote==='for'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)'};box-shadow:0 0 12px ${myVote==='for'?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)'}'>Voted ${myVote==='for'?'FOR':'AGAINST'} (${(myVoteObj&&Number(myVoteObj.weight)===0)?'0 · opinion only':(myVoteObj?.weight||1)})</span>`:`
         <button onclick='castVote("${p.id}","for")' style='padding:4px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-weight:700;font-size:.7rem;cursor:pointer;transition:all .2s' onmouseenter='this.style.background="rgba(34,197,94,.2)"' onmouseleave='this.style.background="rgba(34,197,94,.08)"'>FOR</button>
         <button onclick='castVote("${p.id}","against")' style='padding:4px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-weight:700;font-size:.7rem;cursor:pointer;transition:all .2s' onmouseenter='this.style.background="rgba(239,68,68,.2)"' onmouseleave='this.style.background="rgba(239,68,68,.08)"'>AGAINST</button>`}
       </div>`:''}
@@ -14806,7 +14827,7 @@ function showCreateProposal(){
     overlay.style.cssText='position:fixed;top:46px;left:0;right:0;bottom:0;z-index:15;display:flex;flex-direction:column;color-scheme:dark';
     document.body.appendChild(overlay);
   }
-  const costText=isAdmin()?'Free (Admin)':'5 Tokens or 10 Tickets';
+  const costText=isAdmin()?'Free (Admin)':'5 Tokens';
   const fld='width:100%;box-sizing:border-box;padding:11px 14px;background:rgba(20,5,35,.9);border:1px solid rgba(160,80,255,.25);border-radius:8px;color:#e0c8ff;font-size:.85rem;outline:none;font-family:inherit;color-scheme:dark;-webkit-appearance:none';
   overlay.innerHTML=`
     <div style="flex-shrink:0;background:linear-gradient(135deg,rgba(80,10,100,.97),rgba(30,5,60,.97));border-bottom:1px solid rgba(160,80,255,.25);padding:14px 24px;text-align:center">
@@ -14828,11 +14849,7 @@ function showCreateProposal(){
           <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
             ${VOTE_DURATIONS.map((d,i)=>'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:#c084fc;font-size:.8rem"><input type="radio" name="overlayProposalDuration" value="'+d.id+'"'+(i===1?' checked':'')+' style="accent-color:#c084fc"/> '+d.label+'</label>').join('')}
           </div>
-          <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">PAY WITH${isAdmin()?' <span style="color:#c084fc">(Admin - Free)</span>':''}</div>
-          <div style="display:flex;gap:16px;margin-bottom:16px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#ffd700;font-size:.85rem;font-weight:700"><input type="radio" name="overlayProposalPayment" value="tokens" checked style="accent-color:#c084fc"/> 5 Tokens</label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#88ccff;font-size:.85rem;font-weight:700"><input type="radio" name="overlayProposalPayment" value="tickets" style="accent-color:#88ccff"/> 10 Tickets</label>
-          </div>
+          ${isAdmin()?'':'<div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">COST</div><div style="margin-bottom:16px;color:#ffd700;font-size:.9rem;font-weight:800">5 Tokens<input type="hidden" name="overlayProposalPayment" value="tokens"/></div>'}
           <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">IMAGES (optional, max 5)</div>
           <input type="file" accept="image/*" multiple onchange="previewProposalImages(this)" style="font-size:.75rem;color:#9060bb;margin-bottom:8px"/>
           <div id="proposalImagePreviews" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
@@ -14920,11 +14937,11 @@ window.proposalImgNav=function(proposalId,dir){
 async function submitProposal(){
   if(!S.connected) return;
   const vpCount=getUserVpCount();
-  if(vpCount<3&&!isAdmin()){alert('Need 3 Voting Power Badges to create proposals.');return;}
+  if(vpCount<2&&!isAdmin()){alert('Need 2 Voting Power Badges to create proposals.');return;}
   const isAdm=isAdmin();
   const tokens=Number(S.quarters||0);
   const tix=Number(S.tickets||0);
-  const payChoice=document.querySelector('input[name=overlayProposalPayment]:checked')?.value||'tokens';
+  const payChoice='tokens'; // proposals cost Tokens only
   if(!isAdm){
     if(payChoice==='tokens'&&tokens<5){arcadeConfirm('Insufficient Funds','You need 5 Tokens. You have '+tokens+'.');return;}
     if(payChoice==='tickets'&&tix<10){arcadeConfirm('Insufficient Funds','You need 10 Tickets. You have '+Math.floor(tix)+'.');return;}
@@ -14953,32 +14970,42 @@ async function submitProposal(){
   hideCreateProposal();
   const ptEl=document.getElementById('proposalTitle');if(ptEl)ptEl.value='';
   const pbEl=document.getElementById('proposalBody');if(pbEl)pbEl.value='';
-  // Refresh from chain and re-render
-  await fetchProposalsFromChain();
-  renderDaoMain();
+  // Refresh exactly like the Refresh button, so the new proposal shows immediately
+  await renderDaoPage();
+  await renderDaoMain();
 }
 
+let _castingVote=false;
 async function castVote(proposalId,vote){
   if(!S.connected) return;
-  const vpCount=getUserVpCount();
-  if(vpCount<1){await arcadeAlert('Cannot Vote','Need at least 1 Voting Power Badge to vote.');return;}
-  // Cast vote on-chain
+  if(!hasDaoEntry()){await arcadeAlert('Cannot Vote','You need Voting Power to vote.');return;}
+  if(_castingVote) return;
+  _castingVote=true;
+  const sel='[data-proposal-id="'+proposalId+'"] button';
+  document.querySelectorAll(sel).forEach(b=>{b.disabled=true;b.style.opacity='.5';});
   try{
-    const be=await getBackendActor(true);
-    const result=await be.castVote(proposalId,vote);
-    if(result.err){await arcadeAlert('Vote Failed',escHtml(safeUserErrorMessage(result.err,'vote submit')));return;}
-  }catch(e){
-    console.error('castVote error:',e);
-    await arcadeAlert('Vote Error',escHtml(safeUserErrorMessage(e,'vote submit')));
-    return;
+    try{
+      const be=await getBackendActor(true);
+      const result=await be.castVote(proposalId,vote);
+      if(result.err){await arcadeAlert('Vote Failed',escHtml(safeUserErrorMessage(result.err,'vote submit')));return;}
+    }catch(e){
+      console.error('castVote error:',e);
+      await arcadeAlert('Vote Error',escHtml(safeUserErrorMessage(e,'vote submit')));
+      return;
+    }
+    registerPublicPresence(S.principalText,'dao');
+    await fetchProposalsFromChain();
+    if(window._openProposalId===proposalId) viewProposal(proposalId); else { await renderDaoPage(); await renderDaoMain(); }
+    const c=vote==='for'?'34,197,94':'239,68,68';
+    document.querySelectorAll('[data-proposal-id="'+proposalId+'"] .my-vote-pill').forEach(el=>{ if(el.animate) el.animate([{boxShadow:'0 0 12px rgba('+c+',.45)'},{boxShadow:'0 0 28px 6px rgba('+c+',.8)'},{boxShadow:'0 0 12px rgba('+c+',.45)'}],{duration:1200,easing:'ease-out'}); });
+  }finally{
+    _castingVote=false;
+    document.querySelectorAll(sel).forEach(b=>{b.disabled=false;b.style.opacity='';});
   }
-  registerPublicPresence(S.principalText,'dao');
-  // Refresh from chain and re-render
-  await fetchProposalsFromChain();
-  renderDaoMain();
 }
 
 function viewProposal(proposalId){
+  window._openProposalId=proposalId;
   const proposals=getProposals();
   const p=proposals.find(x=>x.id===proposalId);
   if(!p) return;
@@ -14989,7 +15016,7 @@ function viewProposal(proposalId){
   const pct=total>0?Math.round(yes/total*100):0;
   const cat=PROPOSAL_CATEGORIES.find(c=>c.id===p.category);
   const profile=getProfileFor(p.author);
-  const authorName=profile?.name||p.authorName||p.author?.slice(0,8);
+  const authorName=profile?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'...');
   const statusColor=status==='active'?'#ef4444':status==='passed'?'#22c55e':'#3e537d';
   const statusLabel=status==='active'?'Active':status==='passed'?'Passed - Awaiting Dev Review':status==='failed'?'Failed':'Expired';
   const myVoteObj2=(p.votes||[]).find(v=>v.voter===S.principalText);
@@ -15001,7 +15028,7 @@ function viewProposal(proposalId){
   const isOfficial=p.official;
   const detailBorder=isOfficial?'2px solid rgba(160,80,255,.4)':'1px solid rgba(239,68,68,.15)';
   const detailShadow=isOfficial?';box-shadow:0 0 24px rgba(160,80,255,.15)':'';
-  html+=`<div style='background:rgba(0,10,25,.7);border:${detailBorder};border-radius:14px;padding:20px;margin-bottom:14px${detailShadow}'>
+  html+=`<div data-proposal-id='${p.id}' style='background:rgba(0,10,25,.7);border:${detailBorder};border-radius:14px;padding:20px;margin-bottom:14px${detailShadow}'>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:10px'>
       ${isOfficial?`<span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,rgba(160,80,255,.15),rgba(100,50,200,.15));color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.3)'>DEV TEAM</span>`:''}
       <span style='font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700'>${cat?.name||'General'}</span>
@@ -15014,8 +15041,8 @@ function viewProposal(proposalId){
 
     <!-- Vote bar large -->
     <div style='background:rgba(0,0,0,.4);border-radius:8px;height:36px;overflow:hidden;position:relative;margin-bottom:8px'>
-      <div style='position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:linear-gradient(90deg,rgba(34,197,94,.4),rgba(34,197,94,.2))'></div>
-      <div style='position:absolute;right:0;top:0;bottom:0;width:${100-pct}%;background:linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.4))'></div>
+      <div style='position:absolute;left:0;top:0;bottom:0;width:${total?pct:50}%;background:${total?'linear-gradient(90deg,rgba(34,197,94,.4),rgba(34,197,94,.2))':'rgba(148,163,184,.12)'}'></div>
+      <div style='position:absolute;right:0;top:0;bottom:0;width:${total?100-pct:50}%;background:${total?'linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.4))':'rgba(148,163,184,.08)'}'></div>
       <div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:.85rem;font-weight:800'>
         <span style='color:#22c55e'>FOR ${yes} (${pct}%)</span>
         <span style='color:#ef4444'>AGAINST ${no} (${total>0?100-pct:0}%)</span>
@@ -15027,7 +15054,7 @@ function viewProposal(proposalId){
       <button onclick='castVote("${p.id}","for");viewProposal("${p.id}")' style='flex:1;padding:10px;background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.3);border-radius:8px;color:#22c55e;font-weight:800;font-size:.9rem;cursor:pointer;transition:all .2s' onmouseenter='this.style.background="rgba(34,197,94,.2)"' onmouseleave='this.style.background="rgba(34,197,94,.08)"'>VOTE FOR</button>
       <button onclick='castVote("${p.id}","against");viewProposal("${p.id}")' style='flex:1;padding:10px;background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.3);border-radius:8px;color:#ef4444;font-weight:800;font-size:.9rem;cursor:pointer;transition:all .2s' onmouseenter='this.style.background="rgba(239,68,68,.2)"' onmouseleave='this.style.background="rgba(239,68,68,.08)"'>VOTE AGAINST</button>
     </div>`:''}
-    ${myVote?`<div style='text-align:center;font-size:.8rem;color:${myVote==='for'?'#22c55e':'#ef4444'};font-weight:700;margin-bottom:10px'>You voted ${myVote.toUpperCase()} with ${myVoteObj2?.weight||1} VP weight</div>`:''}
+    ${myVote?`<div class='my-vote-pill' style='text-align:center;font-size:.8rem;color:${myVote==='for'?'#22c55e':'#ef4444'};font-weight:800;margin:0 auto 10px;padding:8px 14px;border-radius:8px;border:1px solid ${myVote==='for'?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)'};background:${myVote==='for'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)'};box-shadow:0 0 14px ${myVote==='for'?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)'}'>You voted ${myVote.toUpperCase()} ${(myVoteObj2&&Number(myVoteObj2.weight)===0)?'(0 weight, opinion only)':'with '+(myVoteObj2?.weight||1)+' VP weight'}</div>`:''}${devTeamVerdictHtml(p)}
   </div>`;
 
   // Admin Response section
@@ -15068,7 +15095,7 @@ function viewProposal(proposalId){
   }
 
   // Reply form
-  if(S.connected&&getUserVpCount()>=1){
+  if(S.connected&&hasDaoEntry()){
     html+=`<div style='margin-top:8px'>
       <textarea id='proposalReply' placeholder='Add to the discussion...' maxlength='1000' rows='2' style='width:100%;box-sizing:border-box;padding:10px;background:rgba(0,0,0,.4);border:1px solid rgba(239,68,68,.12);border-radius:8px;color:#cfd8dc;font-size:.8rem;font-family:inherit;outline:none;resize:vertical'></textarea>
       <button onclick='submitProposalReply("${p.id}")' style='margin-top:4px;padding:6px 16px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:6px;color:#ef4444;font-weight:700;font-size:.75rem;cursor:pointer'>Reply</button>
@@ -15174,7 +15201,7 @@ function closeDaoSection(){
   document.getElementById('daoThreadView').style.display='none';
   document.getElementById('daoCategoryCards').style.display='grid';
   document.getElementById('daoTreasuryHomeBtn').style.display='block';
-  const dsb2=document.getElementById('forumScanBtn'); if(dsb2) dsb2.style.display='none';
+  const dsb2=document.getElementById('forumScanBtn'); if(dsb2) dsb2.style.display='block'; // back on the DAO page: Scan refreshes proposals
   currentForumSection='';
 }
 let _daoThreadPage=0;
@@ -15389,11 +15416,12 @@ let _openThreadIndex=null;
 let _scanningForumUpdates=false;
 async function scanForumUpdates(){
   if(_scanningForumUpdates) return;
-  if(!currentForumSection) return;
+  if(!currentForumSection&&S.view!=='dao') return;
   _scanningForumUpdates=true;
   const btns=document.querySelectorAll('.forum-scan-btn');
   btns.forEach(b=>{b.classList.add('scanning');b.disabled=true;});
   try{
+    if(!currentForumSection&&S.view==='dao'){ await renderDaoPage(); return; } // DAO page: refresh proposals
     await fetchForumPostsFromBackend(currentForumSection);
     if(S.view==='dao'){
       if(_openDaoThreadIndex!=null){openDaoThread(_openDaoThreadIndex);}
@@ -16123,7 +16151,7 @@ function closeNftDetail(){
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['pickAvatarEmoji',pickAvatarEmoji],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
   ['openPlayerPortal',openPlayerPortal],['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['scanWalletBtn',scanWalletBtn],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['openShowroomEdit',openShowroomEdit],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['showBanOverlay',showBanOverlay],['adminBanUser',adminBanUser],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['toggleReplies',toggleReplies],['showReplyForm',showReplyForm],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
-  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['adminGiveAllVp',adminGiveAllVp],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleNftGrail',adminToggleNftGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
+  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['deleteGameFromChain',deleteGameFromChain],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['openBlackholeTreasuryWithdraw',openBlackholeTreasuryWithdraw],['openBackTreasuryWithdraw',openBackTreasuryWithdraw],['openShowroomTreasuryWithdraw',openShowroomTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminResetVp',adminResetVp],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['adminTestLottery',adminTestLottery],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['adminToggleNftGrail',adminToggleNftGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openBulkAbilityAssign',openBulkAbilityAssign],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
   ['runTreasuryScan',runTreasuryScan],
   ['showNftDetail',showNftDetail],['closeNftDetail',closeNftDetail],
   ['previewNftUpload',previewNftUpload],['clearNftUpload',clearNftUpload],['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
@@ -16186,10 +16214,10 @@ function showViewHooked(v){
   if(v==='hole') renderHole();
   // Manifesto splash removed - page loads directly
   // DAO view - no longer hides nav buttons
-  if(v==='dao'){if(!S.connected||getUserVpCount()<1){showViewHooked('landing');arcadeConfirm('Restricted','You need at least 1 Voting Power Badge to access the DAO Boardroom.');return;}renderDaoPage();}
+  if(v==='dao'){if(!S.connected||!hasDaoEntry()){showViewHooked('landing');arcadeConfirm('Restricted','You need at least 1 Voting Power Badge to access the DAO Boardroom.');return;}renderDaoPage();}
   if(v==='profile') renderProfileView();
   if(v==='player-portal'){
-    if(!S.connected||getUserVpCount()<1){showViewHooked('landing');arcadeConfirm('Restricted','You need at least 1 Voting Power Badge to access the Player Portal.');return;}
+    if(!S.connected||!hasDaoEntry()){showViewHooked('landing');arcadeConfirm('Restricted','You need at least 1 Voting Power Badge to access the Player Portal.');return;}
     qs('playerSearchInput').value='';
     renderPlayerDirectory();
   }

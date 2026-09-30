@@ -7380,16 +7380,13 @@ persistent actor ArcadeBackend {
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
+    // Proposals cost 5 Tokens only (the paymentLane argument is kept for interface compatibility but ignored).
     if (not isAdmin(msg.caller)) {
-      if (paymentLane == "tickets") {
-        let ticketBal = getTicketBalance(msg.caller);
-        if (ticketBal < 10) return #err("Not enough tickets. Creating a proposal costs 10 Tickets. Have " # Nat.toText(ticketBal));
-        tickets.put(msg.caller, ticketBal - 10);
-      } else {
-        let tokenBal = getTokenBalance(msg.caller);
-        if (tokenBal < 5) return #err("Not enough tokens. Creating a proposal costs 5 Tokens. Have " # Nat.toText(tokenBal));
-        tokens.put(msg.caller, tokenBal - 5);
-      };
+      let tokenBal = getTokenBalance(msg.caller);
+      if (tokenBal < 5) return #err("Not enough tokens. Creating a proposal costs 5 Tokens. Have " # Nat.toText(tokenBal));
+      tokens.put(msg.caller, tokenBal - 5);
+      // proposal fee -> DAO treasury: the 5 Tokens' ICP backing (1 Token = 0.01 ICP) moves to the DAO's ICP treasury
+      daoTreasuryE8s += 5 * TOKEN_TIP_E8S_PER_TOKEN;
     };
     proposalCounter += 1;
     let now = Time.now();
