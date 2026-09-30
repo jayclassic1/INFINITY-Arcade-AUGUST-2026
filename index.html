@@ -1127,19 +1127,39 @@ window.addEventListener('message', (e) => {
 <section class='view' id='view-dao' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(boardroom.jpg) center center/cover no-repeat fixed'>
 <div style='position:relative;z-index:1;max-width:960px;margin:0 auto;padding:20px 20px 20px'>
 
-<h1 style='text-align:center;margin:0 0 20px;font-size:3rem;letter-spacing:10px;text-transform:uppercase;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,.5),0 0 60px rgba(255,215,0,.2)'>DAO</h1>
+<style>
+.dao-marquee-wrap{text-align:center;margin:6px 0 26px}
+.dao-marquee{position:relative;display:inline-block;padding:6px 20px}
+@keyframes daoBulbs{50%{border-color:#ff3cac;box-shadow:0 0 28px rgba(255,215,0,.35),0 0 60px rgba(255,60,172,.22),inset 0 0 30px rgba(255,60,172,.12)}}
+.dao-stars{position:absolute;top:-15px;left:50%;transform:translateX(-50%);padding:0 10px;font-size:.9rem;letter-spacing:10px;color:#22d3ee;text-shadow:0 0 8px #22d3ee,0 0 16px #22d3ee;background:#0b0718;border-radius:8px}
+.dao-title{margin:0;font-size:4.2rem;font-weight:900;letter-spacing:18px;line-height:1;padding-left:18px}
+.dao-title span{display:inline-block;background:linear-gradient(180deg,#fff6c2 0%,#ffd700 45%,#ff8c00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,215,0,.8)) drop-shadow(0 0 26px rgba(255,60,172,.55));animation:daoBob 2.4s ease-in-out infinite,daoFlicker 6s infinite}
+.dao-title span:nth-child(2){animation-delay:.25s,2s}
+.dao-title span:nth-child(3){animation-delay:.5s,4s}
+@keyframes daoBob{50%{transform:translateY(-6px) scale(1.05)}}
+@keyframes daoFlicker{0%,18%,20%,22%,100%{opacity:1}19%,21%{opacity:.5}}
+.dao-tagline{margin-top:8px;font-size:.72rem;font-weight:800;letter-spacing:6px;background:linear-gradient(90deg,#ff3cac,#c084fc,#22d3ee,#ffd700,#ff3cac);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:daoShimmer 6s linear infinite}
+@keyframes daoShimmer{to{background-position:300% 0}}
+@media(max-width:560px){.dao-title{font-size:3rem;letter-spacing:12px;padding-left:12px}.dao-marquee{padding:12px 26px}.dao-tagline{letter-spacing:3px;font-size:.62rem}}
+</style>
+<div class='dao-marquee-wrap'><div class='dao-marquee'>
+<h1 class='dao-title'><span>D</span><span>A</span><span>O</span></h1>
+<div class='dao-tagline'>◆ THE COMMUNITY BOARDROOM ◆</div>
+</div></div>
 
 <!-- Category Cards -->
 <!-- DAO Treasury Button - now at the very top, above the whole grid. Only visible on the DAO home page itself, hidden while any sub-section/proposal/thread is open. -->
-<div id='daoTreasuryHomeBtn' onclick='showView("dao-dashboard");loadDaoDashboard()' style='cursor:pointer;background:rgba(15,10,40,.3);backdrop-filter:blur(8px);border:2px solid rgba(167,139,250,.3);border-radius:14px;padding:16px;transition:all .3s;text-align:center;margin-bottom:14px' onmouseenter='this.style.borderColor="rgba(167,139,250,.7)";this.style.background="rgba(15,10,40,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(167,139,250,.2)"' onmouseleave='this.style.borderColor="rgba(167,139,250,.3)";this.style.background="rgba(15,10,40,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1rem;color:#a78bfa;letter-spacing:3px;text-shadow:0 0 10px rgba(167,139,250,.4)'>DAO TREASURY</div>
-<div style='font-size:.65rem;color:#5a7a9a;margin-top:4px'>Live balances, gaming-funded rewards, lottery history</div>
-</div>
 
+<style>#daoCategoryCards>#daoTreasuryHomeBtn,#daoCategoryCards>#daoProposalsTile{min-height:110px !important;padding:20px 16px !important}#daoCategoryCards>#daoTreasuryHomeBtn>div:first-child,#daoCategoryCards>#daoProposalsTile>div:first-child{font-size:1.35rem !important}@media(max-width:560px){#daoCategoryCards>#daoTreasuryHomeBtn,#daoCategoryCards>#daoProposalsTile{grid-column:1/-1}}</style>
 <div id='daoCategoryCards' style='display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%'>
 
+<div id='daoTreasuryHomeBtn' onclick='showView("dao-dashboard");loadDaoDashboard()' style='cursor:pointer;background:rgba(15,10,40,.3);backdrop-filter:blur(8px);border:2px solid rgba(167,139,250,.3);border-radius:14px;padding:28px 16px;min-height:140px;display:flex;flex-direction:column;justify-content:center;transition:all .3s;text-align:center;' onmouseenter='this.style.borderColor="rgba(167,139,250,.7)";this.style.background="rgba(15,10,40,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(167,139,250,.2)"' onmouseleave='this.style.borderColor="rgba(167,139,250,.3)";this.style.background="rgba(15,10,40,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
+<div style='font-weight:900;font-size:1.6rem;color:#a78bfa;letter-spacing:4px;text-shadow:0 0 10px rgba(167,139,250,.4)'>DAO TREASURY</div>
+<div style='font-size:.8rem;color:#8b9cc4;margin-top:6px'>Live balances, gaming-funded rewards, lottery history</div>
+</div>
+
 <!-- Proposals button (top center, spans full width) -->
-<div onclick='openDaoProposals()' style='grid-column:1/-1;cursor:pointer;background:rgba(60,20,80,.3);backdrop-filter:blur(8px);border:2px solid rgba(192,132,252,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(192,132,252,.7)";this.style.background="rgba(60,20,80,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(192,132,252,.2)"' onmouseleave='this.style.borderColor="rgba(192,132,252,.3)";this.style.background="rgba(60,20,80,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
+<div id='daoProposalsTile' onclick='openDaoProposals()' style='grid-column:auto;cursor:pointer;background:rgba(60,20,80,.3);backdrop-filter:blur(8px);border:2px solid rgba(192,132,252,.3);border-radius:14px;padding:28px 16px;min-height:140px;display:flex;flex-direction:column;justify-content:center;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(192,132,252,.7)";this.style.background="rgba(60,20,80,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(192,132,252,.2)"' onmouseleave='this.style.borderColor="rgba(192,132,252,.3)";this.style.background="rgba(60,20,80,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
 <div style='font-weight:900;font-size:1.3rem;color:#c084fc;letter-spacing:3px;text-shadow:0 0 15px rgba(192,132,252,.5)'>PROPOSALS</div>
 <div style='font-size:.75rem;color:#7c3aed;margin-top:6px'>View active proposals and submit new ones</div>
 </div>
@@ -1546,87 +1566,42 @@ window.addEventListener('message', (e) => {
 
 <!-- ====== DAO PUBLIC DASHBOARD ====== -->
 <section class='view' id='view-dao-dashboard' style='position:relative;overflow-y:auto;background:#06080f'>
-<div style='max-width:800px;margin:0 auto;padding:10px 20px 60px'>
-<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-top:10px'>
-<div>
-<h1 style='margin:0;font-size:1.6rem;color:#a78bfa;letter-spacing:3px'>DAO DASHBOARD</h1>
-<p style='margin:4px 0 0;font-size:.75rem;color:#5a7a9a'>Live game-earned DAO treasury, jackpot, and governance stats</p>
+<style>
+#view-dao-dashboard{background:radial-gradient(ellipse at top,#1d0b33 0%,#06080f 62%) !important}
+.dtr-title{margin:0;font-size:1.9rem;letter-spacing:6px;font-weight:900;background:linear-gradient(90deg,#ff3cac,#c084fc,#22d3ee,#ffd86b,#ff3cac);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:dtrShift 8s linear infinite}
+@keyframes dtrShift{to{background-position:300% 0}}
+.dtr-hero{text-align:center;padding:26px 20px 20px;border-radius:18px;margin-bottom:18px;background:linear-gradient(160deg,rgba(40,12,70,.85),rgba(8,10,30,.9));border:2px solid rgba(192,132,252,.45);box-shadow:0 0 30px rgba(192,132,252,.25),inset 0 0 40px rgba(34,211,238,.06)}
+.dtr-label{font-size:.7rem;letter-spacing:5px;color:#c4b5fd;font-weight:800}
+.dtr-big{font-size:3rem;font-weight:900;color:#fff;text-shadow:0 0 18px rgba(255,216,107,.8),0 0 40px rgba(255,60,172,.4);margin:6px 0;line-height:1.1}
+.dtr-big span{font-size:1.2rem;color:#ffd86b;letter-spacing:3px}
+.dtr-sub{font-size:.8rem;color:#b7c2e0;margin-bottom:16px}
+.dtr-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.dtr-chip{padding:12px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid var(--c);box-shadow:0 0 12px color-mix(in srgb,var(--c) 30%,transparent)}
+.dtr-chip .k{font-size:.6rem;letter-spacing:2px;color:var(--c);font-weight:900}
+.dtr-chip .v{font-size:1.05rem;font-weight:900;color:#fff;margin:4px 0}
+.dtr-chip .h{font-size:.64rem;color:#8b9cc4}
+.dtr-note{margin-top:14px;font-size:.7rem;color:#9fb0d6}
+.dtr-card{padding:16px;border-radius:16px;margin-bottom:18px;background:rgba(10,8,30,.6);border:1px solid rgba(34,211,238,.3);box-shadow:0 0 20px rgba(34,211,238,.08)}
+.dtr-h{font-size:.75rem;font-weight:900;letter-spacing:3px;color:#e9d5ff;margin-bottom:12px}
+.dtr-row{margin-bottom:12px}
+.dtr-row-top{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;color:#e2e8f0;margin-bottom:5px;flex-wrap:wrap}
+.dtr-row-top em{font-style:normal;font-size:.66rem;color:#7f93c2;margin-left:6px}
+.dtr-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.dtr-bar i{display:block;height:100%;border-radius:999px}
+.dtr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.dtr-stat{text-align:center;padding:14px 8px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.dtr-stat .v{font-size:1.6rem;font-weight:900;color:var(--c);text-shadow:0 0 12px var(--c)}
+.dtr-stat .k{font-size:.6rem;letter-spacing:2px;color:#8b9cc4;margin-top:4px}
+</style>
+<div style='max-width:900px;margin:0 auto;padding:10px 20px 60px'>
+<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:10px;gap:12px;flex-wrap:wrap'>
+<div><h1 class='dtr-title'>DAO TREASURY</h1><p style='margin:4px 0 0;font-size:.75rem;color:#9fb0d6'>Owned by the community · funded by arcade activity · paid out through lotteries</p></div>
+<button onclick='loadDaoDashboard()' style='padding:8px 16px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.45);border-radius:10px;color:#e9d5ff;font-weight:800;font-size:.75rem;cursor:pointer;box-shadow:0 0 12px rgba(192,132,252,.25)'>↻ Refresh</button>
 </div>
-<button onclick='loadDaoDashboard()' style='padding:6px 14px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:#a78bfa;font-weight:700;font-size:.75rem;cursor:pointer'>Refresh</button>
-</div>
-
-<!-- Treasury + Jackpot cards -->
-<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px'>
-<div style='background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:18px'>
-<div style='font-size:.65rem;letter-spacing:2px;color:#a78bfa;margin-bottom:10px'>GAME-EARNED DAO TREASURY</div>
-<div style='display:flex;justify-content:space-between;margin-bottom:6px'>
-<span style='font-size:.78rem;color:#8090b0'>Tokens</span>
-<span id='daoTreasuryTokens' style='font-weight:800;color:#ffd700'>-</span>
-</div>
-<div style='display:flex;justify-content:space-between'>
-<span style='font-size:.78rem;color:#8090b0'>Tickets</span>
-<span id='daoTreasuryTickets' style='font-weight:800;color:#88ccff'>-</span>
-</div>
-</div>
-<div style='background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:18px'>
-<div style='font-size:.65rem;letter-spacing:2px;color:#a78bfa;margin-bottom:10px'>GAME-EARNED DAO JACKPOT</div>
-<div style='display:flex;justify-content:space-between;margin-bottom:6px'>
-<span style='font-size:.78rem;color:#8090b0'>Token Pool</span>
-<span id='daoJackpotTokens' style='font-weight:800;color:#ffd700'>-</span>
-</div>
-<div style='display:flex;justify-content:space-between'>
-<span style='font-size:.78rem;color:#8090b0'>Ticket Pool</span>
-<span id='daoJackpotTickets' style='font-weight:800;color:#88ccff'>-</span>
-</div>
-</div>
-</div>
-
-<!-- Stats row -->
-<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px'>
-<div style='background:rgba(10,20,40,.6);border:1px solid #1a2848;border-radius:10px;padding:14px;text-align:center'>
-<div style='font-size:1.3rem;font-weight:900;color:#fff' id='daoStatProposals'>-</div>
-<div style='font-size:.62rem;color:#3d6090;margin-top:4px;letter-spacing:1px'>PROPOSALS</div>
-</div>
-<div style='background:rgba(10,20,40,.6);border:1px solid #1a2848;border-radius:10px;padding:14px;text-align:center'>
-<div style='font-size:1.3rem;font-weight:900;color:#22c55e' id='daoStatActive'>-</div>
-<div style='font-size:.62rem;color:#3d6090;margin-top:4px;letter-spacing:1px'>ACTIVE VOTES</div>
-</div>
-<div style='background:rgba(10,20,40,.6);border:1px solid #1a2848;border-radius:10px;padding:14px;text-align:center'>
-<div style='font-size:1.3rem;font-weight:900;color:#a78bfa' id='daoStatVpHolders'>-</div>
-<div style='font-size:.62rem;color:#3d6090;margin-top:4px;letter-spacing:1px'>BADGE HOLDERS</div>
-</div>
-<div style='background:rgba(10,20,40,.6);border:1px solid #1a2848;border-radius:10px;padding:14px;text-align:center'>
-<div style='font-size:1.3rem;font-weight:900;color:#f472b6' id='daoStatContribs'>-</div>
-<div style='font-size:.62rem;color:#3d6090;margin-top:4px;letter-spacing:1px'>CONTRIBUTORS</div>
-</div>
-</div>
-
-<!-- Collections row -->
-<div style='display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:28px'>
-<div style='background:rgba(10,20,40,.6);border:1px solid #1a2848;border-radius:10px;padding:14px;text-align:center'>
-<div style='font-size:1.3rem;font-weight:900;color:#00aaff' id='daoStatCollections'>-</div>
-<div style='font-size:.62rem;color:#3d6090;margin-top:4px;letter-spacing:1px'>OFFICIAL COLLECTIONS</div>
-</div>
-</div>
-
-<!-- Revenue Breakdown -->
-<div style='background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:18px;margin-bottom:20px'>
-<div style='font-size:.65rem;letter-spacing:2px;color:#a78bfa;margin-bottom:6px'>LIFETIME FLOWS</div>
-<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px'>
-<div style='display:flex;justify-content:space-between'><span style='font-size:.75rem;color:#8090b0'>Tokens In</span><span id='daoPubTokensIn' style='font-weight:700;color:#22c55e;font-size:.85rem'>--</span></div>
-<div style='display:flex;justify-content:space-between'><span style='font-size:.75rem;color:#8090b0'>Tickets In</span><span id='daoPubTicketsIn' style='font-weight:700;color:#22c55e;font-size:.85rem'>--</span></div>
-<div style='display:flex;justify-content:space-between'><span style='font-size:.75rem;color:#8090b0'>Tokens Out (Lottery)</span><span id='daoPubTokensOut' style='font-weight:700;color:#ef4444;font-size:.85rem'>--</span></div>
-<div style='display:flex;justify-content:space-between'><span style='font-size:.75rem;color:#8090b0'>Tickets Out (Lottery)</span><span id='daoPubTicketsOut' style='font-weight:700;color:#ef4444;font-size:.85rem'>--</span></div>
-</div>
-<div style='font-size:.65rem;letter-spacing:2px;color:#a78bfa;margin-bottom:8px'>REVENUE BY SOURCE</div>
-<div id='daoPubRevenueSources' style='font-size:.8rem;color:#5a7a9a'>Loading...</div>
-</div>
-
-<!-- Recent lottery history -->
-<div style='margin-bottom:8px'>
-<div style='font-size:.7rem;letter-spacing:2px;color:#a78bfa;margin-bottom:12px'>RECENT LOTTERY RESULTS</div>
-<div id='daoLotteryHistory' style='display:grid;gap:6px'></div>
-</div>
+<div id='daoTrHero'><div class='dtr-card' style='color:#7f93c2;font-size:.8rem'>Loading treasury…</div></div>
+<div id='daoLotteryStatusPanel'></div>
+<div id='daoTrSources'></div>
+<div id='daoTrGov'></div>
 </div>
 </section>
 
@@ -1812,7 +1787,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What is the DAO?</button><div class='faq-a'>The DAO is the community governance system. Voting Power Badge holders can vote on proposals that shape the arcade - which games get promoted, what features get built, how the treasury is managed. It\'s a glorified polling machine: proposals that pass go to the dev team for implementation.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power: a Voting Power Badge from the Prize Booth, or a Dev/Artist Contributor badge. Enter through the DAO door on the landing page. Voting Power Badges unlock more as you collect them: 2 badges = create proposals, 3 = Ticket Lottery #1, 4 = Token Lottery #1, 5 = DAO forum tier 1 (Voting and Treasury Talk), 6 = Token Lottery #2, 7 = tier 2 (Elite’s Corner), 8 = Ticket Lottery #2, 9 = Token Lottery #3, 10 = tier 3 (Diplomat’s Only). Lotteries are coming soon.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power: a Voting Power Badge from the Prize Booth, or a Dev/Artist Contributor badge. Enter through the DAO door on the landing page. Voting Power Badges unlock more as you collect them: 2 badges = create proposals, 3 = Token Lottery #1, 4 = Ticket Lottery #1, 5 = DAO forum tier 1 (Voting and Treasury Talk), 6 = Token Lottery #2, 7 = tier 2 (Elite’s Corner), 8 = Ticket Lottery #2, 9 = Token Lottery #3, 10 = tier 3 (Diplomat’s Only). Every lottery entry wins exactly once per 8-week cycle.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Does the DAO control the platform?</button><div class='faq-a'>No. The DAO is advisory. All passed proposals are reviewed by the development team before implementation. The arcade reserves the right to reject proposals that would harm the platform, its economy, or its users. Think of it as a strong suggestion box, not a boardroom.</div></div>
 </div>
@@ -3706,7 +3681,87 @@ async function checkSubmissionNotifications(){
   }catch(e){console.warn('Submission notification check failed:',e);}
 }
 
+let _lotteryCountdownTimer=null;
+function fmtLotteryCountdown(ms){
+  if(ms<=0) return 'any moment now';
+  const s=Math.floor(ms/1000), d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60), sec=s%60;
+  return (d?d+'d ':'')+String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(sec).padStart(2,'0')+'s';
+}
+async function renderLotteryPanel(){
+  const el=document.getElementById('daoLotteryStatusPanel'); if(!el) return;
+  try{
+    const be=await getBackendActor();
+    const me=S.principalText?Principal.fromText(S.principalText):null;
+    const [st,settings,hist,mine]=await Promise.all([be.getLotteryStatus(),be.getLotterySettings(),be.getLotteryHistory(),me?be.getMyLotteryEntries(me):Promise.resolve([])]);
+    const cyc=o=>(Array.isArray(o)&&o.length)?o[0]:null;
+    const lots=[{kind:'token',name:'TOKEN LOTTERY',unit:'Tokens',color:'#ffd86b',c:cyc(st.token),tiers:[3,6,9]},{kind:'ticket',name:'TICKET LOTTERY',unit:'Tickets',color:'#c084fc',c:cyc(st.ticket),tiers:[4,8]}];
+    const card=l=>{
+      const c=l.c; const my=(mine||[]).filter(e=>e[0]===l.kind);
+      const myHtml=my.length?my.map(e=>`<span style="display:inline-block;margin:2px 4px 0 0;padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:800;border:1px solid ${e[2]?'rgba(34,197,94,.6)':'rgba(255,255,255,.18)'};color:${e[2]?'#22c55e':'#cbd5e1'}">#${Number(e[1])} ${e[2]?'✅ Won':'⏳ Waiting'}</span>`).join('')
+        :`<span style="font-size:.68rem;color:#7f93c2">${c?'You have no entries this cycle. ':''}Entries unlock at ${l.tiers.join(' / ')} VP Badges.</span>`;
+      const body=c?`<div style="font-size:.74rem;color:#cbd5e1;line-height:1.7">Draw <b>${Math.min(Number(c.drawsDone)+1,Number(c.drawsTotal))}</b> of <b>${Number(c.drawsTotal)}</b> · Next draw in <b class="lottery-countdown" data-at="${Number(c.nextDrawAt)/1e6}" style="color:${l.color}">…</b><br>Prize per win: <b style="color:${l.color}">${Number(c.perWin).toLocaleString()} ${l.unit}</b> · Entries left: <b>${Number(c.remaining)}</b> of ${Number(c.entriesTotal)}</div>`
+        :`<div style="font-size:.74rem;color:#7f93c2">No cycle running. ${st.enabled?'A new cycle starts as soon as the DAO treasury can fund every entry.':'The lottery is paused.'}</div>`;
+      return `<div style="flex:1;min-width:240px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid ${l.color}55;box-shadow:0 0 14px ${l.color}22"><div style="font-size:.72rem;font-weight:900;letter-spacing:2px;color:${l.color};margin-bottom:6px">${l.name}</div>${body}<div style="margin-top:8px">${myHtml}</div></div>`;
+    };
+    const recent=[...(hist||[])].reverse().slice(0,6).map(h=>{
+      const w=(h[2]||[]).length, each=w?Math.floor(Number(h[3])/w):0, isT=h[1]==='token-lottery';
+      return `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.05);font-size:.7rem;color:#cbd5e1"><span><b style="color:${isT?'#ffd86b':'#c084fc'}">${isT?'Token':'Ticket'} draw</b> · ${w} winner${w!==1?'s':''} · ${each.toLocaleString()} ${isT?'Tokens':'Tickets'} each</span><span style="color:#7f93c2">${new Date(Number(h[0])/1e6).toLocaleString()}</span></div>`;
+    }).join('')||'<div style="font-size:.7rem;color:#7f93c2">No draws yet.</div>';
+    let admin='';
+    if(isAdmin()){
+      admin=`<div style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1px dashed rgba(239,68,68,.4);background:rgba(239,68,68,.05)"><div style="font-size:.66rem;font-weight:900;letter-spacing:2px;color:#ef4444;margin-bottom:8px">ADMIN LOTTERY CONTROLS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.7rem;color:#cbd5e1">
+          <button class="btn" onclick="adminLotteryToggle(${!st.enabled})" style="font-size:.7rem;padding:5px 10px">${st.enabled?'⏸ Pause lottery':'▶ Turn lottery on'}</button>
+          <label>Token %: <input id="lotTokPct" type="number" step="0.01" min="1" max="50" value="${(Number(settings.tokenPayoutBps)/100).toFixed(2)}" style="width:70px"/></label>
+          <label>Ticket %: <input id="lotTixPct" type="number" step="0.01" min="1" max="50" value="${(Number(settings.ticketPayoutBps)/100).toFixed(2)}" style="width:70px"/></label>
+          <button class="btn" onclick="adminLotterySavePct()" style="font-size:.7rem;padding:5px 10px">Save %</button>
+          <label>Test speed (hours per week, 0 = normal): <input id="lotSpeed" type="number" min="0" max="168" step="1" value="${Number(settings.testHoursPerWeek)}" style="width:60px"/></label>
+          <button class="btn" onclick="adminLotterySaveSpeed()" style="font-size:.7rem;padding:5px 10px">Save speed</button>
+          <button class="btn" onclick="adminLotteryRunNow()" style="font-size:.7rem;padding:5px 10px">Run check now</button>
+          <button class="btn" onclick="adminLotteryDraw('token')" style="font-size:.7rem;padding:5px 10px">Force token draw</button>
+          <button class="btn" onclick="adminLotteryDraw('ticket')" style="font-size:.7rem;padding:5px 10px">Force ticket draw</button>
+        </div><div id="lotAdminMsg" style="margin-top:6px;font-size:.68rem;color:#9dd6ff"></div></div>`;
+    }
+    el.innerHTML=`<div style="padding:14px;border-radius:14px;background:rgba(10,8,30,.55);border:1px solid rgba(168,85,247,.3);margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:.8rem;font-weight:900;letter-spacing:3px;color:#e9d5ff">🎰 DAO LOTTERIES</div><div style="font-size:.66rem;color:${st.enabled?'#22c55e':'#f59e0b'};font-weight:800">${st.enabled?'● ON':'⏸ PAUSED'}</div></div>
+      <div style="font-size:.68rem;color:#9fb0d6;margin-bottom:10px;line-height:1.5">Every entry wins exactly once per 8-week cycle, and every win in a cycle is the same size. Prizes come from the DAO treasury.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">${lots.map(card).join('')}</div>
+      <div style="margin-top:12px;font-size:.66rem;font-weight:900;letter-spacing:2px;color:#9fb0d6">RECENT DRAWS</div>${recent}${admin}</div>`;
+    if(_lotteryCountdownTimer) clearInterval(_lotteryCountdownTimer);
+    const tick=()=>document.querySelectorAll('.lottery-countdown').forEach(x=>{ x.textContent=fmtLotteryCountdown(Number(x.dataset.at)-Date.now()); });
+    tick();
+    _lotteryCountdownTimer=setInterval(()=>{ if(!document.getElementById('daoLotteryStatusPanel')){ clearInterval(_lotteryCountdownTimer); return; } tick(); },1000);
+  }catch(e){ console.warn('Lottery panel failed',e); el.innerHTML='<div style="font-size:.72rem;color:#7f93c2">Lottery status unavailable right now.</div>'; }
+}
+function _lotMsg(t){ const m=document.getElementById('lotAdminMsg'); if(m) m.textContent=t; }
+window.adminLotteryToggle=async function(on){ try{ const r=await (await getBackendActor(true)).adminSetLotteryEnabled(!!on); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); } renderLotteryPanel(); };
+window.adminLotterySavePct=async function(){
+  const t=Math.round(parseFloat(document.getElementById('lotTokPct').value)*100), k=Math.round(parseFloat(document.getElementById('lotTixPct').value)*100);
+  if(!(t>=100&&t<=5000&&k>=100&&k<=5000)){ _lotMsg('Percentages must be between 1.00 and 50.00'); return; }
+  try{ const be=await getBackendActor(true); const a=await be.adminSetLotteryPayoutBps('token',BigInt(t)); const b=await be.adminSetLotteryPayoutBps('ticket',BigInt(k)); _lotMsg((a.ok||a.err)+' · '+(b.ok||b.err)); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); }
+  renderLotteryPanel();
+};
+window.adminLotterySaveSpeed=async function(){
+  const h=parseInt(document.getElementById('lotSpeed').value,10);
+  if(!(h>=0&&h<=168)){ _lotMsg('Test speed must be 0 (normal) to 168'); return; }
+  try{ const r=await (await getBackendActor(true)).adminSetLotteryTestSpeed(BigInt(h)); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); }
+  renderLotteryPanel();
+};
+window.adminLotteryRunNow=async function(){ _lotMsg('Running…'); try{ const r=await (await getBackendActor(true)).adminRunLottery(); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); } renderLotteryPanel(); };
+window.adminLotteryDraw=async function(kind){ _lotMsg('Drawing…'); try{ const r=await (await getBackendActor(true)).adminLotteryDrawNow(kind); _lotMsg(r.ok||r.err); }catch(e){ _lotMsg(safeUserErrorMessage(e,'lottery')); } renderLotteryPanel(); };
 async function checkJackpotNotifications(){
+  // DAO lottery wins: cheap query first, then claim (each win is announced once)
+  try{
+    const beQ=await getBackendActor();
+    if(S.principalText&&typeof beQ.hasLotteryWins==='function'&&await beQ.hasLotteryWins(Principal.fromText(S.principalText))){
+      const wins=await (await getBackendActor(true)).claimLotteryWinNotifications();
+      for(const w of (wins||[])){
+        const kind=w[0], tier=Number(w[1]), amt=Number(w[2]);
+        showJackpotPopup({title:'🎉 LOTTERY WIN!',body:'You won '+amt.toLocaleString()+' '+(kind==='token'?'Tokens':'Tickets')+'!',detail:(kind==='token'?'Token':'Ticket')+' Lottery #'+tier+' · paid straight to your balance',cta:'Click anywhere to continue'},kind==='token'?'token':'ticket');
+      }
+      if(wins&&wins.length) syncOnChainTickets();
+    }
+  }catch(e){ console.warn('Lottery win check failed',e); }
   try{
     // Cheap query first - no consensus round needed
     const be=await getBackendActor();
@@ -6280,7 +6335,7 @@ function backendIdl({IDL}){
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
     hasJackpotNotifications:IDL.Func([IDL.Principal],[IDL.Bool],['query']),
     claimJackpotNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Int))],[]),
-    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
+    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getDaoTreasuryOverview:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,lockedTokenE8s:IDL.Nat,lockedTicketE8s:IDL.Nat,inGamesE8s:IDL.Nat,inProposalsE8s:IDL.Nat,inOfficialNftE8s:IDL.Nat,inPlayerNftE8s:IDL.Nat,inVpBadgeE8s:IDL.Nat,lotteryTokensPaid:IDL.Nat,lotteryTicketsPaid:IDL.Nat,lotteryDraws:IDL.Nat,vpHolders:IDL.Nat})],['query']),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
     adminRunLottery:IDL.Func([],[Result],[]),
     getTreasuryBalance:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,reservedE8s:IDL.Nat,outstandingTokens:IDL.Nat,withdrawableE8s:IDL.Nat,tokenLiabilityE8s:IDL.Nat,royaltyLiabilityE8s:IDL.Nat,refundLiabilityE8s:IDL.Nat,ticketPoolLiabilityE8s:IDL.Nat,ticketHolderLiabilityE8s:IDL.Nat,backedTicketPoolTickets:IDL.Nat,safetyBufferE8s:IDL.Nat})],[]),
     getTreasuryLaneSnapshot:IDL.Func([],[IDL.Record({protectedAccountId:IDL.Text,operatingAccountId:IDL.Text,protectedBalanceE8s:IDL.Nat,operatingBalanceE8s:IDL.Nat,backendSafeWithdrawableE8s:IDL.Nat,protectedReservedE8s:IDL.Nat,operatingIncludedInBacking:IDL.Bool,operatingIncludedInBackendSafeMath:IDL.Bool})],[]),
@@ -9696,7 +9751,60 @@ const DAO_GAMING_REWARD_SOURCE_LABELS=Object.freeze({
 });
 
 // ── DAO Public Dashboard ──────────────────────────────────────
+async function renderDaoTreasuryOverview(){
+  const hero=document.getElementById('daoTrHero'), srcEl=document.getElementById('daoTrSources'), gov=document.getElementById('daoTrGov');
+  if(!hero) return;
+  try{
+    const be=await getBackendActor();
+    const o=await be.getDaoTreasuryOverview();
+    let props=[]; try{ await fetchProposalsFromChain(); props=getProposals()||[]; }catch(_){}
+    const N=x=>Number(x||0);
+    const icp=e=>(N(e)/1e8).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4});
+    const bal=N(o.balanceE8s), locked=N(o.lockedTokenE8s)+N(o.lockedTicketE8s);
+    const paidE8s=N(o.lotteryTokensPaid)*1e6+N(o.lotteryTicketsPaid)*1e5;
+    const draws=N(o.lotteryDraws);
+    hero.innerHTML=`<div class='dtr-hero'>
+      <div class='dtr-label'>💰 COMMUNITY TREASURY</div>
+      <div class='dtr-big'>${icp(bal)} <span>ICP</span></div>
+      <div class='dtr-sub'>≈ <b style='color:#ffd86b'>${Math.floor(bal/1e6).toLocaleString()} Tokens</b> or <b style='color:#c084fc'>${Math.floor(bal/1e5).toLocaleString()} Tickets</b> of prize power</div>
+      <div class='dtr-chips'>
+        <div class='dtr-chip' style='--c:#22c55e'><div class='k'>AVAILABLE</div><div class='v'>${icp(bal)} ICP</div><div class='h'>Funds the next lottery cycles</div></div>
+        <div class='dtr-chip' style='--c:#22d3ee'><div class='k'>🔒 LOCKED IN LOTTERIES</div><div class='v'>${icp(locked)} ICP</div><div class='h'>Reserved for entries still waiting to win</div></div>
+        <div class='dtr-chip' style='--c:#f472b6'><div class='k'>🏆 PAID TO PLAYERS</div><div class='v'>${N(o.lotteryTokensPaid).toLocaleString()} Tokens · ${N(o.lotteryTicketsPaid).toLocaleString()} Tickets</div><div class='h'>${draws} lottery draw${draws!==1?'s':''}</div></div>
+      </div>
+      <div class='dtr-note'>🛡️ Nobody can withdraw this treasury, not even the admin. It only flows back to players through the lotteries.</div>
+    </div>`;
+    const src=[
+      {icon:'🎮',name:'Game plays & purchases',rate:'5–20% of token spending on games',v:N(o.inGamesE8s),c:'#22d3ee'},
+      {icon:'🏅',name:'VP Badges',rate:'20% of every badge',v:N(o.inVpBadgeE8s),c:'#ffd86b'},
+      {icon:'🖼️',name:'Official Arcade NFTs',rate:'20% of every redemption',v:N(o.inOfficialNftE8s),c:'#c084fc'},
+      {icon:'🛒',name:'Player NFT sales',rate:'1.5% of every sale',v:N(o.inPlayerNftE8s),c:'#f472b6'},
+      {icon:'🗳️',name:'Proposal fees',rate:'100% of the 5-Token fee',v:N(o.inProposalsE8s),c:'#22c55e'}
+    ];
+    const tracked=src.reduce((t,x)=>t+x.v,0);
+    const early=Math.max(0,bal+locked+paidE8s-tracked);
+    if(early>0) src.push({icon:'⏳',name:'Before tracking began',rate:'earned before per-source tracking was added',v:early,c:'#64748b'});
+    const max=Math.max(1,...src.map(x=>x.v));
+    if(srcEl) srcEl.innerHTML=`<div class='dtr-card'><div class='dtr-h'>📈 WHERE THE TREASURY COMES FROM</div>${src.map(x=>`<div class='dtr-row'><div class='dtr-row-top'><span>${x.icon} <b>${x.name}</b><em>${x.rate}</em></span><span style='color:${x.c};font-weight:900'>${icp(x.v)} ICP</span></div><div class='dtr-bar'><i style='width:${Math.max(2,Math.round(x.v/max*100))}%;background:${x.c};box-shadow:0 0 10px ${x.c}'></i></div></div>`).join('')}</div>`;
+    const active=props.filter(p=>{ try{ return getProposalStatus(p)==='active'; }catch(_){ return false; } }).length;
+    if(gov) gov.innerHTML=`<div class='dtr-card' style='border-color:rgba(192,132,252,.35)'><div class='dtr-h'>🗳️ GOVERNANCE</div><div class='dtr-stats'>
+      <div class='dtr-stat' style='--c:#e9d5ff'><div class='v'>${props.length}</div><div class='k'>PROPOSALS</div></div>
+      <div class='dtr-stat' style='--c:#22c55e'><div class='v'>${active}</div><div class='k'>ACTIVE VOTES</div></div>
+      <div class='dtr-stat' style='--c:#c084fc'><div class='v'>${N(o.vpHolders)}</div><div class='k'>VP BADGE HOLDERS</div></div>
+      <div class='dtr-stat' style='--c:#ffd86b'><div class='v'>${S.connected?getUserVpCount():0}</div><div class='k'>YOUR VP BADGES</div></div>
+    </div></div>`;
+  }catch(e){
+    console.warn('DAO treasury overview failed',e);
+    hero.innerHTML="<div class='dtr-card' style='color:#7f93c2;font-size:.8rem'>Treasury data is unavailable right now. Try Refresh.</div>";
+  }
+}
 async function loadDaoDashboard(){
+  renderLotteryPanel();
+  return renderDaoTreasuryOverview();
+}
+// Retired dashboard loader: it called backend functions that never existed. Kept disconnected for the dead-code sweep.
+async function _legacyLoadDaoDashboard(){
+  renderLotteryPanel();
   const be = await getBackendActor();
   try {
     const [dash, stats, lotteryHist, revBreakdown, ticketJackpotHist] = await Promise.all([
@@ -13926,13 +14034,13 @@ const DAO_LEVELS={
 const VP_NFTS=[
   {id:'vp-1', vpNum:1, name:'Initiate Badge',    desc:'Opens the DAO Boardroom and Player Portal. Welcome to the DAO.',                ticketCost:1000,   rarity:'Common',    emoji:'🔰'},
   {id:'vp-2', vpNum:2, name:'Voice Token',        desc:'Unlocks: create proposals. Your voice carries weight now.',                            ticketCost:2000,   rarity:'Common',    emoji:'🗣️'},
-  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks: Ticket Lottery #1 eligibility (lotteries coming soon).',               ticketCost:3000,   rarity:'Uncommon',  emoji:'🔑'},
-  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Unlocks: Token Lottery #1 eligibility (lotteries coming soon).',                ticketCost:5000,   rarity:'Uncommon',  emoji:'📜'},
+  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks: Token Lottery #1 entry (wins once every 8-week cycle).',               ticketCost:3000,   rarity:'Uncommon',  emoji:'🔑'},
+  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Unlocks: Ticket Lottery #1 entry (wins once every 8-week cycle).',                ticketCost:5000,   rarity:'Uncommon',  emoji:'📜'},
   {id:'vp-5', vpNum:5, name:'Guardian Crest',      desc:'Unlocks: DAO forum tier 1 (Voting and Treasury Talk).',               ticketCost:7500,   rarity:'Rare',      emoji:'🛡️'},
-  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'Unlocks: Token Lottery #2 eligibility (lotteries coming soon).',    ticketCost:10000,  rarity:'Rare',      emoji:'♟️'},
+  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'Unlocks: Token Lottery #2 entry (wins once every 8-week cycle).',    ticketCost:10000,  rarity:'Rare',      emoji:'♟️'},
   {id:'vp-7', vpNum:7, name:'Treasury Sigil',     desc:'Unlocks: DAO forum tier 2 (Elite’s Corner).',                   ticketCost:15000,  rarity:'Rare',      emoji:'💎'},
-  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'Unlocks: Ticket Lottery #2 eligibility (lotteries coming soon).',                   ticketCost:20000,  rarity:'Legendary', emoji:'🏗️'},
-  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'Unlocks: Token Lottery #3 eligibility (lotteries coming soon).',                 ticketCost:25000,  rarity:'Legendary', emoji:'👁️'},
+  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'Unlocks: Ticket Lottery #2 entry (wins once every 8-week cycle).',                   ticketCost:20000,  rarity:'Legendary', emoji:'🏗️'},
+  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'Unlocks: Token Lottery #3 entry (wins once every 8-week cycle).',                 ticketCost:25000,  rarity:'Legendary', emoji:'👁️'},
   {id:'vp-10',vpNum:10,name:'Infinity Crown',     desc:'Unlocks: DAO forum tier 3 (Diplomat’s Only). The final VP badge.',              ticketCost:50000,  rarity:'Legendary', emoji:'👑'},
 ];
 

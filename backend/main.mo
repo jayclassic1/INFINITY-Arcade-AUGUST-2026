@@ -1780,6 +1780,7 @@ persistent actor ArcadeBackend {
           showroomNonTicketArcadeShareE8s += arcadeShareE8s;
         };
         daoTreasuryE8s += daoShareE8s;
+        daoInGamesE8s += daoShareE8s;
 
         // Auto-unlock: a non-ticket game's cumulative per-play spend (already fully accounted for
         // above via the normal per-play split - no separate transaction here) can reach its
@@ -1851,6 +1852,7 @@ persistent actor ArcadeBackend {
     royalties.put(game.creator, currentRoyalty + creatorShareE8s);
     showroomPurchaseArcadeShareE8s += arcadeShareE8s;
     daoTreasuryE8s += daoShareE8s;
+    daoInGamesE8s += daoShareE8s;
 
     logRevenue("game-purchase", icpValueE8s, caller, 6);
     #ok({ tokenBalance = newBal });
@@ -1901,6 +1903,7 @@ persistent actor ArcadeBackend {
     royalties.put(game.creator, currentRoyalty + creatorShareE8s);
     showroomNonTicketArcadeShareE8s += arcadeShareE8s;
     daoTreasuryE8s += daoShareE8s;
+    daoInGamesE8s += daoShareE8s;
 
     let priorSpend = switch (gameTokenSpend.get(key)) { case (?s) s; case null 0 };
     let newSpend = priorSpend + demoCost;
@@ -4432,6 +4435,15 @@ persistent actor ArcadeBackend {
   stable var daoTreasuryE8s : Nat = 0;
   // Prize Booth arcade share: player-listed NFT sales (1.5%), Official NFT redemptions (80%), VP badge sales (80%).
   stable var prizeBoothArcadeShareE8s : Nat = 0;
+  // Lifetime DAO income by source (tracking starts at this upgrade) + lottery payout totals.
+  stable var daoInGamesE8s : Nat = 0;
+  stable var daoInProposalsE8s : Nat = 0;
+  stable var daoInOfficialNftE8s : Nat = 0;
+  stable var daoInPlayerNftE8s : Nat = 0;
+  stable var daoInVpBadgeE8s : Nat = 0;
+  stable var lotteryTokensPaidTotal : Nat = 0;
+  stable var lotteryTicketsPaidTotal : Nat = 0;
+  stable var lotteryDrawsTotal : Nat = 0;
 
   public query func getShowroomTicketArcadeShareBalance() : async Nat { showroomTicketArcadeShareE8s };
   public query func getShowroomNonTicketArcadeShareBalance() : async Nat { showroomNonTicketArcadeShareE8s };
@@ -4586,6 +4598,8 @@ persistent actor ArcadeBackend {
         };
         lotteryWins := Buffer.toArray(wins);
         if (k > 0) {
+          lotteryDrawsTotal += 1;
+          if (kind == "token") { lotteryTokensPaidTotal += c.perWin * k } else { lotteryTicketsPaidTotal += c.perWin * k };
           lotteryHistoryEntries := Array.append<(Int, Text, [Text], Nat)>(lotteryHistoryEntries, [(now, if (kind == "token") { "token-lottery" } else { "ticket-lottery" }, Buffer.toArray(winnersText), c.perWin * k)]);
         };
         let rest = Buffer.Buffer<(Principal, Nat)>(rem);
@@ -4658,6 +4672,24 @@ persistent actor ArcadeBackend {
   };
 
   public query func getLotteryHistory() : async [(Int, Text, [Text], Nat)] { lotteryHistoryEntries };
+
+  public query func getDaoTreasuryOverview() : async {
+    balanceE8s : Nat; lockedTokenE8s : Nat; lockedTicketE8s : Nat;
+    inGamesE8s : Nat; inProposalsE8s : Nat; inOfficialNftE8s : Nat; inPlayerNftE8s : Nat; inVpBadgeE8s : Nat;
+    lotteryTokensPaid : Nat; lotteryTicketsPaid : Nat; lotteryDraws : Nat; vpHolders : Nat;
+  } {
+    let lockedTok : Nat = switch (tokenLotteryCycle) { case null { 0 }; case (?c) { c.perWin * c.remaining.size() * TOKEN_LIABILITY_E8S } };
+    let lockedTix : Nat = switch (ticketLotteryCycle) { case null { 0 }; case (?c) { c.perWin * c.remaining.size() * TICKET_LIABILITY_E8S } };
+    var holders : Nat = 0;
+    for (p in vpHolderPrincipals().vals()) { if (not isAdmin(p) and vpBadgeCountOf(p) > 0) { holders += 1 } };
+    {
+      balanceE8s = daoTreasuryE8s; lockedTokenE8s = lockedTok; lockedTicketE8s = lockedTix;
+      inGamesE8s = daoInGamesE8s; inProposalsE8s = daoInProposalsE8s; inOfficialNftE8s = daoInOfficialNftE8s;
+      inPlayerNftE8s = daoInPlayerNftE8s; inVpBadgeE8s = daoInVpBadgeE8s;
+      lotteryTokensPaid = lotteryTokensPaidTotal; lotteryTicketsPaid = lotteryTicketsPaidTotal; lotteryDraws = lotteryDrawsTotal;
+      vpHolders = holders;
+    }
+  };
 
   public query func getMyLotteryEntries(p : Principal) : async [(Text, Nat, Bool)] {
     let out = Buffer.Buffer<(Text, Nat, Bool)>(5);
@@ -6077,6 +6109,7 @@ persistent actor ArcadeBackend {
               let offE8s = ticketCostToSellerPayoutE8s(cost);
               let offDaoE8s = offE8s * 20 / 100;
               daoTreasuryE8s += offDaoE8s;
+              daoInOfficialNftE8s += offDaoE8s;
               prizeBoothArcadeShareE8s += offE8s - offDaoE8s;
               addMxp(caller, 21);
               return #ok("🎉 NFT redeemed! " # listing.name # " transferred to your wallet.");
@@ -6131,6 +6164,7 @@ persistent actor ArcadeBackend {
                 let arcadeCutE8s = grossE8s * 15 / 1000;
                 let sellerPayoutE8s = grossE8s - daoCutE8s - arcadeCutE8s;
                 daoTreasuryE8s += daoCutE8s;
+                daoInPlayerNftE8s += daoCutE8s;
                 prizeBoothArcadeShareE8s += arcadeCutE8s;
                 // Buyer tickets were already debited before the transfer; credit seller only after success.
                 ignore creditNftSellerEarnings(listing.creator, sellerPayoutE8s);
@@ -7629,6 +7663,7 @@ persistent actor ArcadeBackend {
     let vpE8s = cost * TICKET_LIABILITY_E8S;
     let vpDaoE8s = vpE8s * 20 / 100;
     daoTreasuryE8s += vpDaoE8s;
+    daoInVpBadgeE8s += vpDaoE8s;
     prizeBoothArcadeShareE8s += vpE8s - vpDaoE8s;
     gamerBadgeCounter += 1;
     let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "vp-badge-" # Nat.toText(owned + 1); owner = msg.caller; gameId = null; votingPower = 1; soulbound = true; createdAt = Time.now() };
@@ -7704,6 +7739,7 @@ persistent actor ArcadeBackend {
       tokens.put(msg.caller, tokenBal - 5);
       // proposal fee -> DAO treasury: the 5 Tokens' ICP backing (1 Token = 0.01 ICP) moves to the DAO's ICP treasury
       daoTreasuryE8s += 5 * TOKEN_TIP_E8S_PER_TOKEN;
+      daoInProposalsE8s += 5 * TOKEN_TIP_E8S_PER_TOKEN;
     };
     proposalCounter += 1;
     let now = Time.now();
