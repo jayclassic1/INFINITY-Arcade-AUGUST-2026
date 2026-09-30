@@ -17,6 +17,8 @@ import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Nat8 "mo:base/Nat8";
+import Timer "mo:base/Timer";
+import Random "mo:base/Random";
 
 persistent actor ArcadeBackend {
 
@@ -4468,6 +4470,240 @@ persistent actor ArcadeBackend {
     { enabled = lotteryEnabled; tokenPayoutBps = tokenLotteryPayoutBps; ticketPayoutBps = ticketLotteryPayoutBps; testHoursPerWeek = lotteryTestHoursPerWeek }
   };
 
+  // === DAO LOTTERY ENGINE (stage 2) ===
+  // Token lottery: 8-week cycles, 4 draws (every 2 weeks); entries at 3/6/9 VP Badges (max 3).
+  // Ticket lottery: 8-week cycles, 2 draws (every 4 weeks); entries at 4/8 VP Badges (max 2).
+  // Entries are snapshotted at cycle start; each entry wins exactly once per cycle, all wins equal.
+  // The cycle's prize reserve is locked out of the DAO treasury at the start, sized so every entry
+  // gets exactly perWin. Switching the lottery off only stops NEW cycles; running cycles finish.
+  type LotteryCycle = {
+    kind : Text;
+    startedAt : Int;
+    drawIntervalNs : Int;
+    drawsTotal : Nat;
+    drawsDone : Nat;
+    nextDrawAt : Int;
+    perWin : Nat;
+    entriesTotal : Nat;
+    remaining : [(Principal, Nat)];
+  };
+  type LotteryWin = { player : Principal; kind : Text; tier : Nat; amount : Nat; timestamp : Int; cycleStart : Int };
+  type LotteryCycleView = { startedAt : Int; drawsTotal : Nat; drawsDone : Nat; nextDrawAt : Int; perWin : Nat; entriesTotal : Nat; remaining : Nat };
+
+  stable var tokenLotteryCycle : ?LotteryCycle = null;
+  stable var ticketLotteryCycle : ?LotteryCycle = null;
+  stable var lotteryWins : [LotteryWin] = [];
+  stable var lotteryHistoryEntries : [(Int, Text, [Text], Nat)] = [];
+  stable var lotterySeenEntries : [(Principal, Int)] = [];
+  transient var lotteryTickRunning : Bool = false;
+  transient var lotteryTickStartedAt : Int = 0;
+
+  func lotteryCycleOf(kind : Text) : ?LotteryCycle { if (kind == "token") { tokenLotteryCycle } else { ticketLotteryCycle } };
+  func setLotteryCycle(kind : Text, c : ?LotteryCycle) { if (kind == "token") { tokenLotteryCycle := c } else { ticketLotteryCycle := c } };
+
+  func lotteryWeekNs() : Int {
+    if (lotteryTestHoursPerWeek == 0) { 604_800_000_000_000 } else { lotteryTestHoursPerWeek * 3_600_000_000_000 }
+  };
+
+  func lotterySnapshot(kind : Text) : [(Principal, Nat)] {
+    let thresholds : [Nat] = if (kind == "token") { [3, 6, 9] } else { [4, 8] };
+    let buf = Buffer.Buffer<(Principal, Nat)>(16);
+    for (p in vpHolderPrincipals().vals()) {
+      if (not isAdmin(p)) {
+        let n = vpBadgeCountOf(p);
+        var tier : Nat = 0;
+        for (t in thresholds.vals()) {
+          tier += 1;
+          if (n >= t) { buf.add((p, tier)) };
+        };
+      };
+    };
+    Buffer.toArray(buf)
+  };
+
+  func tryStartLotteryCycle(kind : Text) : Bool {
+    if (not lotteryEnabled) return false;
+    switch (lotteryCycleOf(kind)) { case (?_) { return false }; case null {} };
+    let entries = lotterySnapshot(kind);
+    let e = entries.size();
+    if (e == 0) return false;
+    let bps = if (kind == "token") { tokenLotteryPayoutBps } else { ticketLotteryPayoutBps };
+    let unit = if (kind == "token") { TOKEN_LIABILITY_E8S } else { TICKET_LIABILITY_E8S };
+    let perWin = (daoTreasuryE8s * bps / 10_000) / (e * unit);
+    if (perWin == 0) return false;
+    daoTreasuryE8s -= perWin * e * unit;
+    let week = lotteryWeekNs();
+    let now = Time.now();
+    let interval : Int = if (kind == "token") { 2 * week } else { 4 * week };
+    setLotteryCycle(kind, ?{
+      kind = kind;
+      startedAt = now;
+      drawIntervalNs = interval;
+      drawsTotal = if (kind == "token") { 4 } else { 2 };
+      drawsDone = 0;
+      nextDrawAt = now + interval;
+      perWin = perWin;
+      entriesTotal = e;
+      remaining = entries;
+    });
+    true
+  };
+
+  func runLotteryDraw(kind : Text, seed : Blob, salt : Nat64) {
+    switch (lotteryCycleOf(kind)) {
+      case null {};
+      case (?c) {
+        let rem = c.remaining.size();
+        let drawsLeft : Nat = if (c.drawsTotal > c.drawsDone) { c.drawsTotal - c.drawsDone } else { 1 };
+        let k : Nat = if (drawsLeft <= 1) { rem } else { (rem + drawsLeft - 1) / drawsLeft };
+        let arr = Array.thaw<(Principal, Nat)>(c.remaining);
+        var st : Nat64 = 0x9E3779B97F4A7C15 ^ salt;
+        for (b in Blob.toArray(seed).vals()) {
+          st := (st ^ Nat64.fromNat(Nat8.toNat(b))) *% 6364136223846793005 +% 1442695040888963407;
+        };
+        if (st == 0) { st := 1 };
+        var i : Nat = 0;
+        while (i < k) {
+          st ^= st << 13;
+          st ^= st >> 7;
+          st ^= st << 17;
+          let j = i + Nat64.toNat(st) % (rem - i);
+          let tmp = arr[i];
+          arr[i] := arr[j];
+          arr[j] := tmp;
+          i += 1;
+        };
+        let now = Time.now();
+        let winnersText = Buffer.Buffer<Text>(k);
+        let wins = Buffer.fromArray<LotteryWin>(lotteryWins);
+        var w : Nat = 0;
+        while (w < k) {
+          let (p, tier) = arr[w];
+          if (kind == "token") { tokens.put(p, getTokenBalance(p) + c.perWin) } else { tickets.put(p, getTicketBalance(p) + c.perWin) };
+          wins.add({ player = p; kind = kind; tier = tier; amount = c.perWin; timestamp = now; cycleStart = c.startedAt });
+          winnersText.add(Principal.toText(p));
+          w += 1;
+        };
+        lotteryWins := Buffer.toArray(wins);
+        if (k > 0) {
+          lotteryHistoryEntries := Array.append<(Int, Text, [Text], Nat)>(lotteryHistoryEntries, [(now, if (kind == "token") { "token-lottery" } else { "ticket-lottery" }, Buffer.toArray(winnersText), c.perWin * k)]);
+        };
+        let rest = Buffer.Buffer<(Principal, Nat)>(rem);
+        var r : Nat = k;
+        while (r < rem) { rest.add(arr[r]); r += 1 };
+        let done = c.drawsDone + 1;
+        if (done >= c.drawsTotal or rest.size() == 0) {
+          setLotteryCycle(kind, null);
+        } else {
+          setLotteryCycle(kind, ?{ c with drawsDone = done; nextDrawAt = c.nextDrawAt + c.drawIntervalNs; remaining = Buffer.toArray(rest) });
+        };
+      };
+    };
+  };
+
+  func lotteryTick() : async () {
+    let now = Time.now();
+    // Self-healing lock: a check older than 5 minutes is treated as stuck and ignored.
+    if (lotteryTickRunning and now - lotteryTickStartedAt < 300_000_000_000) return;
+    lotteryTickRunning := true;
+    lotteryTickStartedAt := now;
+    hydrateRuntimeStateIfNeeded();
+    var due = false;
+    for (kind in ["token", "ticket"].vals()) {
+      switch (lotteryCycleOf(kind)) { case (?c) { if (now >= c.nextDrawAt) { due := true } }; case null {} };
+    };
+    if (due) {
+      let seed : ?Blob = try { ?(await Random.blob()) } catch (_) { null };
+      switch (seed) {
+        case (?sd) {
+          hydrateRuntimeStateIfNeeded();
+          let now2 = Time.now();
+          switch (tokenLotteryCycle) { case (?c) { if (now2 >= c.nextDrawAt) { runLotteryDraw("token", sd, 1) } }; case null {} };
+          switch (ticketLotteryCycle) { case (?c) { if (now2 >= c.nextDrawAt) { runLotteryDraw("ticket", sd, 2) } }; case null {} };
+        };
+        case null {};
+      };
+    };
+    ignore tryStartLotteryCycle("token");
+    ignore tryStartLotteryCycle("ticket");
+    lotteryTickRunning := false;
+  };
+
+  public shared(msg) func adminRunLottery() : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    await lotteryTick();
+    #ok("Lottery check complete: due draws run, new cycles started if on and affordable")
+  };
+
+  // TESTING ONLY (remove before mainnet): make the current cycle's next draw due now, then run a check.
+  public shared(msg) func adminLotteryDrawNow(kind : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    switch (lotteryCycleOf(kind)) {
+      case null { return #err("No running " # kind # " lottery cycle") };
+      case (?c) { setLotteryCycle(kind, ?{ c with nextDrawAt = Time.now() }) };
+    };
+    await lotteryTick();
+    #ok("Draw forced for the " # kind # " lottery")
+  };
+
+  func lotteryCycleView(c : ?LotteryCycle) : ?LotteryCycleView {
+    switch (c) {
+      case null { null };
+      case (?x) { ?{ startedAt = x.startedAt; drawsTotal = x.drawsTotal; drawsDone = x.drawsDone; nextDrawAt = x.nextDrawAt; perWin = x.perWin; entriesTotal = x.entriesTotal; remaining = x.remaining.size() } };
+    }
+  };
+
+  public query func getLotteryStatus() : async { enabled : Bool; daoTreasuryE8s : Nat; token : ?LotteryCycleView; ticket : ?LotteryCycleView } {
+    { enabled = lotteryEnabled; daoTreasuryE8s = daoTreasuryE8s; token = lotteryCycleView(tokenLotteryCycle); ticket = lotteryCycleView(ticketLotteryCycle) }
+  };
+
+  public query func getLotteryHistory() : async [(Int, Text, [Text], Nat)] { lotteryHistoryEntries };
+
+  public query func getMyLotteryEntries(p : Principal) : async [(Text, Nat, Bool)] {
+    let out = Buffer.Buffer<(Text, Nat, Bool)>(5);
+    for (kind in ["token", "ticket"].vals()) {
+      switch (lotteryCycleOf(kind)) {
+        case null {};
+        case (?c) {
+          for ((q, tier) in c.remaining.vals()) { if (Principal.equal(q, p)) { out.add((kind, tier, false)) } };
+          for (w in lotteryWins.vals()) { if (Principal.equal(w.player, p) and w.kind == kind and w.cycleStart == c.startedAt) { out.add((kind, w.tier, true)) } };
+        };
+      };
+    };
+    Buffer.toArray(out)
+  };
+
+  func lotteryLastSeen(p : Principal) : Int {
+    for (e in lotterySeenEntries.vals()) { if (Principal.equal(e.0, p)) return e.1 };
+    0
+  };
+
+  public query func hasLotteryWins(p : Principal) : async Bool {
+    let seen = lotteryLastSeen(p);
+    for (w in lotteryWins.vals()) { if (Principal.equal(w.player, p) and w.timestamp > seen) return true };
+    false
+  };
+
+  public shared(msg) func claimLotteryWinNotifications() : async [(Text, Nat, Nat, Int)] {
+    let caller = msg.caller;
+    if (Principal.isAnonymous(caller)) return [];
+    let seen = lotteryLastSeen(caller);
+    let out = Buffer.Buffer<(Text, Nat, Nat, Int)>(4);
+    var latest : Int = seen;
+    for (w in lotteryWins.vals()) {
+      if (Principal.equal(w.player, caller) and w.timestamp > seen) {
+        out.add((w.kind, w.tier, w.amount, w.timestamp));
+        if (w.timestamp > latest) { latest := w.timestamp };
+      };
+    };
+    if (latest > seen) {
+      let others = Array.filter<(Principal, Int)>(lotterySeenEntries, func(e) { not Principal.equal(e.0, caller) });
+      lotterySeenEntries := Array.append<(Principal, Int)>(others, [(caller, latest)]);
+    };
+    Buffer.toArray(out)
+  };
+
+
   /// Admin-only withdrawal from the Showroom ticket-game arcade-share accumulator (from_subaccount=null: this is
   /// a plain internal counter against the canister's general ICP balance, not a dedicated subaccount).
   public shared(msg) func adminWithdrawShowroomTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
@@ -7598,4 +7834,8 @@ persistent actor ArcadeBackend {
       totalRevenueIcp = totalRevenueE8s / 100_000_000;
     };
   };
+
+  // Lottery timer: placed LAST so every function it uses is already defined when it starts.
+  // Re-armed automatically on every install/upgrade (transient fields re-initialise in a persistent actor).
+  transient let _lotteryTimerId : Timer.TimerId = Timer.recurringTimer<system>(#seconds 600, lotteryTick);
 };
