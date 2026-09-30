@@ -4428,11 +4428,45 @@ persistent actor ArcadeBackend {
   stable var showroomNonTicketArcadeShareE8s : Nat = 0;
   stable var showroomPurchaseArcadeShareE8s : Nat = 0;
   stable var daoTreasuryE8s : Nat = 0;
+  // Prize Booth arcade share: player-listed NFT sales (1.5%), Official NFT redemptions (80%), VP badge sales (80%).
+  stable var prizeBoothArcadeShareE8s : Nat = 0;
 
   public query func getShowroomTicketArcadeShareBalance() : async Nat { showroomTicketArcadeShareE8s };
   public query func getShowroomNonTicketArcadeShareBalance() : async Nat { showroomNonTicketArcadeShareE8s };
   public query func getShowroomPurchaseArcadeShareBalance() : async Nat { showroomPurchaseArcadeShareE8s };
   public query func getDaoTreasuryBalance() : async Nat { daoTreasuryE8s };
+  public query func getPrizeBoothArcadeShareBalance() : async Nat { prizeBoothArcadeShareE8s };
+
+  // === DAO LOTTERY SETTINGS (stage 1; the draw engine comes in stage 2) ===
+  stable var lotteryEnabled : Bool = false;
+  stable var tokenLotteryPayoutBps : Nat = 1000; // 10.00% of the DAO treasury reserved per token cycle
+  stable var ticketLotteryPayoutBps : Nat = 900; // 9.00% of the DAO treasury reserved per ticket cycle
+  stable var lotteryTestHoursPerWeek : Nat = 0; // 0 = normal speed; N = one lottery "week" lasts N hours (local testing)
+
+  public shared(msg) func adminSetLotteryEnabled(on : Bool) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    lotteryEnabled := on;
+    #ok(if (on) "Lottery ON: new cycles start when affordable" else "Lottery PAUSED: running cycles still finish, no new cycles start")
+  };
+
+  public shared(msg) func adminSetLotteryPayoutBps(kind : Text, bps : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (bps < 100 or bps > 5000) return #err("Payout must be between 1.00% and 50.00% (100-5000 basis points)");
+    if (kind == "token") { tokenLotteryPayoutBps := bps; return #ok("Token lottery payout set; applies from the next cycle") };
+    if (kind == "ticket") { ticketLotteryPayoutBps := bps; return #ok("Ticket lottery payout set; applies from the next cycle") };
+    #err("Kind must be token or ticket")
+  };
+
+  public shared(msg) func adminSetLotteryTestSpeed(hoursPerWeek : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (hoursPerWeek > 168) return #err("Use 0 for normal speed, or 1-168 hours per lottery week");
+    lotteryTestHoursPerWeek := hoursPerWeek;
+    #ok(if (hoursPerWeek == 0) "Lottery at normal speed" else "Lottery test speed: 1 week = " # Nat.toText(hoursPerWeek) # " hour(s)")
+  };
+
+  public query func getLotterySettings() : async { enabled : Bool; tokenPayoutBps : Nat; ticketPayoutBps : Nat; testHoursPerWeek : Nat } {
+    { enabled = lotteryEnabled; tokenPayoutBps = tokenLotteryPayoutBps; ticketPayoutBps = ticketLotteryPayoutBps; testHoursPerWeek = lotteryTestHoursPerWeek }
+  };
 
   /// Admin-only withdrawal from the Showroom ticket-game arcade-share accumulator (from_subaccount=null: this is
   /// a plain internal counter against the canister's general ICP balance, not a dedicated subaccount).
@@ -4528,6 +4562,37 @@ persistent actor ArcadeBackend {
     }
   };
 
+
+  /// Admin-only withdrawal from the Prize Booth (NFT + VP badge sales) arcade-share accumulator.
+  public shared(msg) func adminWithdrawPrizeBoothArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
+    let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
+    if (totalDebit > prizeBoothArcadeShareE8s) {
+      return #err("Prize Booth arcade share has insufficient balance: " # Nat.toText(prizeBoothArcadeShareE8s) # " e8s available (needs amount + " # Nat.toText(ICP_LEDGER_FEE_E8S) # " e8s ledger fee)");
+    };
+    prizeBoothArcadeShareE8s -= totalDebit;
+    try {
+      let result = await ICP_LEDGER.icrc1_transfer({
+        to = destination;
+        fee = ?ICP_LEDGER_FEE_E8S;
+        memo = null;
+        from_subaccount = null;
+        created_at_time = null;
+        amount = amountE8s;
+      });
+      switch (result) {
+        case (#Ok(blockIndex)) { #ok(blockIndex) };
+        case (#Err(e)) {
+          prizeBoothArcadeShareE8s += totalDebit;
+          #err(icpTransferErrorText("Prize Booth arcade share withdrawal", e))
+        };
+      }
+    } catch (e) {
+      prizeBoothArcadeShareE8s += totalDebit;
+      #err("Prize Booth arcade share withdrawal transfer error: " # Error.message(e))
+    }
+  };
   // ============================================
   // === GAME ZIP UPLOAD QUEUE (The Back + Showroom) ===
   // Submitters upload their game zip in chunks directly into arcade_backend's own storage, since
@@ -5772,6 +5837,11 @@ persistent actor ArcadeBackend {
               let updList : NftListing = { id = listing.id; listingType = listing.listingType; name = listing.name; description = listing.description; rarity = listing.rarity; ticketCost = listing.ticketCost; imageUrl = listing.imageUrl; creator = listing.creator; tier = listing.tier; status = "sold"; feePaid = listing.feePaid; showroomFeePaid = listing.showroomFeePaid; txId = listing.txId; createdAt = listing.createdAt; sourceCanisterId = listing.sourceCanisterId; sourceTokenId = listing.sourceTokenId; sourceTokenKey = listing.sourceTokenKey; collectionName = listing.collectionName; };
               nftListings.put(listingId, updList);
               logRevenue("official-nft-redeem", ticketCostToSellerPayoutE8s(cost), caller, 7);
+              // Prize Booth split for Official NFTs: arcade 80%, DAO 20% (of the spent tickets' ICP backing)
+              let offE8s = ticketCostToSellerPayoutE8s(cost);
+              let offDaoE8s = offE8s * 20 / 100;
+              daoTreasuryE8s += offDaoE8s;
+              prizeBoothArcadeShareE8s += offE8s - offDaoE8s;
               addMxp(caller, 21);
               return #ok("🎉 NFT redeemed! " # listing.name # " transferred to your wallet.");
             };
@@ -5819,7 +5889,13 @@ persistent actor ArcadeBackend {
 
             switch (transferOk) {
               case (#ok(_)) {
-                let sellerPayoutE8s = ticketCostToSellerPayoutE8s(cost);
+                let grossE8s = ticketCostToSellerPayoutE8s(cost);
+                // Prize Booth split for player-listed NFTs: seller 97%, arcade 1.5%, DAO 1.5%
+                let daoCutE8s = grossE8s * 15 / 1000;
+                let arcadeCutE8s = grossE8s * 15 / 1000;
+                let sellerPayoutE8s = grossE8s - daoCutE8s - arcadeCutE8s;
+                daoTreasuryE8s += daoCutE8s;
+                prizeBoothArcadeShareE8s += arcadeCutE8s;
                 // Buyer tickets were already debited before the transfer; credit seller only after success.
                 ignore creditNftSellerEarnings(listing.creator, sellerPayoutE8s);
                 // Update escrow
@@ -7313,6 +7389,11 @@ persistent actor ArcadeBackend {
     let balance = getTicketBalance(msg.caller);
     if (balance < cost) return #err("Not enough tickets. This badge costs " # Nat.toText(cost) # " Tickets. Have " # Nat.toText(balance));
     tickets.put(msg.caller, balance - cost);
+    // Prize Booth split for VP badges: arcade 80%, DAO 20% (of the spent tickets' ICP backing)
+    let vpE8s = cost * TICKET_LIABILITY_E8S;
+    let vpDaoE8s = vpE8s * 20 / 100;
+    daoTreasuryE8s += vpDaoE8s;
+    prizeBoothArcadeShareE8s += vpE8s - vpDaoE8s;
     gamerBadgeCounter += 1;
     let badge : GamerBadge = { id = "badge-" # Nat.toText(gamerBadgeCounter); badgeType = "vp-badge-" # Nat.toText(owned + 1); owner = msg.caller; gameId = null; votingPower = 1; soulbound = true; createdAt = Time.now() };
     gamerBadgeEntries := Array.append<GamerBadge>(gamerBadgeEntries, [badge]);
