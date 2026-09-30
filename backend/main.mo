@@ -7780,6 +7780,7 @@ persistent actor ArcadeBackend {
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
+    if (not isAdmin(msg.caller) and recentProposalBy(msg.caller, Time.now())) return #err("You can create one proposal every 24 hours");
     // Proposals cost 5 Tokens only (the paymentLane argument is kept for interface compatibility but ignored).
     if (not isAdmin(msg.caller)) {
       let tokenBal = getTokenBalance(msg.caller);
@@ -7814,9 +7815,142 @@ persistent actor ArcadeBackend {
     #ok(proposal.id)
   };
 
+  // === PROPOSAL TYPES (stage 1) ===
+  // Side table keyed by proposal id, so the stored Proposal record never changes shape.
+  // category holds the proposal type; multi-choice votes are stored as "c0".."c3" in ProposalVote.vote.
+  type ProposalMeta = {
+    kind : Text;
+    choices : [Text];
+    choiceTotals : [Nat];
+    target : Text;          // "game:<id>" | "hole:<id>" | principal text | ""
+    voterCount : Nat;       // weighted (non-admin) voters, for quorum
+    execStatus : Text;      // "none" now; stage 2: "pending" | "executed" | "vetoed" | "failed"
+    executeAfter : Int;     // stage 2 timelock
+  };
+  stable var proposalMetaEntries : [(Text, ProposalMeta)] = [];
+
+  func findProposalMeta(id : Text) : ?ProposalMeta {
+    for ((k, m) in proposalMetaEntries.vals()) { if (k == id) return ?m };
+    null
+  };
+  func putProposalMeta(id : Text, m : ProposalMeta) {
+    proposalMetaEntries := Array.append<(Text, ProposalMeta)>(Array.filter<(Text, ProposalMeta)>(proposalMetaEntries, func(e) { e.0 != id }), [(id, m)]);
+  };
+  func parseChoiceVote(v : Text, n : Nat) : ?Nat {
+    var i : Nat = 0;
+    while (i < n and i < 4) { if (v == "c" # Nat.toText(i)) return ?i; i += 1 };
+    null
+  };
+  func recentProposalBy(who : Principal, now : Int) : Bool {
+    for (p in proposalEntries.vals()) { if (Principal.equal(p.author, who) and now - p.createdAt < 86_400_000_000_000) return true };
+    false
+  };
+
+  public shared(msg) func createProposalV2(kind : Text, title : Text, body : Text, duration : Text, images : [Text], choices : [Text], target : Text) : async Result.Result<Text, Text> {
+    let caller = msg.caller;
+    if (isAnonymousPrincipal(caller)) return #err("Connect wallet to create a proposal");
+    hydrateRuntimeStateIfNeeded();
+    let admin = isAdmin(caller);
+    let advisory : [Text] = ["recommend-game", "recommendation", "game-design-request", "general", "ban-user", "bug-report"];
+    let devOnly : [Text] = ["contest", "community-choice", "artist-commission"];
+    let lockedKinds : [Text] = ["dao-favourite", "mute-user", "content-removal"];
+    func inList(l : [Text]) : Bool { for (x in l.vals()) { if (x == kind) return true }; false };
+    if (inList(lockedKinds)) return #err("This proposal type is coming soon");
+    if (not inList(advisory) and not inList(devOnly)) return #err("Unknown proposal type");
+    if (inList(devOnly) and not admin) return #err("Only the Dev Team can create this proposal type");
+    if (kind == "bug-report") {
+      if (votingPowerOf(caller) == 0 and not admin) return #err("DAO membership (1 Voting Power) required to file a bug report");
+    } else if (not admin and vpBadgeCountOf(caller) < 2) {
+      return #err("2 Voting Power Badges required to create proposals");
+    };
+    if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
+    if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
+    let now = Time.now();
+    if (not admin and recentProposalBy(caller, now)) return #err("You can create one proposal every 24 hours");
+    let cleaned = Buffer.Buffer<Text>(4);
+    for (c in choices.vals()) { let t = Text.trim(c, #char ' '); if (Text.size(t) > 0) { cleaned.add(t) } };
+    let multiRequired = inList(devOnly);
+    if (multiRequired and (cleaned.size() < 2 or cleaned.size() > 4)) return #err("This proposal type needs 2 to 4 choices");
+    if (kind == "general" and cleaned.size() != 0 and (cleaned.size() < 2 or cleaned.size() > 4)) return #err("General proposals need either no choices (For/Against) or 2 to 4 choices");
+    if (not multiRequired and kind != "general" and cleaned.size() > 0) return #err("This proposal type is For/Against only");
+    for (t in cleaned.vals()) { if (Text.size(t) > 80) return #err("Each choice must be 80 characters or fewer") };
+    var tgt : Text = "";
+    if (kind == "recommend-game") {
+      switch (Text.stripStart(target, #text "game:")) {
+        case (?gid) {
+          switch (gameSubmissions.get(gid)) { case null { return #err("Game not found") }; case (?_) {} };
+          tgt := target;
+        };
+        case null {
+          switch (Text.stripStart(target, #text "hole:")) {
+            case (?hid) {
+              switch (findHoleSubmission(hid)) {
+                case null { return #err("Blackhole entry not found") };
+                case (?h) { if (h.status != "active") return #err("That Blackhole entry is no longer active") };
+              };
+              tgt := target;
+            };
+            case null { return #err("Pick a game from The Back or a Blackhole entry to recommend") };
+          };
+        };
+      };
+    };
+    if (kind == "ban-user") {
+      let who = Principal.fromText(target); // malformed text traps and nothing is saved; the UI validates first
+      if (isAdmin(who)) return #err("The Dev Team can't be targeted");
+      if (Principal.equal(who, caller)) return #err("You can't target yourself");
+      tgt := Principal.toText(who);
+    };
+    if (kind != "bug-report" and not admin) {
+      let tokenBal = getTokenBalance(caller);
+      if (tokenBal < 5) return #err("Not enough tokens. Creating a proposal costs 5 Tokens. Have " # Nat.toText(tokenBal));
+      tokens.put(caller, tokenBal - 5);
+      daoTreasuryE8s += 5 * TOKEN_TIP_E8S_PER_TOKEN;
+      daoInProposalsE8s += 5 * TOKEN_TIP_E8S_PER_TOKEN;
+    };
+    proposalCounter += 1;
+    let proposal : Proposal = {
+      id = "proposal-" # Nat.toText(proposalCounter);
+      title = title;
+      body = body;
+      category = kind;
+      official = admin;
+      images = images;
+      author = caller;
+      authorName = Principal.toText(caller);
+      createdAt = now;
+      endsAt = now + durationToNs(duration);
+      duration = duration;
+      votesFor = 0;
+      votesAgainst = 0;
+      votes = [];
+      discussion = [];
+      closed = false;
+    };
+    proposalEntries := Array.append<Proposal>([proposal], proposalEntries);
+    let finalChoices = Buffer.toArray(cleaned);
+    putProposalMeta(proposal.id, {
+      kind = kind;
+      choices = finalChoices;
+      choiceTotals = Array.tabulate<Nat>(finalChoices.size(), func(_ : Nat) : Nat { 0 });
+      target = tgt;
+      voterCount = 0;
+      execStatus = "none";
+      executeAfter = 0;
+    });
+    addDxp(caller, 10);
+    #ok(proposal.id)
+  };
+
+  public query func getProposalMetas() : async [(Text, ProposalMeta)] { proposalMetaEntries };
+
   public shared(msg) func castVote(proposalId : Text, vote : Text) : async Result.Result<Text, Text> {
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to vote");
-    if (vote != "for" and vote != "against") return #err("Vote must be for or against");
+    let meta = findProposalMeta(proposalId);
+    let isMulti = switch (meta) { case (?m) { m.choices.size() > 0 }; case null { false } };
+    let choiceIdx : ?Nat = switch (meta) { case (?m) { if (m.choices.size() > 0) { parseChoiceVote(vote, m.choices.size()) } else { null } }; case null { null } };
+    if (isMulti) { if (choiceIdx == null) return #err("Pick one of the proposal's choices") }
+    else { if (vote != "for" and vote != "against") return #err("Vote must be for or against") };
     let weight = votingPowerOf(msg.caller);
     if (weight == 0 and not isAdmin(msg.caller)) return #err("Voting Power Badge required to vote");
     var found = false;
@@ -7857,6 +7991,14 @@ persistent actor ArcadeBackend {
     });
     switch (rejected) { case (?reason) { return #err(reason) }; case null {} };
     if (not found) return #err("Proposal not found");
+    switch (meta) {
+      case (?m) {
+        let ew : Nat = if (isAdmin(msg.caller)) 0 else weight;
+        let totals = Array.tabulate<Nat>(m.choiceTotals.size(), func(i : Nat) : Nat { m.choiceTotals[i] + (switch (choiceIdx) { case (?c) { if (c == i) ew else 0 }; case null { 0 } }) });
+        putProposalMeta(proposalId, { m with choiceTotals = totals; voterCount = m.voterCount + (if (ew > 0) 1 else 0) });
+      };
+      case null {};
+    };
     if (weight > 0) { addDxp(msg.caller, weight) };
     #ok("Vote recorded")
   };

@@ -6272,7 +6272,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -14343,6 +14343,178 @@ const PROPOSAL_CATEGORIES=[
   {id:'general',name:'General',desc:'Anything else for the community to decide'}
 ];
 
+const PROPOSAL_TYPES=[
+  {id:'recommend-game',name:'Recommend Game',desc:'Recommend a game from The Back or the Blackhole for the Showroom. Advisory: the Dev Team decides.',who:'2+ VP Badges',cost:'5 Tokens',target:'game'},
+  {id:'recommendation',name:'Recommendation',desc:'Suggest changing or updating something on the arcade. Advisory.',who:'2+ VP Badges',cost:'5 Tokens'},
+  {id:'game-design-request',name:'Game Design Request',desc:'Request a type of game you want to see built. Advisory.',who:'2+ VP Badges',cost:'5 Tokens'},
+  {id:'general',name:'General',desc:'Anything else. Leave choices empty for For/Against, or add 2 to 4 choices. Advisory.',who:'2+ VP Badges',cost:'5 Tokens',mode:'opt'},
+  {id:'ban-user',name:'Ban User',desc:'Ask the Dev Team to ban a toxic user. Advisory: the Dev Team reviews and decides.',who:'2+ VP Badges',cost:'5 Tokens',target:'user'},
+  {id:'bug-report',name:'Glitch / Bug Report',desc:'Bring serious attention to a problem that needs fixing.',who:'Any DAO member',cost:'Free'},
+  {id:'contest',name:'Contest',desc:'Dev Team contest: the community picks one of up to 4 options.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
+  {id:'community-choice',name:'Community Choice',desc:'The Dev Team asks the community to choose, e.g. an aesthetic upgrade.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'},
+  {id:'artist-commission',name:'Artist Commission',desc:'The community helps choose an artist or direction for a commission.',who:'Dev Team only',cost:'Free',devOnly:true,mode:'multi'}
+];
+function proposalTypeName(p){
+  const k=p.kind||p.category;
+  const t=PROPOSAL_TYPES.find(x=>x.id===k); if(t) return t.name;
+  const c=PROPOSAL_CATEGORIES.find(x=>x.id===p.category); return c?c.name:'General';
+}
+function _propTimeLabel(p){
+  const ms=p.endsAt-Date.now();
+  if(ms<=0) return 'ENDED';
+  return ms>86400000?Math.ceil(ms/86400000)+'d left':Math.ceil(ms/3600000)+'h left';
+}
+function _propAuthor(p){
+  const prof=(typeof getProfileFor==='function')?getProfileFor(p.author):null;
+  return prof?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'…');
+}
+function renderMultiChoiceCard(p){
+  const active=Date.now()<p.endsAt;
+  const totals=p.choiceTotals||[]; const sum=totals.reduce((a,b)=>a+b,0);
+  let lead=-1,best=-1; totals.forEach((t,i)=>{ if(t>best){best=t;lead=i;} });
+  const myV=(p.votes||[]).find(v=>v.voter===S.principalText);
+  const myIdx=myV&&/^c\d$/.test(myV.vote)?Number(myV.vote.slice(1)):-1;
+  const border=p.official?'2px solid rgba(160,80,255,.5)':'1px solid rgba(239,68,68,.2)';
+  const shadow=p.official?'box-shadow:0 0 18px rgba(160,80,255,.2);':'';
+  return `<div data-proposal-id='${p.id}' onclick='if(!event.target.closest("button,img,span[onclick]"))openProposalPopup("${p.id}")' style='cursor:pointer;background:rgba(0,10,25,.7);border:${border};border-radius:12px;padding:14px;margin-bottom:8px;${shadow}'>
+    <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
+      ${p.official?`<span style='font-size:.55rem;padding:2px 8px;border-radius:4px;color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.4)'>DEV TEAM</span>`:''}
+      <span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:rgba(192,132,252,.12);color:#e9d5ff;font-weight:700'>${escHtml(proposalTypeName(p))}</span>
+      <span style='font-size:.6rem;color:${active?'#ef4444':'#64748b'};font-weight:700;margin-left:auto'>${_propTimeLabel(p)}</span>
+    </div>
+    <div style='font-weight:800;font-size:.95rem;color:#e0e6f0;margin-bottom:4px'>${escHtml(p.title)}</div>
+    <div style='font-size:.7rem;color:#5a8ab8;margin-bottom:8px'>${escHtml(_propAuthor(p))}</div>
+    <div style='font-size:.72rem;color:#cbd5e1;margin-bottom:10px'>${p.choices.length} choices · ${sum?`${active?'Leading':'Winner'}: <b style="color:#ffd86b">${escHtml(p.choices[lead]||'')}</b> (${Math.round(best/sum*100)}%)`:'No votes yet'}</div>
+    <div style='display:flex;justify-content:space-between;align-items:center'>
+      <span style='font-size:.65rem;color:#2d5a8a'>${(p.votes||[]).length} vote${(p.votes||[]).length!==1?'s':''}</span>
+      ${myIdx>=0?`<span class='my-vote-pill' style='font-size:.7rem;color:#22c55e;font-weight:800;padding:4px 12px;border-radius:6px;border:1px solid rgba(34,197,94,.75);background:rgba(34,197,94,.1);box-shadow:0 0 12px rgba(34,197,94,.45)'>You picked: ${escHtml(p.choices[myIdx]||'')}</span>`
+        :`<button onclick='openProposalPopup("${p.id}")' style='padding:5px 14px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.45);border-radius:6px;color:#e9d5ff;font-weight:800;font-size:.7rem;cursor:pointer'>${active?'Vote in details →':'See results →'}</button>`}
+    </div>
+  </div>`;
+}
+function closeProposalPopup(){ const o=document.getElementById('proposalPopup'); if(o) o.remove(); window._popupProposalId=null; }
+if(!window._proposalPopupEsc){ window._proposalPopupEsc=true; document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProposalPopup(); }); }
+function _proposalTargetHtml(p){
+  const t=String(p.target||''); if(!t) return '';
+  const box=(icon,label,val)=>`<div style="margin-bottom:12px;padding:8px 12px;border-radius:10px;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.3);font-size:.78rem;color:#cbd5e1">${icon} ${label}: ${val}</div>`;
+  if(t.startsWith('game:')){ const gid=t.slice(5); const g=((typeof getSubmissions==='function'?getSubmissions():[])||[]).find(x=>x&&x.id===gid); return box('🎮','Recommended game',`<b style="color:#22d3ee">${escHtml(g&&g.name?g.name:gid)}</b>`); }
+  if(t.startsWith('hole:')) return box('🕳️','Recommended Blackhole entry',`<b style="color:#22d3ee">${escHtml(t.slice(5))}</b>`);
+  const nm=_proposalAuthorNames[t]||(t.slice(0,10)+'…');
+  return box('👤','User',`<span onclick="closeProposalPopup();viewPublicProfile('${escHtml(t)}')" style="cursor:pointer;color:#22d3ee;font-weight:800">${escHtml(nm)}</span>`);
+}
+async function submitProposalReplyPopup(id){
+  const el=document.getElementById('popupProposalReply');
+  const body=(el?.value||'').trim(); if(!body) return;
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.addProposalReply(id,body);
+    if(r.err){ await arcadeAlert('Reply Failed',escHtml(safeUserErrorMessage(r.err,'proposal reply'))); return; }
+  }catch(e){ await arcadeAlert('Error',escHtml(safeUserErrorMessage(e,'proposal reply'))); return; }
+  await fetchProposalsFromChain();
+  if(window._popupNameTried) delete window._popupNameTried[id];
+  await prefetchProposalAuthorNames();
+  openProposalPopup(id);
+}
+function openProposalPopup(id){
+  const p=(getProposals()||[]).find(x=>x.id===id); if(!p) return;
+  window._popupProposalId=id;
+  let o=document.getElementById('proposalPopup');
+  if(!o){
+    o=document.createElement('div'); o.id='proposalPopup';
+    // z-index 250: above the page and the proposal form (15), below alerts/confirms (300) and image viewer (99999)
+    o.style.cssText='position:fixed;inset:0;z-index:250;background:rgba(3,2,10,.78);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:60px 14px 40px;box-sizing:border-box';
+    o.addEventListener('click',e=>{ if(e.target===o) closeProposalPopup(); });
+    document.body.appendChild(o);
+  }
+  const active=Date.now()<p.endsAt;
+  const multi=!!(p.choices&&p.choices.length);
+  const myV=(p.votes||[]).find(v=>v.voter===S.principalText);
+  const my=myV?myV.vote:null;
+  let results='', voteArea='';
+  if(multi){
+    const totals=p.choiceTotals||[]; const sum=totals.reduce((a,b)=>a+b,0); const best=totals.length?Math.max(...totals):0;
+    const devPick=(p.votes||[]).find(v=>Number(v.weight)===0&&/^c\d$/.test(v.vote));
+    results=p.choices.map((c,i)=>{
+      const v=totals[i]||0, pc=sum?Math.round(v/sum*100):0, lead=sum>0&&v===best, mine=my==='c'+i, col=lead?'#ffd86b':'#c084fc';
+      return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:#e2e8f0;margin-bottom:4px"><span>${lead?'👑 ':''}<b>${escHtml(c)}</b>${mine?' <span class="my-vote-pill" style="font-size:.6rem;color:#22c55e;border:1px solid rgba(34,197,94,.7);border-radius:6px;padding:1px 6px;box-shadow:0 0 10px rgba(34,197,94,.45)">YOUR PICK</span>':''}${devPick&&devPick.vote==='c'+i?' <span style="font-size:.6rem;color:#c084fc">· Dev Team pick</span>':''}</span><span style="color:${col};font-weight:800;white-space:nowrap">${v} · ${pc}%</span></div><div style="height:10px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden"><i style="display:block;height:100%;width:${sum?Math.max(2,pc):0}%;background:${col};box-shadow:0 0 10px ${col}"></i></div></div>`;
+    }).join('');
+    if(active&&!my) voteArea=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px">${p.choices.map((c,i)=>`<button onclick='castVote("${p.id}","c${i}")' style="padding:10px;background:rgba(192,132,252,.1);border:2px solid rgba(192,132,252,.45);border-radius:10px;color:#e9d5ff;font-weight:800;cursor:pointer">${escHtml(c)}</button>`).join('')}</div>`;
+  } else {
+    const yes=p.votesFor||0, no=p.votesAgainst||0, tot=yes+no, pc=tot?Math.round(yes/tot*100):0;
+    results=`<div style="background:rgba(0,0,0,.4);border-radius:8px;height:36px;overflow:hidden;position:relative;margin-bottom:8px">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:${tot?pc:50}%;background:${tot?'linear-gradient(90deg,rgba(34,197,94,.45),rgba(34,197,94,.2))':'rgba(148,163,184,.12)'}"></div>
+      <div style="position:absolute;right:0;top:0;bottom:0;width:${tot?100-pc:50}%;background:${tot?'linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.45))':'rgba(148,163,184,.08)'}"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:.85rem;font-weight:800"><span style="color:#22c55e">FOR ${yes} · ${tot?pc:0}%</span><span style="color:#ef4444">AGAINST ${no} · ${tot?100-pc:0}%</span></div>
+    </div>${typeof devTeamVerdictHtml==='function'?devTeamVerdictHtml(p):''}`;
+    if(active&&!my) voteArea=`<div style="display:flex;gap:10px;margin-top:10px"><button onclick='castVote("${p.id}","for")' style="flex:1;padding:10px;background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.35);border-radius:10px;color:#22c55e;font-weight:900;cursor:pointer">FOR</button><button onclick='castVote("${p.id}","against")' style="flex:1;padding:10px;background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.35);border-radius:10px;color:#ef4444;font-weight:900;cursor:pointer">AGAINST</button></div>`;
+    else if(my) voteArea=`<div class="my-vote-pill" style="text-align:center;margin-top:10px;padding:8px 14px;border-radius:8px;font-weight:800;font-size:.8rem;color:${my==='for'?'#22c55e':'#ef4444'};border:1px solid ${my==='for'?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)'};box-shadow:0 0 14px ${my==='for'?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)'}">You voted ${escHtml(String(my).toUpperCase())}</div>`;
+  }
+  const disc=(p.discussion||[]).map(d=>{
+    const dp=(typeof getProfileFor==='function')?getProfileFor(d.author):null;
+    const dn=dp?.name||_proposalAuthorNames[d.author]||((d.authorName&&d.authorName!==d.author)?d.authorName:String(d.author||'').slice(0,8)+'…');
+    return `<div style="background:rgba(0,10,25,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px;margin-bottom:6px"><div style="font-size:.72rem;margin-bottom:4px"><b style="color:#5a8ab8">${escHtml(dn)}</b> <span style="color:#475569;font-size:.62rem">${getTimeAgo(new Date(d.timestamp))}</span></div><div style="font-size:.8rem;color:#b8c6e0;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escHtml(d.body)}</div></div>`;
+  }).join('')||'<div style="color:#475569;font-size:.75rem;padding:6px 0">No discussion yet</div>';
+  const reply=(S.connected&&hasDaoEntry())?`<textarea id="popupProposalReply" placeholder="Add to the discussion..." maxlength="1000" rows="2" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px;background:rgba(0,0,0,.4);border:1px solid rgba(192,132,252,.25);border-radius:8px;color:#e0e6f0;font-family:inherit"></textarea><button onclick='submitProposalReplyPopup("${p.id}")' style="margin-top:6px;padding:6px 16px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.4);border-radius:6px;color:#e9d5ff;font-weight:800;font-size:.75rem;cursor:pointer">Reply</button>`:'';
+  const imgs=(p.images||[]).length?`<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto">${p.images.map((src,i)=>`<img src="${src}" onclick='viewProposalImage("${p.id}",${i})' style="max-width:180px;max-height:160px;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.1)"/>`).join('')}</div>`:'';
+  const nVotes=(p.votes||[]).length;
+  o.innerHTML=`<div data-proposal-id='${p.id}' style="position:relative;width:100%;max-width:640px;border-radius:18px;padding:22px;background:linear-gradient(160deg,rgba(35,10,60,.97),rgba(8,10,30,.97));border:2px solid ${p.official?'rgba(192,132,252,.6)':'rgba(239,68,68,.35)'};box-shadow:0 0 40px rgba(192,132,252,.25)">
+    <button onclick="closeProposalPopup()" aria-label="Close" style="position:absolute;top:10px;right:12px;background:none;border:none;color:#cbd5e1;font-size:1.3rem;cursor:pointer">✕</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;padding-right:30px">
+      ${p.official?'<span style="font-size:.6rem;padding:2px 8px;border-radius:4px;color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.45)">DEV TEAM</span>':''}
+      <span style="font-size:.62rem;padding:2px 8px;border-radius:4px;background:rgba(192,132,252,.12);color:#e9d5ff;font-weight:700">${escHtml(proposalTypeName(p))}</span>
+      <span style="font-size:.62rem;color:${active?'#ef4444':'#64748b'};font-weight:800">${_propTimeLabel(p)}</span>
+    </div>
+    <h2 style="margin:0 0 6px;font-size:1.25rem;color:#f1f5f9">${escHtml(p.title)}</h2>
+    <div style="font-size:.74rem;color:#64748b;margin-bottom:14px"><span onclick="closeProposalPopup();viewPublicProfile('${p.author}')" style="cursor:pointer;color:#5a8ab8;font-weight:700">${escHtml(_propAuthor(p))}</span> · ${getTimeAgo(new Date(p.createdAt))}</div>
+    ${_proposalTargetHtml(p)}
+    <div style="font-size:.86rem;color:#b8c6e0;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin-bottom:14px">${escHtml(p.body)}</div>
+    ${imgs}
+    <div style="font-size:.68rem;font-weight:900;letter-spacing:2px;color:#9fb0d6;margin-bottom:8px">${multi?'RESULTS':'VOTES'}</div>
+    ${results}
+    ${voteArea}
+    <div style="font-size:.66rem;color:#64748b;margin-top:8px">${nVotes} vote${nVotes!==1?'s':''} · ${multi?'Most votes wins':'Simple majority wins'}</div>
+    <div style="font-size:.7rem;font-weight:900;letter-spacing:2px;color:#fca5a5;margin:18px 0 8px">DISCUSSION</div>
+    ${disc}${reply}
+  </div>`;
+  window._popupNameTried=window._popupNameTried||{};
+  const _missing=[p.author,...(p.discussion||[]).map(d=>d.author)].some(a=>a&&!_proposalAuthorNames[a]);
+  if(_missing&&!window._popupNameTried[id]){ window._popupNameTried[id]=true; prefetchProposalAuthorNames().then(()=>{ if(window._popupProposalId===id) openProposalPopup(id); }); }
+}
+async function updateProposalTypeFields(){
+  const kind=document.getElementById('overlayProposalCategory')?.value;
+  const t=PROPOSAL_TYPES.find(x=>x.id===kind)||{};
+  const hint=document.getElementById('propTypeHint');
+  if(hint) hint.innerHTML=`${escHtml(t.desc||'')}<br><span style="color:#ffd700">${escHtml(t.who||'2+ VP Badges')} · ${isAdmin()?'Free (Admin)':escHtml(t.cost||'5 Tokens')}</span>`;
+  const payIn=document.querySelector('input[name=overlayProposalPayment]');
+  if(payIn&&payIn.parentElement){ const box=payIn.parentElement, lbl=box.previousElementSibling, show=kind!=='bug-report'; box.style.display=show?'':'none'; if(lbl) lbl.style.display=show?'':'none'; }
+  const ch=document.getElementById('propChoicesBox'); if(ch) ch.style.display=(t.mode==='multi'||t.mode==='opt')?'block':'none';
+  const chLbl=document.getElementById('propChoicesLabel'); if(chLbl) chLbl.textContent=t.mode==='multi'?'CHOICES (2 to 4)':'CHOICES (optional: leave empty for For/Against, or add 2 to 4)';
+  const g=document.getElementById('propTargetGameBox'); if(g) g.style.display=t.target==='game'?'block':'none';
+  const u=document.getElementById('propTargetUserBox'); if(u) u.style.display=t.target==='user'?'block':'none';
+  if(t.target==='game'){
+    const sel=document.getElementById('propTargetGame');
+    if(sel&&!sel.dataset.loaded){
+      sel.dataset.loaded='1';
+      const games=((typeof getSubmissions==='function'?getSubmissions():[])||[]).filter(x=>x&&(x.tier==='backroom'||x.gameTier==='backroom')&&(x.status||'live')==='live');
+      let holes=[]; try{ holes=await (await getBackendActor()).getHoleSubmissions('new'); }catch(_){}
+      sel.innerHTML='<option value="">Choose a game from The Back or a Blackhole entry…</option>'
+        +games.map(x=>`<option value="game:${escHtml(x.id)}">🎮 ${escHtml(x.name||x.id)}</option>`).join('')
+        +(holes||[]).filter(h=>h&&h.status==='active').map(h=>`<option value="hole:${escHtml(h.id)}">🕳️ ${escHtml(h.title||h.id)}</option>`).join('');
+    }
+  }
+}
+function collectProposalTypeFields(kind){
+  const t=PROPOSAL_TYPES.find(x=>x.id===kind)||{};
+  const choices=[0,1,2,3].map(i=>(document.getElementById('propChoice'+i)?.value||'').trim()).filter(Boolean);
+  if(t.mode==='multi'&&choices.length<2){ arcadeAlert('Choices Needed','Add at least 2 choices (up to 4).'); return null; }
+  if(t.mode==='opt'&&choices.length===1){ arcadeAlert('Choices','Add a second choice, or leave all choices empty for a For/Against vote.'); return null; }
+  let target='';
+  if(t.target==='game'){ target=document.getElementById('propTargetGame')?.value||''; if(!target){ arcadeAlert('Pick a Game','Choose the game or Blackhole entry you are recommending.'); return null; } }
+  if(t.target==='user'){ target=(document.getElementById('propTargetUser')?.value||'').trim(); try{ Principal.fromText(target); }catch(_){ arcadeAlert('Invalid User ID','Paste the user\'s principal ID (shown on their profile).'); return null; } }
+  return {choices:(t.mode==='multi'||t.mode==='opt')?choices:[], target};
+}
+// Make the new proposal UI reachable from inline onclick handlers (the app's scripts run in a private scope)
+Object.assign(window,{openProposalPopup,closeProposalPopup,submitProposalReplyPopup,updateProposalTypeFields});
 const VOTE_DURATIONS=[
   {id:'1d',label:'1 Day',ms:86400000},
   {id:'3d',label:'3 Days',ms:259200000},
@@ -14375,6 +14547,11 @@ async function fetchProposalsFromChain(){
       adminResponse:(JSON.parse(localStorage.getItem('proposal_admin_responses')||'{}')||{})[p.id]||null,
       adminResponseDate:(JSON.parse(localStorage.getItem('proposal_admin_response_dates')||'{}')||{})[p.id]||null
     }));
+    try{
+      const metas=await be.getProposalMetas();
+      const mm=new Map((metas||[]).map(e=>[e[0],e[1]]));
+      _proposalCache.forEach(p=>{const m=mm.get(p.id);if(m){p.kind=m.kind;p.choices=m.choices||[];p.choiceTotals=(m.choiceTotals||[]).map(Number);p.target=m.target||'';p.voterCount=Number(m.voterCount||0);}});
+    }catch(_){}
     _proposalCacheTime=Date.now();
     return _proposalCache;
   }catch(e){console.warn('fetchProposals:',e);return _proposalCache;}
@@ -14862,7 +15039,7 @@ async function renderDaoMain(){
 const _proposalAuthorNames={};
 async function prefetchProposalAuthorNames(){
   try{
-    const ids=[...new Set(getProposals().map(p=>String(p.author||'')).filter(a=>a&&!_proposalAuthorNames[a]))];
+    const ids=[...new Set(getProposals().flatMap(p=>[p.author,...(p.discussion||[]).map(d=>d.author),(p.target&&!/^(game|hole):/.test(p.target))?p.target:null]).map(a=>String(a||'')).filter(a=>a&&!_proposalAuthorNames[a]))];
     if(!ids.length) return;
     const be=await getBackendActor();
     await Promise.all(ids.map(async a=>{try{const o=await be.getPlayerProfile(Principal.fromText(a)); if(o&&o.length&&o[0].name) _proposalAuthorNames[a]=o[0].name;}catch(_){}}));
@@ -14876,6 +15053,7 @@ function devTeamVerdictHtml(p){
   return `<div style='margin:4px 0 8px;padding:7px 12px;border-radius:8px;text-align:center;font-size:.78rem;font-weight:900;letter-spacing:1px;color:${yes?'#22c55e':'#ef4444'};background:rgba(${c},.1);border:1px solid rgba(${c},.45);box-shadow:0 0 12px rgba(${c},.2)'>${yes?'✅ Dev Team Recommends!':'⛔ Dev Team Doesn’t Recommend'}</div>`;
 }
 function renderProposalCard(p){
+  if(p.choices&&p.choices.length) return renderMultiChoiceCard(p);
   const status=getProposalStatus(p);
   const yes=p.votesFor||0;
   const no=p.votesAgainst||0;
@@ -14895,13 +15073,13 @@ function renderProposalCard(p){
   const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'';
   const hoverBorder=isOfficial?'rgba(180,100,255,.7)':(status==='active'?'rgba(239,68,68,.4)':'');
 
-  return `<div data-proposal-id='${p.id}' style='background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
+  return `<div data-proposal-id='${p.id}' onclick='if(!event.target.closest("button,img,span[onclick]"))openProposalPopup("${p.id}")' style='cursor:pointer;background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
       ${isOfficial?`<span style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,rgba(160,80,255,.15),rgba(100,50,200,.15));color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.3)'>DEV TEAM</span>`:''}
-      <span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700;letter-spacing:.5px'>${cat?.name||'General'}</span>
+      <span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700;letter-spacing:.5px'>${escHtml(proposalTypeName(p))}</span>
       <span style='font-size:.6rem;color:${statusColor};font-weight:700;margin-left:auto'>${statusLabel}</span>
     </div>
-    <div style='font-weight:800;font-size:.95rem;color:#e0e6f0;margin-bottom:4px;cursor:pointer' onclick='viewProposal("${p.id}")'>${escHtml(p.title)}</div>
+    <div style='font-weight:800;font-size:.95rem;color:#e0e6f0;margin-bottom:4px;cursor:pointer'>${escHtml(p.title)}</div>
     <div style='font-size:.7rem;color:#3d6090;margin-bottom:10px'><span onclick="viewPublicProfile('${p.author}')" style="cursor:pointer;color:#5a8ab8" onmouseenter="this.style.color='var(--cyan)'" onmouseleave="this.style.color='#5a8ab8'">${escHtml(authorName)}</span> · ${getTimeAgo(new Date(p.createdAt))}</div>
     ${p.images&&p.images.length?`<div style='display:flex;gap:6px;margin-bottom:10px;overflow-x:auto'>${p.images.map((src,i)=>`<img src='${src}' onclick='event.stopPropagation();viewProposalImage("${p.id}",${i})' style='width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,.08);cursor:pointer;flex-shrink:0;transition:transform .2s' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.1)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)"'/>`).join('')}</div>`:''}
 
@@ -14945,10 +15123,15 @@ function showCreateProposal(){
     <div style="flex:1;overflow-y:auto;background:linear-gradient(160deg,rgba(40,5,60,.98),rgba(60,5,20,.98))">
       <div style="max-width:580px;margin:0 auto;padding:24px 24px 40px">
         <div style="background:rgba(20,4,35,.85);border:1px solid rgba(160,80,255,.2);border-radius:14px;padding:24px;box-shadow:0 0 40px rgba(160,80,255,.08)">
-          <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">CATEGORY</div>
-          <select id="overlayProposalCategory" style="${fld};margin-bottom:16px">
-            ${PROPOSAL_CATEGORIES.map(c=>'<option value="'+c.id+'" style="background:#140423;color:#e0c8ff">'+c.name+'</option>').join('')}
+          <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">PROPOSAL TYPE</div>
+          <select id="overlayProposalCategory" onchange="updateProposalTypeFields()" style="${fld};margin-bottom:6px">
+            ${PROPOSAL_TYPES.filter(t=>!t.devOnly||isAdmin()).map(t=>'<option value="'+t.id+'" style="background:#140423;color:#e0c8ff">'+t.name+(t.devOnly?' (Dev Team)':'')+'</option>').join('')}
           </select>
+          <div id="propTypeHint" style="font-size:.72rem;color:#b9a3d6;margin-bottom:16px;line-height:1.5"></div>
+          <div id="propTargetGameBox" style="display:none;margin-bottom:16px"><div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">GAME TO RECOMMEND</div><select id="propTargetGame" style="${fld}"><option value="">Loading…</option></select></div>
+          <div id="propTargetUserBox" style="display:none;margin-bottom:16px"><div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">USER (principal ID)</div><input id="propTargetUser" placeholder="Paste the user's principal ID" style="${fld}"/><div style="font-size:.65rem;color:#8b7aa8;margin-top:4px">Advisory: the Dev Team reviews and decides.</div></div>
+          <div id="propChoicesBox" style="display:none;margin-bottom:16px"><div id="propChoicesLabel" style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">CHOICES</div>${[0,1,2,3].map(i=>'<input id="propChoice'+i+'" maxlength="80" placeholder="Choice '+(i+1)+'" style="'+fld+';margin-bottom:6px"/>').join('')}</div>
+          <div style="font-size:.66rem;color:#8b7aa8;margin:-6px 0 16px">One proposal per player every 24 hours.</div>
           <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">PROPOSAL TITLE</div>
           <input id="overlayProposalTitle" placeholder="What are you proposing?" maxlength="120" style="${fld};margin-bottom:16px"/>
           <div style="font-size:.7rem;color:#a060cc;letter-spacing:2px;margin-bottom:6px;font-weight:700">DESCRIPTION</div>
@@ -14967,6 +15150,7 @@ function showCreateProposal(){
     </div>`;
   overlay.style.display='flex';
   proposalImageData=[];
+  updateProposalTypeFields();
 }
 function hideCreateProposal(){
   const overlay=document.getElementById('proposalOverlay');
@@ -15045,22 +15229,24 @@ window.proposalImgNav=function(proposalId,dir){
 async function submitProposal(){
   if(!S.connected) return;
   const vpCount=getUserVpCount();
-  if(vpCount<2&&!isAdmin()){alert('Need 2 Voting Power Badges to create proposals.');return;}
+  const _kind0=document.getElementById('overlayProposalCategory')?.value||'general';
+  if(vpCount<2&&!isAdmin()&&_kind0!=='bug-report'){arcadeAlert('Not Yet','Need 2 Voting Power Badges to create this proposal type.');return;}
   const isAdm=isAdmin();
   const tokens=Number(S.quarters||0);
   const tix=Number(S.tickets||0);
   const payChoice='tokens'; // proposals cost Tokens only
-  if(!isAdm){
+  if(!isAdm&&_kind0!=='bug-report'){
     if(payChoice==='tokens'&&tokens<5){arcadeConfirm('Insufficient Funds','You need 5 Tokens. You have '+tokens+'.');return;}
     if(payChoice==='tickets'&&tix<10){arcadeConfirm('Insufficient Funds','You need 10 Tickets. You have '+Math.floor(tix)+'.');return;}
   }
   const title=(document.getElementById('overlayProposalTitle')?.value||'').trim();
   const body=(document.getElementById('overlayProposalBody')?.value||'').trim();
   const category=document.getElementById('overlayProposalCategory')?.value||'general';
+  const pf=collectProposalTypeFields(category); if(!pf) return;
   const durId=document.querySelector('input[name=overlayProposalDuration]:checked')?.value||'3d';
   if(!title){arcadeConfirm('Missing Title','Enter a proposal title.');return;}
   if(!body){arcadeConfirm('Missing Description','Describe your proposal.');return;}
-  if(!isAdm){
+  if(!isAdm&&category!=='bug-report'){
     const payLabel=payChoice==='tokens'?'5 Tokens':'10 Tickets';
     if(!await arcadeConfirm('Submit Proposal','This will cost '+payLabel+'. Continue?')) return;
   }
@@ -15068,8 +15254,8 @@ async function submitProposal(){
   try{
     const be=await getBackendActor(true);
     const imgArr=proposalImageData.slice(0,5);
-    const result=await be.createProposal(title,body,category,durId,imgArr,payChoice);
-    if(result.err){await arcadeAlert('Image Upload Error',safeUploadErrorMessage(result.err,'proposal image submission'));return;}
+    const result=await be.createProposalV2(category,title,body,durId,imgArr,pf.choices,pf.target);
+    if(result.err){await arcadeAlert('Proposal Not Created',escHtml(safeUserErrorMessage(result.err,'proposal submit')));return;}
     // Refresh token balance after deduction
     syncOnChainTickets();
   }catch(e){await arcadeAlert('Image Upload Error',safeUploadErrorMessage(e,'proposal image submission'));return;}
@@ -15103,7 +15289,8 @@ async function castVote(proposalId,vote){
     }
     registerPublicPresence(S.principalText,'dao');
     await fetchProposalsFromChain();
-    if(window._openProposalId===proposalId) viewProposal(proposalId); else { await renderDaoPage(); await renderDaoMain(); }
+    if(window._popupProposalId===proposalId){ await renderDaoPage(); await renderDaoMain(); openProposalPopup(proposalId); }
+    else if(window._openProposalId===proposalId) viewProposal(proposalId); else { await renderDaoPage(); await renderDaoMain(); }
     const c=vote==='for'?'34,197,94':'239,68,68';
     document.querySelectorAll('[data-proposal-id="'+proposalId+'"] .my-vote-pill').forEach(el=>{ if(el.animate) el.animate([{boxShadow:'0 0 12px rgba('+c+',.45)'},{boxShadow:'0 0 28px 6px rgba('+c+',.8)'},{boxShadow:'0 0 12px rgba('+c+',.45)'}],{duration:1200,easing:'ease-out'}); });
   }finally{
@@ -15139,7 +15326,7 @@ function viewProposal(proposalId){
   html+=`<div data-proposal-id='${p.id}' style='background:rgba(0,10,25,.7);border:${detailBorder};border-radius:14px;padding:20px;margin-bottom:14px${detailShadow}'>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:10px'>
       ${isOfficial?`<span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,rgba(160,80,255,.15),rgba(100,50,200,.15));color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.3)'>DEV TEAM</span>`:''}
-      <span style='font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700'>${cat?.name||'General'}</span>
+      <span style='font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700'>${escHtml(proposalTypeName(p))}</span>
       <span style='font-size:.65rem;color:${statusColor};font-weight:700'>${statusLabel}</span>
     </div>
     <h2 style='margin:0 0 6px;font-size:1.2rem;color:#e0e6f0'>${escHtml(p.title)}</h2>
@@ -15192,7 +15379,7 @@ function viewProposal(proposalId){
   if(disc.length){
     html+=disc.map(d=>{
       const dp=getProfileFor(d.author);
-      const dn=dp?.name||d.authorName||d.author?.slice(0,8);
+      const dn=dp?.name||_proposalAuthorNames[d.author]||((d.authorName&&d.authorName!==d.author)?d.authorName:String(d.author||'').slice(0,8)+'…');
       return `<div style='background:rgba(0,10,25,.5);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:10px;margin-bottom:6px'>
         <div style='font-size:.75rem;margin-bottom:4px'><span onclick="viewPublicProfile('${d.author}')" style="cursor:pointer;color:#5a8ab8;font-weight:700">${escHtml(dn)}</span> <span style="color:#2d5a8a;font-size:.65rem">${getTimeAgo(new Date(d.timestamp))}</span></div>
         <div style='font-size:.8rem;color:#8ab4d8;line-height:1.5;white-space:pre-wrap;word-break:break-word'>${escHtml(d.body)}</div>
