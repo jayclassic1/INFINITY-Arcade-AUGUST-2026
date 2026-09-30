@@ -1691,6 +1691,8 @@ persistent actor ArcadeBackend {
       return #err("Not enough tokens. Listing an NFT costs " # Nat.toText(NFT_LISTING_FEE_TOKENS) # " Tokens. Have " # Nat.toText(balance));
     };
     tokens.put(caller, balance - NFT_LISTING_FEE_TOKENS);
+    // NFT listing fee -> Prize Booth arcade share (was previously left unassigned)
+    prizeBoothArcadeShareE8s += NFT_LISTING_FEE_TOKENS * TOKEN_LIABILITY_E8S;
     #ok(());
   };
 
@@ -1722,6 +1724,7 @@ persistent actor ArcadeBackend {
 
   /// Spend tokens to play a game (no revenue share — legacy/generic)
   public shared(msg) func spendTokens(amount : Nat) : async Result.Result<Nat, Text> {
+    if (true) return #err("Retired: token spends go through game play, purchases or tips");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -6468,6 +6471,7 @@ persistent actor ArcadeBackend {
 
   /// Redeem an NFT by spending tickets
   public shared(msg) func redeem(tokenId : TokenId) : async Result.Result<Text, Text> {
+    if (true) return #err("Retired: redeem Official NFTs through the Prize Booth");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated via Internet Identity");
     hydrateRuntimeStateIfNeeded();

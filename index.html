@@ -1843,6 +1843,38 @@ window.addEventListener('message', (e) => {
 <button id='adminTabNft' class='btn tiny' onclick='switchAdminTab("nft")' style='font-size:.72rem;padding:5px 14px;border-color:#3456aa;color:#8bb4ff'>NFT</button>
 <button id='adminTabOther' class='btn tiny' onclick='switchAdminTab("other")' style='font-size:.72rem;padding:5px 14px;border-color:#3456aa;color:#8bb4ff'>Other</button>
 </div>
+<div id='adminTreasuryOverview' style='display:none'>
+<style>
+#treasuryBalanceBar,#adminTreasuryDepositSection,#adminMiscToolsSection,#adminOperatingWithdrawSection,#adminArcadeSharesSection{background:linear-gradient(160deg,rgba(26,14,52,.94),rgba(8,10,26,.94))!important;border:1px solid rgba(192,132,252,.22)!important;border-left:4px solid var(--atr-accent,#c084fc)!important;border-radius:16px!important;padding:18px 20px!important;margin:0 0 16px!important;box-shadow:0 0 24px rgba(192,132,252,.07)!important;scroll-margin-top:90px}
+#treasuryBalanceBar{--atr-accent:#ffd86b}
+#adminTreasuryDepositSection{--atr-accent:#22d3ee}
+#adminOperatingWithdrawSection{--atr-accent:#fbbf24}
+#adminArcadeSharesSection{--atr-accent:#39ff88}
+#adminMiscToolsSection{--atr-accent:#c084fc}
+#adminTreasuryDepositSection>div:first-child,#adminMiscToolsSection>div:first-child,#adminOperatingWithdrawSection>div:first-child,#adminArcadeSharesSection>div:first-child{color:#f1e8ff!important;font-size:.82rem!important;letter-spacing:3px!important;font-weight:900!important;margin-bottom:12px!important;text-shadow:0 0 12px var(--atr-accent,#c084fc)}
+#adminTreasuryDepositSection input,#adminOperatingWithdrawSection input,#adminArcadeSharesSection input,#adminTreasuryDepositSection select{background:rgba(0,0,0,.4)!important;border:1px solid rgba(148,163,184,.25)!important;border-radius:9px!important;color:#f1f5f9!important;padding:8px 10px!important}
+#adminTreasuryDepositSection .btn,#adminOperatingWithdrawSection .btn,#adminArcadeSharesSection .btn,#adminMiscToolsSection .btn,#adminOperatingWithdrawSection button{border-radius:9px!important}
+#treasuryDepositTargets>div>div,#arcadeShareRows>div,#treasuryDestinationInfo>div{border-radius:12px!important;background:rgba(255,255,255,.03)!important;border-color:rgba(255,255,255,.09)!important}
+.atr-nav{position:sticky;top:0;z-index:6;display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:6px 0 14px;border-radius:14px;background:rgba(10,8,26,.92);backdrop-filter:blur(8px);border:1px solid rgba(192,132,252,.25)}
+.atr-nav button{padding:6px 14px;border-radius:999px;border:1px solid rgba(192,132,252,.35);background:rgba(192,132,252,.08);color:#e9d5ff;font-weight:800;font-size:.72rem;cursor:pointer}
+.atr-nav button:hover{background:rgba(192,132,252,.2);box-shadow:0 0 12px rgba(192,132,252,.35)}
+.atr-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.atr-tile{cursor:pointer;padding:16px;border-radius:16px;background:linear-gradient(160deg,rgba(35,12,62,.95),rgba(8,10,28,.95));border:1px solid var(--c);box-shadow:0 0 18px color-mix(in srgb,var(--c) 25%,transparent);transition:transform .15s}
+.atr-tile:hover{transform:translateY(-2px)}
+.atr-tile .k{font-size:.62rem;letter-spacing:2px;font-weight:900;color:var(--c)}
+.atr-tile .v{font-size:1.45rem;font-weight:900;color:#fff;margin:6px 0 2px;text-shadow:0 0 14px var(--c)}
+.atr-tile .h{font-size:.64rem;color:#94a3b8}
+</style>
+<div class='atr-nav'>
+<button onclick="atrJump('adminTreasuryDepositSection')">💸 Revenue</button>
+<button onclick="atrJump('adminOperatingWithdrawSection')">🏦 Operating</button>
+<button onclick="atrJump('adminArcadeSharesSection')">🎯 Shares</button>
+<button onclick="atrJump('treasuryBalanceBar')">📊 Stats</button>
+<button onclick="atrJump('adminMiscToolsSection')">🛠️ Tools</button>
+<button onclick="renderAdminTreasuryOverview();loadTreasuryInfo();loadArcadeShareInfo()" style="margin-left:auto">↻ Refresh all</button>
+</div>
+<div id='atrTiles' class='atr-tiles'><div style='color:#94a3b8;font-size:.75rem'>Loading overview…</div></div>
+</div>
 <div id='treasuryBalanceBar' style='background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--gold);border-radius:10px;padding:12px 16px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px'>
 <div style='display:flex;align-items:center;gap:8px;align-self:flex-start;padding-top:8px'><span style='font-size:1.2rem'>💰</span><span style='color:var(--gold);font-weight:bold;font-size:.95rem'>Treasury</span><button id='treasuryScanBtn' onclick='runTreasuryScan()' title='Scan treasury balances' style='padding:5px 9px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.45);border-radius:8px;color:var(--gold);font-weight:800;font-size:.68rem;cursor:pointer;box-shadow:0 0 10px rgba(255,215,0,.12);transition:transform .18s ease,box-shadow .18s ease'>Scan</button></div>
 <div style='display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap'>
@@ -1870,7 +1902,7 @@ window.addEventListener('message', (e) => {
 </div>
 </div>
 <div id='adminTreasuryDepositSection' style='background:rgba(0,170,255,.05);border:1px solid rgba(0,170,255,.2);border-radius:10px;padding:12px 16px;margin-bottom:12px'>
-<div style='font-size:.75rem;font-weight:800;color:#00aaff;letter-spacing:2px;margin-bottom:8px'>TREASURY DEPOSIT ADDRESSES</div>
+<div style='font-size:.75rem;font-weight:800;color:#00aaff;letter-spacing:2px;margin-bottom:8px'>REVENUE &amp; DEPOSIT ADDRESSES</div>
 <div id='treasuryDepositTargets' style='display:grid;gap:8px;font-size:.7rem;color:#88ccff'>Click refresh to load live deposit wiring</div>
 </div>
 
@@ -1912,7 +1944,7 @@ window.addEventListener('message', (e) => {
 </div>
 <div id='adminArcadeSharesSection' style='background:rgba(57,255,20,.04);border:1px solid rgba(57,255,20,.2);border-radius:10px;padding:12px;margin-bottom:12px'>
 <div style='font-size:.75rem;font-weight:800;color:#39ff14;letter-spacing:2px;margin-bottom:8px'>ARCADE REVENUE SHARES</div>
-<div style='font-size:.65rem;color:var(--muted);margin-bottom:8px'>The arcade's cut of Showroom revenue. Withdrawals send to a principal's default account; each share pays its own 0.0001 ICP ledger fee. The DAO pool is display-only — it has no withdraw path by design.</div>
+<div style='font-size:.65rem;color:var(--muted);margin-bottom:8px'>The arcade's cut of game plays, purchases and Prize Booth sales. Withdrawals send to a principal's default account; each share pays its own 0.0001 ICP ledger fee. The DAO pool is display-only — it has no withdraw path by design.</div>
 <div style='font-size:.6rem;color:#5a7baa;letter-spacing:1px;margin-bottom:2px'>DESTINATION PRINCIPAL</div>
 <input type='text' id='arcadeShareDest' placeholder='Principal (defaults to your admin principal)' autocomplete='off' spellcheck='false' style='width:100%;padding:6px 10px;margin-bottom:8px;background:rgba(0,0,0,.3);border:1px solid rgba(57,255,20,.2);border-radius:6px;color:#fff;font-size:.72rem;box-sizing:border-box'/>
 <div id='arcadeShareRows' style='display:grid;gap:6px'></div>
@@ -6347,7 +6379,7 @@ function backendIdl({IDL}){
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
     hasJackpotNotifications:IDL.Func([IDL.Principal],[IDL.Bool],['query']),
     claimJackpotNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Int))],[]),
-    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetSolvencyReport:IDL.Func([],[IDL.Variant({ok:IDL.Record({tokensE8s:IDL.Nat,ticketsE8s:IDL.Nat,gameTicketPoolsE8s:IDL.Nat,creatorRoyaltiesE8s:IDL.Nat,nftSellerEarningsE8s:IDL.Nat,tipEarningsE8s:IDL.Nat,refundsE8s:IDL.Nat,arcadeSharesE8s:IDL.Nat,daoTreasuryE8s:IDL.Nat,lotteryLockedE8s:IDL.Nat,totalLiabilitiesE8s:IDL.Nat,ledgerBalanceE8s:IDL.Nat,surplusE8s:IDL.Nat,shortfallE8s:IDL.Nat}),err:IDL.Text})],[]),getDaoTreasuryOverview:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,lockedTokenE8s:IDL.Nat,lockedTicketE8s:IDL.Nat,inGamesE8s:IDL.Nat,inProposalsE8s:IDL.Nat,inOfficialNftE8s:IDL.Nat,inPlayerNftE8s:IDL.Nat,inVpBadgeE8s:IDL.Nat,lotteryTokensPaid:IDL.Nat,lotteryTicketsPaid:IDL.Nat,lotteryDraws:IDL.Nat,vpHolders:IDL.Nat})],['query']),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
+    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetSolvencyReport:IDL.Func([],[IDL.Variant({ok:IDL.Record({tokensE8s:IDL.Nat,ticketsE8s:IDL.Nat,gameTicketPoolsE8s:IDL.Nat,creatorRoyaltiesE8s:IDL.Nat,nftSellerEarningsE8s:IDL.Nat,tipEarningsE8s:IDL.Nat,refundsE8s:IDL.Nat,arcadeSharesE8s:IDL.Nat,daoTreasuryE8s:IDL.Nat,lotteryLockedE8s:IDL.Nat,totalLiabilitiesE8s:IDL.Nat,ledgerBalanceE8s:IDL.Nat,surplusE8s:IDL.Nat,shortfallE8s:IDL.Nat}),err:IDL.Text})],[]),getDaoTreasuryOverview:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,lockedTokenE8s:IDL.Nat,lockedTicketE8s:IDL.Nat,inGamesE8s:IDL.Nat,inProposalsE8s:IDL.Nat,inOfficialNftE8s:IDL.Nat,inPlayerNftE8s:IDL.Nat,inVpBadgeE8s:IDL.Nat,lotteryTokensPaid:IDL.Nat,lotteryTicketsPaid:IDL.Nat,lotteryDraws:IDL.Nat,vpHolders:IDL.Nat})],['query']),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),adminWithdrawPrizeBoothArcadeShare:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
     adminRunLottery:IDL.Func([],[Result],[]),
     getTreasuryBalance:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,reservedE8s:IDL.Nat,outstandingTokens:IDL.Nat,withdrawableE8s:IDL.Nat,tokenLiabilityE8s:IDL.Nat,royaltyLiabilityE8s:IDL.Nat,refundLiabilityE8s:IDL.Nat,ticketPoolLiabilityE8s:IDL.Nat,ticketHolderLiabilityE8s:IDL.Nat,backedTicketPoolTickets:IDL.Nat,safetyBufferE8s:IDL.Nat})],[]),
     getTreasuryLaneSnapshot:IDL.Func([],[IDL.Record({protectedAccountId:IDL.Text,operatingAccountId:IDL.Text,protectedBalanceE8s:IDL.Nat,operatingBalanceE8s:IDL.Nat,backendSafeWithdrawableE8s:IDL.Nat,protectedReservedE8s:IDL.Nat,operatingIncludedInBacking:IDL.Bool,operatingIncludedInBackendSafeMath:IDL.Bool})],[]),
@@ -12106,13 +12138,40 @@ async function openShowroomTreasuryWithdraw(){
 }
 
 // Session #3: Treasury-tab panel for the per-lane arcade revenue shares (+ read-only DAO pool).
-const ARCADE_SHARE_LANES=[
-  {key:'ticket',label:'Showroom Ticket games (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
-  {key:'nonticket',label:'Showroom Non-Ticket games (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
-  {key:'purchase',label:'Showroom game purchases (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
+const ARCADE_SHARE_LANES=[{key:'prizebooth',label:'Prize Booth (NFT listing fees 100% · player NFT sales 1.5% · Official NFTs & VP badges 80%)',get:'getPrizeBoothArcadeShareBalance',wd:'adminWithdrawPrizeBoothArcadeShare'},
+  {key:'ticket',label:'Ticket-game plays (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
+  {key:'nonticket',label:'Non-ticket plays & demo tries: Showroom + The Back (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
+  {key:'purchase',label:'Game purchases, all tiers (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
   {key:'boost',label:'Boost Treasury (creator Spotlight boosts)',get:'getBoostTreasuryBalance',wd:'adminWithdrawBoostTreasury'}
 ];
 const ARCADE_SHARE_FEE_E8S=10000n;
+window.atrJump=function(id){ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
+async function renderAdminTreasuryOverview(){
+  const box=document.getElementById('atrTiles'); if(!box||!isAdmin()) return;
+  const N=v=>{ try{ if(v&&typeof v==='object'&&'ok' in v) return Number(v.ok); if(v&&typeof v==='object'&&'err' in v) return 0; return Number(v||0); }catch(_){ return 0; } };
+  const icp=e=>(e/1e8).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4});
+  try{
+    const be=await getBackendActor(true);
+    const safe=p=>Promise.resolve().then(p).catch(()=>0);
+    const laneVals=await Promise.all(ARCADE_SHARE_LANES.map(l=>safe(()=>be[l.get]())));
+    const [show,back,hole,ops,dao,rep]=await Promise.all([
+      safe(()=>be.getShowroomTreasuryBalance()), safe(()=>be.getBackTreasuryBalance()), safe(()=>be.getBlackholeTreasuryBalance()),
+      safe(()=>getIcpAccountBalanceE8s(getOperatingTreasuryAccountId())), safe(()=>be.getDaoTreasuryBalance()),
+      be.adminGetSolvencyReport().catch(()=>null)
+    ]);
+    const withdrawable=laneVals.reduce((a,v)=>a+N(v),0)+N(show)+N(back)+N(hole)+N(ops);
+    const r=rep&&rep.ok?rep.ok:null;
+    const short=r?Number(r.shortfallE8s):0, surplus=r?Number(r.surplusE8s):0;
+    const solv=r?(short>0?{c:'#ef4444',v:'−'+icp(short)+' ICP',h:'Shortfall (test mints count here on local)'}:{c:'#22c55e',v:'+'+icp(surplus)+' ICP',h:'Surplus: everything owed is backed'}):{c:'#94a3b8',v:'—',h:'Solvency report unavailable'};
+    const tok=r?Math.round(Number(r.tokensE8s)/1e6):0, tix=r?Math.round(Number(r.ticketsE8s)/1e5):0;
+    box.innerHTML=`
+      <div class='atr-tile' style='--c:#39ff88' onclick="atrJump('adminTreasuryDepositSection')"><div class='k'>💸 WITHDRAWABLE NOW</div><div class='v'>${icp(withdrawable)} ICP</div><div class='h'>All revenue pots + Operating Treasury</div></div>
+      <div class='atr-tile' style='--c:${solv.c}' onclick="atrJump('treasuryBalanceBar')"><div class='k'>🛡️ SOLVENCY</div><div class='v'>${solv.v}</div><div class='h'>${solv.h}</div></div>
+      <div class='atr-tile' style='--c:#22d3ee' onclick="atrJump('treasuryBalanceBar')"><div class='k'>🎟️ PLAYER BALANCES</div><div class='v'>${tok.toLocaleString()} T · ${tix.toLocaleString()} TK</div><div class='h'>Tokens and tickets held by players</div></div>
+      <div class='atr-tile' style='--c:#c084fc' onclick="showView('dao-dashboard');loadDaoDashboard()"><div class='k'>🏛️ DAO TREASURY</div><div class='v'>${icp(N(dao))} ICP</div><div class='h'>Funds the lotteries · open DAO Treasury →</div></div>`;
+  }catch(e){ box.innerHTML='<div style="color:#ef4444;font-size:.75rem">'+escHtml(safeUserErrorMessage(e,'treasury overview'))+'</div>'; }
+}
+window.renderAdminTreasuryOverview=renderAdminTreasuryOverview;
 async function loadArcadeShareInfo(){
   if(!isAdmin()) return;
   const rows=document.getElementById('arcadeShareRows'); if(!rows) return;
@@ -12132,7 +12191,7 @@ async function loadArcadeShareInfo(){
         <button class="btn" onclick="document.getElementById('arcadeShareAmt_${l.key}').value='${e8sToIcpInput(max)}'" style="font-size:.65rem;padding:3px 8px">Max</button>
         <button class="btn" onclick="withdrawArcadeShare('${l.key}')" style="font-size:.65rem;padding:3px 8px;border-color:#39ff14;color:#39ff14" ${max>0n?'':'disabled'}>Withdraw</button>
       </div>`;
-    }).join('')+`<div style="padding:6px 8px;border:1px dashed rgba(255,215,0,.25);border-radius:8px;font-size:.66rem;color:#fbbf24">DAO pool: ${e8sToIcpInput(BigInt(dao))} ICP — display only, no withdraw path (reserved for the future DAO lottery)</div>`;
+    }).join('')+`<div style="padding:6px 8px;border:1px dashed rgba(255,215,0,.25);border-radius:8px;font-size:.66rem;color:#fbbf24">DAO pool: ${e8sToIcpInput(BigInt(dao))} ICP — funds the DAO lotteries · nobody can withdraw it · <span onclick="showView('dao-dashboard');loadDaoDashboard()" style="cursor:pointer;text-decoration:underline;color:#e9d5ff">Open DAO Treasury →</span></div>`;
   }catch(e){ rows.innerHTML='<span style="color:#ef4444;font-size:.7rem">'+escHtml(safeUserErrorMessage(e,'arcade shares'))+'</span>'; }
 }
 async function withdrawArcadeShare(key){
@@ -12224,7 +12283,7 @@ async function loadTreasuryInfo(){
       </div>
     </div>`;
     if(depositEl) depositEl.innerHTML=renderTreasuryDepositTargets(mainAccountId,operatingAccountId,ownerPrincipal,blackholeE8s,Number(blackholeBalanceE8s||0),backE8s,Number(backBalanceE8s||0),showroomE8s,Number(showroomBalanceE8s||0));
-    if(laneEl) laneEl.innerHTML='<div style="padding:10px 12px;border:1px solid rgba(148,163,184,.2);border-radius:8px;background:rgba(148,163,184,.05);font-size:.68rem;color:#cbd5e1">Detailed treasury lane balances are not exposed by the current backend interface. Creator earnings are tracked separately as claimable balances; admin lane dashboards stay disabled until backend support lands.</div>';
+    if(laneEl) laneEl.innerHTML='';
   }catch(_e){if(el) el.innerHTML=renderBackendSlicePending('Treasury details are unavailable right now. Deposit targets remain visible; admin actions stay disabled.');setTreasuryActionAvailability(false);setTreasurySweepAvailability(false);}
 }
 
@@ -13436,7 +13495,8 @@ function switchAdminTab(tab){
     const btn=document.getElementById('adminTab'+label);
     if(btn) btn.style.borderColor=tab===key?'var(--gold)':'#3456aa';
   });
-  if(tab==='treasury'){loadTreasuryInfo();loadArcadeShareInfo();}
+  const _atrOv=document.getElementById('adminTreasuryOverview'); if(_atrOv) _atrOv.style.display=tab==='treasury'?'block':'none';
+  if(tab==='treasury'){loadTreasuryInfo();loadArcadeShareInfo();renderAdminTreasuryOverview();}
   if(tab==='upload'){setUploadGameTier('showroom');refreshAdminPendingSubmissionSelect();refreshAdminGameUpdateSelect();renderPendingSubmissionsByTier();}
   if(tab==='nft') renderNftAdminList();
   if(tab==='other') renderGameAdminList();
