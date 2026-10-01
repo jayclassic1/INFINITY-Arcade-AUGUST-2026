@@ -3922,6 +3922,13 @@ async function returnNftFromEscrow(){
   }
 }
 window.NFT_LISTING_FEE_TOKENS_UI=5; // keep in sync with backend NFT_LISTING_FEE_TOKENS
+async function openMyListingInBooth(listingId,from){
+  window._delistReturnTo=from||null;
+  try{ showView('prizes'); showTab('shop'); }catch(_){}
+  try{ await refreshNftListingsCache(); }catch(_){}
+  showUserNftDetail(listingId);
+}
+window.openMyListingInBooth=openMyListingInBooth;
 function closeListNftPicker(){ const m=document.getElementById('listNftPickerPopup'); if(m) m.remove(); }
 if(!window._listPickerEsc){ window._listPickerEsc=true; document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeListNftPicker(); }); }
 async function openListNftPicker(){
@@ -3958,7 +3965,7 @@ async function openListNftPicker(){
     const ownedCards=(owned||[]).map((n,i)=>`<div class='lnp-card'><div class='lnp-img'>${img(n.imageUrl)}</div><div style='padding:8px'>
         <div class='lnp-name'>${escHtml(n.name||'NFT')}</div><div class='lnp-std'>${escHtml(n.standard||'')}</div>
         <button class='lnp-btn' onclick='listPickerChoose(${i})'>List</button></div></div>`);
-    const lockedCards=(listed||[]).map(l=>`<div class='lnp-card lnp-locked'><div class='lnp-img' style='filter:grayscale(.6) brightness(.6)'>${img(l.imageUrl)}</div><div style='padding:8px'>
+    const lockedCards=(listed||[]).map(l=>`<div class='lnp-card lnp-locked' style='cursor:pointer' title='Open in the Prize Booth to manage or delist' onclick='closeListNftPicker();openMyListingInBooth(${JSON.stringify(l.id)})'><div class='lnp-img' style='filter:grayscale(.6) brightness(.6)'>${img(l.imageUrl)}</div><div style='padding:8px'>
         <div class='lnp-name' style='color:#aaa'>${escHtml(l.name||'NFT')}</div><div class='lnp-std' style='color:#ffd700;font-weight:800'>🔒 In Prize Booth</div></div></div>`);
     const all=ownedCards.concat(lockedCards);
     grid.innerHTML=all.length?all.join(''):"<div style='grid-column:1/-1;text-align:center;color:#94a3b8;font-size:.85rem;padding:30px'>You don't own any NFTs yet. Win some in the Prize Booth, then list them here.</div>";
@@ -6175,7 +6182,7 @@ function backendIdl({IDL}){
     setGamePaysTickets:IDL.Func([IDL.Text,IDL.Bool],[Result],[]),
     adminCreateCollection:IDL.Func([IDL.Text,IDL.Text,IDL.Nat,IDL.Vec(IDL.Text)],[Result],[]),
     adminMintCollection:IDL.Func([IDL.Text],[Result],[]),
-    adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[Result],[]),
+    
     adminDeleteCollection:IDL.Func([IDL.Text],[Result],[]),
     getOfficialCollections:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Text,name:IDL.Text,description:IDL.Text,creator:IDL.Principal,imageUrls:IDL.Vec(IDL.Text),nftIds:IDL.Vec(IDL.Nat),ticketCost:IDL.Nat,totalSupply:IDL.Nat,abilities:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),createdAt:IDL.Int}))],['query']),
     getOfficialCollection:IDL.Func([IDL.Text],[IDL.Opt(IDL.Record({id:IDL.Text,name:IDL.Text,description:IDL.Text,creator:IDL.Principal,imageUrls:IDL.Vec(IDL.Text),nftIds:IDL.Vec(IDL.Nat),ticketCost:IDL.Nat,totalSupply:IDL.Nat,abilities:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),createdAt:IDL.Int}))],['query']),
@@ -6200,7 +6207,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -7876,12 +7883,12 @@ async function renderCollection(forceRefresh=false){
   }catch(e){console.warn('My active listings fetch failed:',e);}
   const lockedCards=myListings.map(listing=>{
     const imgTag=listing.imageUrl?buildNftImageTag(listing.imageUrl,[],`width:100%;height:100%;object-fit:contain`):'';
-    return `<div class='card' style='padding:0;overflow:hidden;width:min(120px,100%);max-width:120px;border:2px solid #888;box-shadow:0 0 8px rgba(136,136,136,.3);position:relative'>
+    return `<div class='card' onclick='openMyListingInBooth(${JSON.stringify(listing.id)},"collection")' title='Open in the Prize Booth to manage or delist' style='cursor:pointer;padding:0;overflow:hidden;width:min(120px,100%);max-width:120px;border:2px solid #888;box-shadow:0 0 8px rgba(136,136,136,.3);position:relative'>
       <div style='height:100px;background:#0a0a1a;overflow:hidden;display:grid;place-items:center;filter:grayscale(.6) brightness(.55)'>${imgTag}</div>
       <div style='position:absolute;top:0;left:0;width:100%;height:100px;display:grid;place-items:center;background:rgba(0,0,0,.3);font-size:1.8rem'>🔒</div>
       <div style='padding:4px 6px;text-align:center'>
         <b style='font-size:.65rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#aaa'>${escHtml(listing.name)}</b>
-        <div style='font-size:.5rem;color:var(--gold);font-weight:700'>In Prize Booth</div>
+        <div style='font-size:.5rem;color:var(--gold);font-weight:700'>In Prize Booth · Manage ›</div>
       </div>
     </div>`;
   });
@@ -16386,6 +16393,7 @@ function openCollectionBrowser(){
 }
 
 async function showUserNftDetail(id){
+  const _retTo=window._delistReturnTo||null; window._delistReturnTo=null;
   const subs=getNftSubmissions();
   const s=subs.find(x=>x.id===id);
   if(!s) return;
@@ -16542,6 +16550,7 @@ async function showUserNftDetail(id){
         await beD.removeNftListing(s.id);
         invalidateNftCache();
         alert('NFT delisted and returned!');
+        if(_retTo==='collection'){ try{ xBtn.click(); }catch(_){} try{ showView('prizes'); showTab('collection'); renderCollection(true); }catch(_){} }
         closeNftDetail();
         renderNftShop();
         if(typeof loadWalletNfts==='function') loadWalletNfts();

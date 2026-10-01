@@ -3387,6 +3387,159 @@ persistent actor ArcadeBackend {
     };
   };
 
+  // === OFFICIAL NFT ABILITIES (phase 1: foundation) ===
+  // Secret by design: assignments are only readable through admin-only queries. Collection abilities live in
+  // collectionAbilityEntries (collection id -> [(id, value)]) - NOT OfficialCollection.abilities, which putOfficialCollection
+  // rebuilds from the per-token map on every save. Per-NFT extras live in officialCollectionAbilities as "id|id=value".
+  // A player's abilities = for every Official NFT they hold (not held in arcade escrow): collection + token abilities.
+  transient let ABILITY_IDS : [Text] = ["gxp-amp", "mxp-amp", "dxp-amp", "token-lottery", "ticket-lottery", "vp-plus",
+    "access-dev", "access-art", "access-veteran", "access-elite", "access-diplomat", "access-all",
+    "border-rainbow", "border-diamond", "border-gold", "border-whitelight",
+    "wall-plus", "neon-name", "collector-title", "forum-thread-plus", "proposal-plus"];
+  func isKnownAbility(id : Text) : Bool { for (a in ABILITY_IDS.vals()) { if (a == id) return true }; false };
+  // Normalised (trimmed, lowercased) so escrow canister ids typed or passed in a different form still match.
+  func isOfficialNftCanister(c : Text) : Bool {
+    Text.toLowercase(Text.trim(c, #char ' ')) == Text.toLowercase(Text.trim(nftCanisterIdText, #char ' '))
+  };
+
+  stable var officialNftOwnerEntries : [(Nat, Principal)] = [];
+  stable var collectionAbilityEntries : [(Text, [(Text, Text)])] = [];
+  func collectionAbilitiesOf(collectionId : Text) : [(Text, Text)] {
+    for ((k, l) in collectionAbilityEntries.vals()) { if (k == collectionId) return l };
+    []
+  };
+  func setCollectionAbilitiesStore(collectionId : Text, list : [(Text, Text)]) {
+    let rest = Array.filter<(Text, [(Text, Text)])>(collectionAbilityEntries, func(e) { e.0 != collectionId });
+    collectionAbilityEntries := if (list.size() == 0) { rest } else { Array.append<(Text, [(Text, Text)])>(rest, [(collectionId, list)]) };
+  };
+  func officialOwnerOf(t : Nat) : ?Principal {
+    for ((k, o) in officialNftOwnerEntries.vals()) { if (k == t) return ?o };
+    null
+  };
+  func setOfficialOwner(t : Nat, owner : ?Principal) {
+    let rest = Array.filter<(Nat, Principal)>(officialNftOwnerEntries, func(e) { e.0 != t });
+    officialNftOwnerEntries := switch (owner) { case (?o) { Array.append<(Nat, Principal)>(rest, [(t, o)]) }; case null { rest } };
+  };
+  func tokenHeldInArcadeEscrow(t : Nat) : Bool {
+    let tt = Nat.toText(t);
+    for (e in escrows.vals()) { if (isOfficialNftCanister(e.canisterId) and e.tokenId == tt and e.status == "held") return true };
+    false
+  };
+  func collectionOfOfficialToken(t : Nat) : ?OfficialCollection {
+    for (c in officialCollections.vals()) { if (collectionContainsToken(c, t)) return ?c };
+    null
+  };
+  func parseAbilityText(raw : Text) : [(Text, Text)] {
+    let out = Buffer.Buffer<(Text, Text)>(4);
+    for (part in Text.split(raw, #char '|')) {
+      let kv = Iter.toArray(Text.split(part, #char '='));
+      if (kv.size() > 0) {
+        let id = Text.trim(kv[0], #char ' ');
+        if (isKnownAbility(id)) { out.add((id, if (kv.size() > 1) { Text.trim(kv[1], #char ' ') } else { "" })) };
+      };
+    };
+    Buffer.toArray(out)
+  };
+  func encodeAbilityList(list : [(Text, Text)]) : Text {
+    var t = "";
+    for ((id, v) in list.vals()) {
+      let piece = if (v == "") { id } else { id # "=" # v };
+      t := if (t == "") { piece } else { t # "|" # piece };
+    };
+    t
+  };
+  func cleanAbilityList(list : [(Text, Text)]) : Result.Result<[(Text, Text)], Text> {
+    let out = Buffer.Buffer<(Text, Text)>(list.size());
+    for ((id, v) in list.vals()) {
+      if (not isKnownAbility(id)) return #err("Unknown ability: " # id);
+      if (Text.size(v) > 40) return #err("Ability value too long (max 40): " # id);
+      if (Text.contains(v, #char '|') or Text.contains(v, #char '=')) return #err("Ability values can't contain | or =");
+      out.add((id, v));
+    };
+    #ok(Buffer.toArray(out))
+  };
+  // Every ability instance a player holds right now (duplicates = stacking).
+  func abilityInstancesOf(p : Principal) : [(Text, Text)] {
+    hydrateRuntimeStateIfNeeded();
+    let out = Buffer.Buffer<(Text, Text)>(8);
+    for ((t, o) in officialNftOwnerEntries.vals()) {
+      if (Principal.equal(o, p) and not tokenHeldInArcadeEscrow(t)) {
+        switch (collectionOfOfficialToken(t)) {
+          case (?c) { for ((id, v) in collectionAbilitiesOf(c.id).vals()) { if (isKnownAbility(id) and disabledAbilities.get(id) == null) { out.add((id, v)) } } };
+          case null {};
+        };
+        switch (officialCollectionAbilities.get(t)) {
+          case (?raw) { for ((id, v) in parseAbilityText(raw).vals()) { if (disabledAbilities.get(id) == null) { out.add((id, v)) } } };
+          case null {};
+        };
+      };
+    };
+    Buffer.toArray(out)
+  };
+  func abilityCountOf(p : Principal, id : Text) : Nat {
+    var n : Nat = 0;
+    for ((a, _) in abilityInstancesOf(p).vals()) { if (a == id) { n += 1 } };
+    n
+  };
+  func abilityValueOf(p : Principal, id : Text) : ?Text {
+    for ((a, v) in abilityInstancesOf(p).vals()) { if (a == id) return ?v };
+    null
+  };
+
+  public shared(msg) func adminSetCollectionAbilities(collectionId : Text, list : [(Text, Text)]) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    let clean = switch (cleanAbilityList(list)) { case (#ok(l)) { l }; case (#err(e)) { return #err(e) } };
+    switch (officialCollections.get(collectionId)) {
+      case null { #err("Collection not found") };
+      case (?c) { setCollectionAbilitiesStore(c.id, clean); #ok("Collection abilities saved (" # Nat.toText(clean.size()) # ")") };
+    }
+  };
+  public shared(msg) func adminSetTokenAbilities(tokenId : Nat, list : [(Text, Text)]) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    if (not tokenBelongsToOfficialCollection(tokenId)) return #err("Official collection token not found");
+    let clean = switch (cleanAbilityList(list)) { case (#ok(l)) { l }; case (#err(e)) { return #err(e) } };
+    if (clean.size() == 0) { officialCollectionAbilities.delete(tokenId) } else { officialCollectionAbilities.put(tokenId, encodeAbilityList(clean)) };
+    #ok("NFT abilities saved (" # Nat.toText(clean.size()) # ")")
+  };
+  public shared(msg) func adminSyncOfficialOwners() : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    let self = Principal.fromActor(ArcadeBackend);
+    let ids = Buffer.Buffer<Nat>(64);
+    for (c in officialCollections.vals()) { for (t in c.nftIds.vals()) { ids.add(t) } };
+    var players : Nat = 0; var arcade : Nat = 0; var failed : Nat = 0;
+    for (t in ids.vals()) {
+      try {
+        switch (await nftCanister().icrc7_owner_of(t)) {
+          case (#Ok(acc)) {
+            if (Principal.equal(acc.owner, self)) { setOfficialOwner(t, null); arcade += 1 } else { setOfficialOwner(t, ?acc.owner); players += 1 };
+          };
+          case (#Err(_)) { failed += 1 };
+        };
+      } catch (_) { failed += 1 };
+    };
+    #ok("Synced: " # Nat.toText(players) # " player-held, " # Nat.toText(arcade) # " arcade-held, " # Nat.toText(failed) # " failed")
+  };
+  public shared query(msg) func adminGetPlayerAbilities(p : Principal) : async [(Text, Text)] {
+    if (not isAdmin(msg.caller)) return [];
+    abilityInstancesOf(p)
+  };
+  public shared query(msg) func adminGetCollectionAbilitySetup(collectionId : Text) : async { collection : [(Text, Text)]; tokens : [(Nat, [(Text, Text)])] } {
+    if (not isAdmin(msg.caller)) return { collection = []; tokens = [] };
+    switch (officialCollections.get(collectionId)) {
+      case null { { collection = []; tokens = [] } };
+      case (?c) {
+        let toks = Buffer.Buffer<(Nat, [(Text, Text)])>(c.nftIds.size());
+        for (t in c.nftIds.vals()) {
+          switch (officialCollectionAbilities.get(t)) { case (?raw) { toks.add((t, parseAbilityText(raw))) }; case null {} };
+        };
+        { collection = collectionAbilitiesOf(c.id); tokens = Buffer.toArray(toks) }
+      };
+    }
+  };
+
   public shared(msg) func adminDisableAbility(ability : Text) : async Result.Result<Text, Text> {
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -6175,6 +6328,7 @@ persistent actor ArcadeBackend {
               let updList : NftListing = { id = listing.id; listingType = listing.listingType; name = listing.name; description = listing.description; rarity = listing.rarity; ticketCost = listing.ticketCost; imageUrl = listing.imageUrl; creator = listing.creator; tier = listing.tier; status = "sold"; feePaid = listing.feePaid; showroomFeePaid = listing.showroomFeePaid; txId = listing.txId; createdAt = listing.createdAt; sourceCanisterId = listing.sourceCanisterId; sourceTokenId = listing.sourceTokenId; sourceTokenKey = listing.sourceTokenKey; collectionName = listing.collectionName; };
               nftListings.put(listingId, updList);
               logRevenue("official-nft-redeem", ticketCostToSellerPayoutE8s(cost), caller, 7);
+              setOfficialOwner(listing.sourceTokenId, ?caller); // abilities follow the new owner
               // Prize Booth split for Official NFTs: arcade 80%, DAO 20% (of the spent tickets' ICP backing)
               let offE8s = ticketCostToSellerPayoutE8s(cost);
               let offDaoE8s = offE8s * 20 / 100;
@@ -6228,6 +6382,7 @@ persistent actor ArcadeBackend {
 
             switch (transferOk) {
               case (#ok(_)) {
+                if (isOfficialNftCanister(escrow.canisterId)) { switch (Nat.fromText(escrow.tokenId)) { case (?t) { setOfficialOwner(t, ?caller) }; case null {} } };
                 let grossE8s = ticketCostToSellerPayoutE8s(cost);
                 // Prize Booth split for player-listed NFTs: seller 97%, arcade 1.5%, DAO 1.5%
                 let daoCutE8s = grossE8s * 15 / 1000;
@@ -6264,15 +6419,15 @@ persistent actor ArcadeBackend {
     };
   };
 
-  /// Return an escrowed NFT to the original depositor (admin only, for delisting)
+  /// Return an escrowed NFT to the player who listed it (delisting). Allowed for that player or an admin.
   public shared(msg) func returnEscrowNft(listingId : Text) : async Result.Result<Text, Text> {
-    if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
 
     switch (escrows.get(listingId)) {
       case null { return #err("No escrow found for listing: " # listingId) };
       case (?escrow) {
         if (escrow.status != "held") return #err("Escrow status is " # escrow.status # " — cannot return");
+        if (not isAdmin(msg.caller) and not Principal.equal(escrow.depositor, msg.caller)) return #err("Only the player who listed this NFT (or an admin) can delist it");
 
         let self = Principal.fromActor(ArcadeBackend);
         let returnOk : Result.Result<Text, Text> = if (escrow.standard == "dip721") {
@@ -6294,8 +6449,11 @@ persistent actor ArcadeBackend {
 
         switch (returnOk) {
           case (#ok(_)) {
+            if (isOfficialNftCanister(escrow.canisterId)) { switch (Nat.fromText(escrow.tokenId)) { case (?t) { setOfficialOwner(t, ?escrow.depositor) }; case null {} } };
             let updated : EscrowedNft = { listingId = escrow.listingId; canisterId = escrow.canisterId; tokenId = escrow.tokenId; standard = escrow.standard; depositor = escrow.depositor; depositedAt = escrow.depositedAt; status = "returned"; redeemedBy = null; redeemedAt = ?Time.now(); };
             escrows.put(listingId, updated);
+            // Delisting completes in one step: the listing leaves the Prize Booth as the NFT goes home.
+            switch (nftListings.get(listingId)) { case (?l) { nftListings.put(listingId, { l with status = "removed" }) }; case null {} };
             #ok("NFT returned to " # Principal.toText(escrow.depositor));
           };
           case (#err(msg2)) { #err(msg2) };
