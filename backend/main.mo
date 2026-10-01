@@ -578,8 +578,8 @@ persistent actor ArcadeBackend {
   // NFT sales: 90% to NFT creator, 10% stays in operating treasury; not DAO jackpot or member reward funding.
   transient let NFT_CREATOR_SHARE : Nat = 90; // percent
 
-  // NFT listing fee: 2 Tokens = 0.02 ICP equivalent at the fixed 1 ICP = 100 Tokens rate.
-  transient let NFT_LISTING_FEE_TOKENS : Nat = 2;
+  // NFT listing fee: 5 Tokens = 0.05 ICP equivalent at the fixed 1 ICP = 100 Tokens rate (credits the Prize Booth arcade share).
+  transient let NFT_LISTING_FEE_TOKENS : Nat = 5;
   transient let NFT_LISTING_FEE_E8S : Nat = NFT_LISTING_FEE_TOKENS * TOKEN_LIABILITY_E8S;
 
   // Backend canister's own default account identifier, used as the "protected" Treasury lane
@@ -2937,7 +2937,7 @@ persistent actor ArcadeBackend {
       creator = caller;
       tier = "open";
       status = "live";
-      feePaid = NFT_LISTING_FEE_E8S; // 2 Tokens = 0.02 ICP equivalent
+      feePaid = NFT_LISTING_FEE_E8S; // 5 Tokens = 0.05 ICP equivalent
       showroomFeePaid = 0;
       txId = feeTxId;
       createdAt = Time.now();

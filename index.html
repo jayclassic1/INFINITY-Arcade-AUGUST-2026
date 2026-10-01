@@ -358,7 +358,7 @@ new MutationObserver(mutations=>{
 })();
 </script>
 
-<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' id='nftDetailSpotlight' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ffd700;color:#ffd700'>⭐ Spotlight</button><button class='btn' id='nftDetailGrail' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ff44aa;color:#ff44aa'>Grail NFT</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← HOME</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Refresh</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
+<div id='loading'><h1>INFINITY ARCADE</h1></div><canvas id='particles'></canvas><nav><div class='logo' onclick="showView('landing')" style='cursor:pointer'>INFINITY ARCADE <span onclick='openArcadeBot()' style='cursor:pointer;font-size:1.17rem;margin-left:4px' title='Ask Arcade Bot' class='brain-icon'>🧠</span></div><div class='row'><div class='pocket' id='topIcpChip' style='font-size:.78rem;padding:5px 8px;display:flex;align-items:center;gap:4px'>∞ <b id='topIcp'>0</b> ICP <span id='topIcpRefresh' class='icp-refresh-btn' style='cursor:pointer;font-size:.75rem' onclick='refreshIcpBtn(this, event)' title='Refresh balance'>🔄</span></div><div class='pocket' style='font-size:.78rem;padding:5px 8px'><b id='pocketQ'>0</b> <span style='color:#ffd700'>Tokens</span> | <b id='pocketT'>10</b> <span style='color:#88ccff'>Tickets</span></div><button class='btn hidden' id='walletBtn' onclick='openWalletPanel()'>Wallet</button><button class='btn hidden' id='disconnectBtn' onclick='disconnectWallet()'>Disconnect</button><button class='btn hidden' id='connectBtn' onclick='showConnect()'>Connect / Create</button><div class='principal-pill hidden' id='principalPill' onclick="showView('profile')" style='cursor:pointer' title='View Profile'></div></div></nav><div id='nftDetailModal' onclick='if(event.target===this)closeNftDetail()' style='display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);place-items:center'><div style='background:#0a1428;border:1px solid #0066ff;border-radius:16px;max-width:400px;width:90%;overflow:hidden;box-shadow:0 0 40px #0066ff40;position:relative'><button onclick='closeNftDetail()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:all .2s' onmouseenter='this.style.borderColor="#ff4444";this.style.color="#ff4444"' onmouseleave='this.style.borderColor="#555";this.style.color="#fff"'>X</button><img id='nftDetailImg' style='width:100%;height:320px;object-fit:contain;background:#0a0a1a'/><div style='padding:16px;text-align:center'><h2 id='nftDetailName' style='margin:0 0 6px;font-size:1.2rem'></h2><div id='nftDetailRarity' style='font-size:.8rem;margin-bottom:8px'></div><div id='nftDetailDesc' style='font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4'></div><div id='nftDetailCost' style='color:var(--gold);font-weight:800;font-size:1.1rem;margin-bottom:16px'></div><div style='display:flex;gap:10px;justify-content:center;align-items:center'><button class='btn green' id='nftDetailRedeem' style='font-size:.9rem;padding:8px 24px'>🎟️ Redeem</button><button class='btn' id='nftDetailSpotlight' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ffd700;color:#ffd700'>⭐ Spotlight</button><button class='btn' id='nftDetailGrail' style='display:none;font-size:.8rem;padding:8px 16px;border-color:#ff44aa;color:#ff44aa'>Grail NFT</button><button class='btn' onclick='closeNftDetail()' style='font-size:1.1rem;padding:6px 12px;border-color:#666;color:#999;line-height:1'>✕</button></div></div></div></div><div id='topRightBtns' style='position:fixed;top:66px;right:14px;z-index:90;display:flex;gap:8px'><button id='submitGameBtn' onclick='submitGameNavigate()' style='display:none;padding:6px 14px;background-color:rgba(0,0,0,.72);border:1px solid #fff;border-radius:8px;cursor:pointer'><span style='font-weight:900;font-size:.8rem;background-image:linear-gradient(90deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:rainbowSlide 3s linear infinite'>Submit a Game</span></button><button id='myCollectionBtn' onclick="showView('prizes');showTab('collection')" style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40'>My Collection</button><button id='modBtn' onclick="showView('forum')" style='display:none;padding:6px 14px;background:rgba(50,40,0,.85);border:1px solid #ffc107;border-radius:8px;color:#ffc107;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,193,7,.25)'>Moderator</button><button id='adminBtn' onclick="showView('admin')" style='display:none;padding:6px 14px;background:rgba(40,0,40,.85);border:1px solid #ff44aa;border-radius:8px;color:#ff44aa;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #ff44aa40'>Admin</button></div><div id='prizeBoothBtns' style='display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:90;gap:8px;align-items:center'><button id='listNftBtn' onclick="openListNftPicker()" style='display:none;padding:6px 14px;background:rgba(60,30,0,.85);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.25)'>List NFT</button><button id='scanBtn' onclick='renderCollection(true)' style='display:none;padding:6px 14px;background:rgba(0,40,80,.85);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #00aaff40'>Scan</button></div><div style='position:fixed;top:66px;left:14px;z-index:90;display:flex;gap:8px'><button id='returnBtn' onclick="goBack()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>← HOME</button><button id='forumScanBtn' class='forum-scan-btn' onclick="scanForumUpdates()" style='padding:6px 14px;background:rgba(0,40,80,.95);border:1px solid #0066ff;border-radius:8px;color:#00aaff;font-weight:700;font-size:.8rem;cursor:pointer;box-shadow:0 0 12px #0066ff40;display:none'>Refresh</button><button id='gameNavShowroomBtn' onclick="showView('arcade')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid var(--gold,#ffd700);border-radius:8px;color:var(--gold,#ffd700);font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,215,0,.35);display:none'>SHOWROOM</button><button id='gameNavBackBtn' onclick="showView('backroom')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #aa00ff;border-radius:8px;color:#cc44ff;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(170,0,255,.4);display:none'>THE BACK</button><button id='gameNavHoleBtn' onclick="showView('hole')" style='padding:6px 14px;background:rgba(0,0,0,.72);border:1px solid #ff44aa;border-radius:8px;color:#ff77dd;font-weight:700;font-size:.75rem;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px rgba(255,68,170,.35);display:none'>BLACKHOLE</button></div>
 <button id='playerManualBtn' onclick='openPlayerManual()' style='position:fixed;bottom:16px;left:14px;z-index:80;display:none;padding:6px 16px;background:rgba(4,8,20,.85);border:1px solid rgba(0,170,255,.3);border-radius:8px;color:#00aaff;font-size:.72rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.borderColor="rgba(0,170,255,.7)";this.style.color="#fff"' onmouseleave='this.style.borderColor="rgba(0,170,255,.3)";this.style.color="#00aaff"'>Player Manual</button>
 <div id='legalFooterBtn' style='position:fixed;top:72px;left:14px;z-index:80;display:flex;gap:8px'>
 <button onclick="showView('legal-tos')" style='padding:5px 12px;background:rgba(4,8,20,.75);border:1px solid #1a2848;border-radius:7px;color:#3d6090;font-size:.65rem;font-weight:700;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(6px);transition:all .2s' onmouseenter='this.style.color="#00aaff";this.style.borderColor="#0066ff44"' onmouseleave='this.style.color="#3d6090";this.style.borderColor="#1a2848"'>Terms</button>
@@ -1020,49 +1020,38 @@ window.addEventListener('message', (e) => {
 <section class='view' id='view-forum' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(forums-bg.jpg?v=2) center center/cover no-repeat fixed'>
 <div style='max-width:960px;margin:0 auto;padding:80px 24px 20px;display:flex;flex-direction:column;align-items:center;min-height:100vh'>
 
-<h1 style='text-align:center;margin:0 0 30px;font-size:3rem;letter-spacing:10px;text-transform:uppercase;color:#fff;text-shadow:0 0 30px rgba(160,80,255,.4),0 0 60px rgba(0,170,255,.2)'>Community Forum</h1>
+<style>
+.fr-title{margin:0;font-size:3.2rem;font-weight:900;letter-spacing:12px;text-align:center;text-transform:uppercase;background:linear-gradient(90deg,#22d3ee,#a855f7,#ff3cac,#facc15,#22d3ee);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:frShift 10s linear infinite;filter:drop-shadow(0 0 18px rgba(168,85,247,.45))}
+@keyframes frShift{to{background-position:300% 0}}
+.fr-tag{margin:10px 0 32px;font-size:.78rem;font-weight:800;letter-spacing:7px;color:#cbd5e1;text-align:center;text-shadow:0 0 10px rgba(34,211,238,.6)}
+.fr-card{position:relative;cursor:pointer;overflow:hidden;padding:20px 20px;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,rgba(8,8,20,.86)),rgba(6,6,16,.9));border:2px solid color-mix(in srgb,var(--c) 45%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--c) 18%,transparent),inset 0 0 30px color-mix(in srgb,var(--c) 8%,transparent);backdrop-filter:blur(8px);transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;align-items:center;gap:16px;text-align:left}
+.fr-card::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);pointer-events:none}
+.fr-card:hover{transform:translateY(-3px) scale(1.01);border-color:var(--c);box-shadow:0 0 30px color-mix(in srgb,var(--c) 45%,transparent),inset 0 0 40px color-mix(in srgb,var(--c) 14%,transparent)}
+.fr-ico{flex:0 0 auto;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;background:rgba(0,0,0,.38);border:1px solid color-mix(in srgb,var(--c) 50%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--c) 30%,transparent)}
+.fr-card:hover .fr-ico{animation:frPulse .9s ease-in-out infinite}
+@keyframes frPulse{50%{transform:scale(1.12)}}
+.fr-body{flex:1;min-width:0}
+.fr-name{font-weight:900;font-size:1.02rem;letter-spacing:3px;color:var(--c);text-shadow:0 0 12px color-mix(in srgb,var(--c) 60%,transparent)}
+.fr-desc{margin-top:5px;font-size:.75rem;color:#b8c2d8;line-height:1.4}
+.fr-pill{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;font-size:.6rem;font-weight:800;letter-spacing:1px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 50%,transparent);background:rgba(0,0,0,.3)}
+.fr-arrow{flex:0 0 auto;font-size:1.6rem;font-weight:900;color:var(--c);opacity:.45;transition:transform .2s,opacity .2s}
+.fr-card:hover .fr-arrow{opacity:1;transform:translateX(4px)}
+.fr-wide{grid-column:1/-1;padding:24px 24px}
+.fr-wide .fr-ico{width:64px;height:64px;font-size:2rem}
+.fr-wide .fr-name{font-size:1.2rem}
+@media(max-width:640px){#forumCategories{grid-template-columns:1fr !important}.fr-title{font-size:2rem;letter-spacing:6px}.fr-tag{letter-spacing:3px;font-size:.66rem}}
+</style>
+<h1 class='fr-title'>Community Forum</h1>
+<div class='fr-tag'>◆ THE ARCADE HANGOUT ◆</div>
 
 <div id='forumCategories' style='display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%'>
-
-<!-- 1. General Discussions - white -->
-<div onclick="openForumSection('general')" style='cursor:pointer;background:rgba(40,40,40,.3);backdrop-filter:blur(8px);border:2px solid rgba(220,220,220,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(220,220,220,.8)";this.style.background="rgba(60,60,60,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(220,220,220,.15)"' onmouseleave='this.style.borderColor="rgba(220,220,220,.3)";this.style.background="rgba(40,40,40,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#e0e0e0;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(220,220,220,.3)'>GENERAL DISCUSSIONS</div>
-</div>
-
-<!-- 2. Announcements - red -->
-<div onclick="openForumSection('announcements')" style='cursor:pointer;background:rgba(80,10,10,.3);backdrop-filter:blur(8px);border:2px solid rgba(239,68,68,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(239,68,68,.7)";this.style.background="rgba(80,10,10,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(239,68,68,.2)"' onmouseleave='this.style.borderColor="rgba(239,68,68,.3)";this.style.background="rgba(80,10,10,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ef4444;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(239,68,68,.4)'>ANNOUNCEMENTS</div>
-</div>
-
-<!-- 3. Game Discussion - orange -->
-<div onclick="openForumSection('game-discussion')" style='cursor:pointer;background:rgba(80,40,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(251,146,60,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(251,146,60,.7)";this.style.background="rgba(80,40,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(251,146,60,.2)"' onmouseleave='this.style.borderColor="rgba(251,146,60,.3)";this.style.background="rgba(80,40,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#fb923c;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(251,146,60,.4)'>GAME DISCUSSION</div>
-</div>
-
-<!-- 4. Game Developers - yellow -->
-<div onclick="openForumSection('game-dev')" style='cursor:pointer;background:rgba(60,50,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(250,204,21,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(250,204,21,.7)";this.style.background="rgba(60,50,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(250,204,21,.2)"' onmouseleave='this.style.borderColor="rgba(250,204,21,.3)";this.style.background="rgba(60,50,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#facc15;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(250,204,21,.4)'>GAME DEVELOPERS</div>
-</div>
-
-<!-- 5. Art Discussion - green -->
-<div onclick="openForumSection('art-discussion')" style='cursor:pointer;background:rgba(0,50,20,.3);backdrop-filter:blur(8px);border:2px solid rgba(34,197,94,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(34,197,94,.7)";this.style.background="rgba(0,50,20,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(34,197,94,.2)"' onmouseleave='this.style.borderColor="rgba(34,197,94,.3)";this.style.background="rgba(0,50,20,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#4ade80;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(74,222,128,.4)'>ART DISCUSSION</div>
-</div>
-
-<!-- 6. Artist's Corner - cyan -->
-<div onclick="openForumSection('artists-corner')" style='cursor:pointer;background:rgba(0,50,60,.3);backdrop-filter:blur(8px);border:2px solid rgba(34,211,238,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(34,211,238,.7)";this.style.background="rgba(0,50,60,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(34,211,238,.2)"' onmouseleave='this.style.borderColor="rgba(34,211,238,.3)";this.style.background="rgba(0,50,60,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#22d3ee;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(34,211,238,.4)'>ARTIST'S CORNER</div>
-</div>
-
-<!-- 7. Veteran Legion - blue -->
-<div onclick="openVeteranPortal()" style='cursor:pointer;background:rgba(0,20,80,.3);backdrop-filter:blur(8px);border:2px solid rgba(59,130,246,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(59,130,246,.7)";this.style.background="rgba(0,20,80,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(59,130,246,.2)"' onmouseleave='this.style.borderColor="rgba(59,130,246,.3)";this.style.background="rgba(0,20,80,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#3b82f6;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(59,130,246,.4)'>VETERAN LEGION</div>
-</div>
-
-<!-- 8. Bugs and Glitches - violet -->
-<div onclick="openForumSection('bugs')" style='cursor:pointer;background:rgba(50,0,80,.3);backdrop-filter:blur(8px);border:2px solid rgba(168,85,247,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(168,85,247,.7)";this.style.background="rgba(50,0,80,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(168,85,247,.2)"' onmouseleave='this.style.borderColor="rgba(168,85,247,.3)";this.style.background="rgba(50,0,80,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#a855f7;letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 12px rgba(168,85,247,.4)'>BUGS AND GLITCHES</div>
-</div>
+<div class='fr-card fr-wide' style='--c:#ef4444' onclick="openForumSection('announcements')"><div class='fr-ico'>📢</div><div class='fr-body'><div class='fr-name'>ANNOUNCEMENTS</div><div class='fr-desc'>Official news, updates and events from the Dev Team</div><span class="fr-pill">📌 Dev Team posts</span></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#e0e0e0' onclick="openForumSection('general')"><div class='fr-ico'>💬</div><div class='fr-body'><div class='fr-name'>GENERAL DISCUSSIONS</div><div class='fr-desc'>Say hi, hang out and talk about anything arcade</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#fb923c' onclick="openForumSection('game-discussion')"><div class='fr-ico'>🎮</div><div class='fr-body'><div class='fr-name'>GAME DISCUSSION</div><div class='fr-desc'>Strategies, high scores and your favourite games</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#facc15' onclick="openForumSection('game-dev')"><div class='fr-ico'>🛠️</div><div class='fr-body'><div class='fr-name'>GAME DEVELOPERS</div><div class='fr-desc'>Build, share and get feedback on your games</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#4ade80' onclick="openForumSection('art-discussion')"><div class='fr-ico'>🎨</div><div class='fr-body'><div class='fr-name'>ART DISCUSSION</div><div class='fr-desc'>Talk art, pixel work and NFT collections</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#22d3ee' onclick="openForumSection('artists-corner')"><div class='fr-ico'>🖌️</div><div class='fr-body'><div class='fr-name'>ARTIST'S CORNER</div><div class='fr-desc'>Show off your work and find collaborators</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#a855f7' onclick="openForumSection('bugs')"><div class='fr-ico'>🐛</div><div class='fr-body'><div class='fr-name'>BUGS AND GLITCHES</div><div class='fr-desc'>Report problems so the Dev Team can squash them</div></div><div class='fr-arrow'>›</div></div>
 
 </div>
 
@@ -1150,65 +1139,19 @@ window.addEventListener('message', (e) => {
 <!-- Category Cards -->
 <!-- DAO Treasury Button - now at the very top, above the whole grid. Only visible on the DAO home page itself, hidden while any sub-section/proposal/thread is open. -->
 
-<style>#daoCategoryCards>#daoTreasuryHomeBtn,#daoCategoryCards>#daoProposalsTile{min-height:110px !important;padding:20px 16px !important}#daoCategoryCards>#daoTreasuryHomeBtn>div:first-child,#daoCategoryCards>#daoProposalsTile>div:first-child{font-size:1.35rem !important}@media(max-width:560px){#daoCategoryCards>#daoTreasuryHomeBtn,#daoCategoryCards>#daoProposalsTile{grid-column:1/-1}}</style>
+<style>.fr-feature{padding:24px 22px}.fr-feature .fr-ico{width:64px;height:64px;font-size:2rem}.fr-feature .fr-name{font-size:1.25rem;letter-spacing:4px}@media(max-width:640px){#daoCategoryCards{grid-template-columns:1fr !important}}</style>
 <div id='daoCategoryCards' style='display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%'>
-
-<div id='daoTreasuryHomeBtn' onclick='showView("dao-dashboard");loadDaoDashboard()' style='cursor:pointer;background:rgba(15,10,40,.3);backdrop-filter:blur(8px);border:2px solid rgba(167,139,250,.3);border-radius:14px;padding:28px 16px;min-height:140px;display:flex;flex-direction:column;justify-content:center;transition:all .3s;text-align:center;' onmouseenter='this.style.borderColor="rgba(167,139,250,.7)";this.style.background="rgba(15,10,40,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(167,139,250,.2)"' onmouseleave='this.style.borderColor="rgba(167,139,250,.3)";this.style.background="rgba(15,10,40,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.6rem;color:#a78bfa;letter-spacing:4px;text-shadow:0 0 10px rgba(167,139,250,.4)'>DAO TREASURY</div>
-<div style='font-size:.8rem;color:#8b9cc4;margin-top:6px'>Live balances, gaming-funded rewards, lottery history</div>
-</div>
-
-<!-- Proposals button (top center, spans full width) -->
-<div id='daoProposalsTile' onclick='openDaoProposals()' style='grid-column:auto;cursor:pointer;background:rgba(60,20,80,.3);backdrop-filter:blur(8px);border:2px solid rgba(192,132,252,.3);border-radius:14px;padding:28px 16px;min-height:140px;display:flex;flex-direction:column;justify-content:center;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(192,132,252,.7)";this.style.background="rgba(60,20,80,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(192,132,252,.2)"' onmouseleave='this.style.borderColor="rgba(192,132,252,.3)";this.style.background="rgba(60,20,80,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.3rem;color:#c084fc;letter-spacing:3px;text-shadow:0 0 15px rgba(192,132,252,.5)'>PROPOSALS</div>
-<div style='font-size:.75rem;color:#7c3aed;margin-top:6px'>View active proposals and submit new ones</div>
-</div>
-
-<!-- Row 1: General Discussion (left), Proposal Talk (right) -->
-<div onclick='openDaoSection("dao-general")' style='cursor:pointer;background:rgba(20,20,20,.3);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.25);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(255,255,255,.7)";this.style.background="rgba(40,40,40,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(255,255,255,.1)"' onmouseleave='this.style.borderColor="rgba(255,255,255,.25)";this.style.background="rgba(20,20,20,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ffffff;letter-spacing:2px;text-shadow:0 0 10px rgba(255,255,255,.3)'>General Discussion</div>
-</div>
-
-<div onclick='openDaoSection("dao-proposal-talk")' style='cursor:pointer;background:rgba(40,0,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(239,68,68,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(239,68,68,.7)";this.style.background="rgba(40,0,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(239,68,68,.2)"' onmouseleave='this.style.borderColor="rgba(239,68,68,.3)";this.style.background="rgba(40,0,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ef4444;letter-spacing:2px;text-shadow:0 0 10px rgba(239,68,68,.4)'>Proposal Talk</div>
-</div>
-
-<!-- Row 2: Game Developers (left), Artists (right) -->
-<div onclick='openDaoSection("dao-game-developers")' style='cursor:pointer;background:rgba(0,30,15,.3);backdrop-filter:blur(8px);border:2px solid rgba(34,197,94,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(34,197,94,.7)";this.style.background="rgba(0,30,15,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(34,197,94,.2)"' onmouseleave='this.style.borderColor="rgba(34,197,94,.3)";this.style.background="rgba(0,30,15,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#22c55e;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 10px rgba(34,197,94,.4)'>Game Developers</div>
-<div style='font-size:.6rem;color:rgba(34,197,94,.55);letter-spacing:1px'>Game Contributor NFT required</div>
-</div>
-
-<div onclick='openDaoSection("dao-artists")' style='cursor:pointer;background:rgba(40,0,30,.3);backdrop-filter:blur(8px);border:2px solid rgba(255,68,204,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(255,68,204,.7)";this.style.background="rgba(40,0,30,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(255,68,204,.2)"' onmouseleave='this.style.borderColor="rgba(255,68,204,.3)";this.style.background="rgba(40,0,30,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ff44cc;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 10px rgba(255,68,204,.4)'>Artists</div>
-<div style='font-size:.6rem;color:rgba(255,68,204,.55);letter-spacing:1px'>Artist Contributor NFT required</div>
-</div>
-
-<!-- Row 3: Elite's Corner (left), Veteran Discussion (right) -->
-<div onclick='openDaoSection("dao-player-portal")' style='cursor:pointer;background:rgba(0,20,50,.3);backdrop-filter:blur(8px);border:2px solid rgba(0,170,255,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(0,170,255,.7)";this.style.background="rgba(0,20,50,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(0,170,255,.2)"' onmouseleave='this.style.borderColor="rgba(0,170,255,.3)";this.style.background="rgba(0,20,50,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#00aaff;letter-spacing:2px;text-shadow:0 0 10px rgba(0,170,255,.4)'>Elite's Corner</div>
-</div>
-
-<div id='daoVotingSection' onclick='openDaoSection("dao-voting")' style='cursor:pointer;background:rgba(40,30,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(251,191,36,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(251,191,36,.7)";this.style.background="rgba(40,30,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(251,191,36,.2)"' onmouseleave='this.style.borderColor="rgba(251,191,36,.3)";this.style.background="rgba(40,30,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#fbbf24;letter-spacing:2px;text-shadow:0 0 10px rgba(251,191,36,.4)'>Veteran Discussion</div>
-</div>
-
-<!-- Row 4: Treasury Talk (left), Diplomat's Only (right) -->
-<div id='daoTreasurySection' onclick='openDaoSection("dao-treasury")' style='cursor:pointer;background:rgba(40,15,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(255,136,0,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(255,136,0,.7)";this.style.background="rgba(40,15,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(255,136,0,.2)"' onmouseleave='this.style.borderColor="rgba(255,136,0,.3)";this.style.background="rgba(40,15,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ff8800;letter-spacing:2px;text-shadow:0 0 10px rgba(255,136,0,.4)'>Treasury Talk</div>
-</div>
-
-<div id='daoCoreSection' onclick='openDaoSection("dao-core")' style='cursor:pointer;background:rgba(40,0,0,.3);backdrop-filter:blur(8px);border:2px solid rgba(239,68,68,.3);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(239,68,68,.7)";this.style.background="rgba(40,0,0,.5)";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(239,68,68,.2)"' onmouseleave='this.style.borderColor="rgba(239,68,68,.3)";this.style.background="rgba(40,0,0,.3)";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.1rem;color:#ef4444;letter-spacing:2px;text-shadow:0 0 10px rgba(239,68,68,.4)'>Diplomat's Only</div>
-</div>
-
-<!-- Player Portal Button - spans full width, now at the bottom of the grid. DAO Forums is
-     already VP-gated (hasDaoAccess), so simply living here satisfies "only VP holders can view
-     it" for free. -->
-<div id='daoPlayerPortalBtn' onclick="showView('player-portal')" style='grid-column:1/-1;cursor:pointer;background:linear-gradient(135deg,rgba(255,68,170,.12),rgba(139,92,246,.12));backdrop-filter:blur(8px);border:2px solid rgba(255,68,170,.35);border-radius:14px;padding:24px 16px;transition:all .3s;text-align:center' onmouseenter='this.style.borderColor="rgba(255,68,170,.7)";this.style.background="linear-gradient(135deg,rgba(255,68,170,.22),rgba(139,92,246,.22))";this.style.transform="translateY(-3px)";this.style.boxShadow="0 8px 30px rgba(255,68,170,.2)"' onmouseleave='this.style.borderColor="rgba(255,68,170,.35)";this.style.background="linear-gradient(135deg,rgba(255,68,170,.12),rgba(139,92,246,.12))";this.style.transform="translateY(0)";this.style.boxShadow="none"'>
-<div style='font-weight:900;font-size:1.3rem;color:#ff44aa;letter-spacing:4px;text-shadow:0 0 12px rgba(255,68,170,.4)'>PLAYER PORTAL</div>
-<div style='font-size:.75rem;color:rgba(255,68,170,.7);margin-top:6px'>Search Voting Power holders by name</div>
-</div>
+<div id='daoTreasuryHomeBtn' class='fr-card fr-feature' style='--c:#a78bfa' onclick="showView('dao-dashboard');loadDaoDashboard()"><div class='fr-ico'>🏛️</div><div class='fr-body'><div class='fr-name'>DAO TREASURY</div><div class='fr-desc'>Live balance, where it comes from, and the lotteries</div></div><div class='fr-arrow'>›</div></div>
+<div id='daoProposalsTile' class='fr-card fr-feature' style='--c:#c084fc' onclick="openDaoProposals()"><div class='fr-ico'>🗳️</div><div class='fr-body'><div class='fr-name'>PROPOSALS</div><div class='fr-desc'>Vote on proposals and submit your own</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#ffffff' onclick="openDaoSection('dao-general')"><div class='fr-ico'>💬</div><div class='fr-body'><div class='fr-name'>GENERAL DISCUSSION</div><div class='fr-desc'>Open discussion for all DAO members</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#ef4444' onclick="openDaoSection('dao-proposal-talk')"><div class='fr-ico'>📜</div><div class='fr-body'><div class='fr-name'>PROPOSAL TALK</div><div class='fr-desc'>Discuss governance proposals and ideas</div></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#22c55e' onclick="openDaoSection('dao-game-developers')"><div class='fr-ico'>🛠️</div><div class='fr-body'><div class='fr-name'>GAME DEVELOPERS</div><div class='fr-desc'>Developer discussion, tips and collaboration</div><span class="fr-pill">🛠️ Game Contributor NFT</span></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#ff44cc' onclick="openDaoSection('dao-artists')"><div class='fr-ico'>🎨</div><div class='fr-body'><div class='fr-name'>ARTISTS</div><div class='fr-desc'>Art submissions, NFT creation and creative talk</div><span class="fr-pill">🎨 Artist Contributor NFT</span></div><div class='fr-arrow'>›</div></div>
+<div id='daoVotingSection' class='fr-card' style='--c:#fbbf24' onclick="openDaoSection('dao-voting')"><div class='fr-ico'>⚔️</div><div class='fr-body'><div class='fr-name'>VETERAN DISCUSSION</div><div class='fr-desc'>Discuss active votes and strategy</div><span class="fr-pill">🔑 5 VP Badges</span></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#00aaff' onclick="openDaoSection('dao-player-portal')"><div class='fr-ico'>💎</div><div class='fr-body'><div class='fr-name'>ELITE'S CORNER</div><div class='fr-desc'>An inner circle for dedicated DAO members</div><span class="fr-pill">🔑 7 VP Badges</span></div><div class='fr-arrow'>›</div></div>
+<div id='daoCoreSection' class='fr-card' style='--c:#f43f5e' onclick="openDaoSection('dao-core')"><div class='fr-ico'>👑</div><div class='fr-body'><div class='fr-name'>DIPLOMAT'S ONLY</div><div class='fr-desc'>High-level platform direction and critical decisions</div><span class="fr-pill">🔑 10 VP Badges</span></div><div class='fr-arrow'>›</div></div>
+<div class='fr-card' style='--c:#3b82f6' onclick="showView('forum');openVeteranPortal()"><div class='fr-ico'>🎖️</div><div class='fr-body'><div class='fr-name'>VETERAN LEGION</div><div class='fr-desc'>The seasoned players' lounge, earned by playing</div><span class="fr-pill">🎖️ Gamer XP required</span></div><div class='fr-arrow'>›</div></div>
+<div id='daoPlayerPortalBtn' class='fr-card fr-wide' style='--c:#ff44aa' onclick="showView('player-portal')"><div class='fr-ico'>🔎</div><div class='fr-body'><div class='fr-name'>PLAYER PORTAL</div><div class='fr-desc'>Search Voting Power holders by name</div></div><div class='fr-arrow'>›</div></div>
 
 </div>
 
@@ -1594,10 +1537,11 @@ window.addEventListener('message', (e) => {
 .dtr-stat .k{font-size:.6rem;letter-spacing:2px;color:#8b9cc4;margin-top:4px}
 </style>
 <div style='max-width:900px;margin:0 auto;padding:10px 20px 60px'>
-<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:10px;gap:12px;flex-wrap:wrap'>
-<div><h1 class='dtr-title'>DAO TREASURY</h1><p style='margin:4px 0 0;font-size:.75rem;color:#9fb0d6'>Owned by the community · funded by arcade activity · paid out through lotteries</p></div>
-<button onclick='loadDaoDashboard()' style='padding:8px 16px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.45);border-radius:10px;color:#e9d5ff;font-weight:800;font-size:.75rem;cursor:pointer;box-shadow:0 0 12px rgba(192,132,252,.25)'>↻ Refresh</button>
+<div style='display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-top:10px'>
+<button id='daoTreasuryBackBtn' onclick="showView('dao')" style='background:rgba(0,0,0,.4);border:2px solid rgba(192,132,252,.3);border-radius:8px;color:#c084fc;padding:8px 14px;cursor:pointer;font-size:.85rem;font-weight:700'>Back</button>
+<button onclick='loadDaoDashboard()' style='background:rgba(0,0,0,.4);border:2px solid rgba(192,132,252,.3);border-radius:8px;color:#c084fc;padding:8px 14px;cursor:pointer;font-size:.85rem;font-weight:700'>↻ Refresh</button>
 </div>
+<div style='margin-bottom:20px'><h1 class='dtr-title'>DAO TREASURY</h1><p style='margin:4px 0 0;font-size:.75rem;color:#9fb0d6'>Owned by the community · funded by arcade activity · paid out through lotteries</p></div>
 <div id='daoTrHero'><div class='dtr-card' style='color:#7f93c2;font-size:.8rem'>Loading treasury…</div></div>
 <div id='daoLotteryStatusPanel'></div>
 <div id='daoTrSources'></div>
@@ -3977,6 +3921,57 @@ async function returnNftFromEscrow(){
     resEl.innerHTML='<span style="color:var(--red)">'+escHtml(safeUserErrorMessage(e,'NFT delist'))+'</span>';
   }
 }
+window.NFT_LISTING_FEE_TOKENS_UI=5; // keep in sync with backend NFT_LISTING_FEE_TOKENS
+function closeListNftPicker(){ const m=document.getElementById('listNftPickerPopup'); if(m) m.remove(); }
+if(!window._listPickerEsc){ window._listPickerEsc=true; document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeListNftPicker(); }); }
+async function openListNftPicker(){
+  if(!S.connected) return showConnect();
+  closeListNftPicker();
+  const m=document.createElement('div');
+  m.id='listNftPickerPopup';
+  m.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(3,2,10,.82);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:70px 14px 40px;box-sizing:border-box';
+  m.onclick=e=>{ if(e.target===m) closeListNftPicker(); };
+  m.innerHTML=`<style>
+    .lnp-box{position:relative;width:100%;max-width:720px;border-radius:18px;padding:20px;background:linear-gradient(160deg,rgba(40,24,8,.97),rgba(8,10,28,.97));border:2px solid rgba(255,215,0,.5);box-shadow:0 0 40px rgba(255,215,0,.18)}
+    .lnp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:14px}
+    .lnp-card{border-radius:14px;overflow:hidden;background:rgba(0,0,0,.45);border:1px solid rgba(57,255,20,.45);box-shadow:0 0 12px rgba(57,255,20,.15);transition:transform .15s,box-shadow .15s}
+    .lnp-card:hover{transform:translateY(-2px);box-shadow:0 0 20px rgba(57,255,20,.35)}
+    .lnp-img{height:110px;background:#0a0a1a;display:grid;place-items:center;overflow:hidden}
+    .lnp-name{font-size:.72rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lnp-std{font-size:.55rem;color:#94a3b8;margin-top:2px}
+    .lnp-btn{width:100%;margin-top:6px;padding:6px;border-radius:8px;border:1px solid #ffd700;background:rgba(255,215,0,.1);color:#ffd700;font-weight:900;font-size:.7rem;cursor:pointer}
+    .lnp-locked{border-color:#666;box-shadow:none;opacity:.6}
+  </style>
+  <div class='lnp-box'>
+    <button onclick='closeListNftPicker()' aria-label='Close' style='position:absolute;top:10px;right:12px;background:none;border:none;color:#cbd5e1;font-size:1.3rem;cursor:pointer'>✕</button>
+    <div style='font-size:1.1rem;font-weight:900;letter-spacing:3px;color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,.5)'>🏆 LIST AN NFT</div>
+    <div style='font-size:.72rem;color:#cbd5e1;margin-top:4px'>Pick one of your NFTs, set a ticket price, and it goes straight into the Prize Booth. Listing costs ${NFT_LISTING_FEE_TOKENS_UI} Tokens.</div>
+    <div id='listNftPickerGrid' class='lnp-grid'><div style='grid-column:1/-1;text-align:center;color:#22d3ee;font-size:.8rem;padding:24px'>⏳ Scanning your wallet…</div></div>
+  </div>`;
+  document.body.appendChild(m);
+  const grid=document.getElementById('listNftPickerGrid');
+  try{
+    const owned=await scanAndCacheWalletNfts(true);
+    let listed=[]; try{ listed=await (await getBackendActor(true)).getMyActiveNftListings(); }catch(_){}
+    window._listPickerNfts=owned||[];
+    const img=u=>u?buildNftImageTag(u,[],'width:100%;height:100%;object-fit:contain'):'<span style="font-size:1.6rem">🖼️</span>';
+    const ownedCards=(owned||[]).map((n,i)=>`<div class='lnp-card'><div class='lnp-img'>${img(n.imageUrl)}</div><div style='padding:8px'>
+        <div class='lnp-name'>${escHtml(n.name||'NFT')}</div><div class='lnp-std'>${escHtml(n.standard||'')}</div>
+        <button class='lnp-btn' onclick='listPickerChoose(${i})'>List</button></div></div>`);
+    const lockedCards=(listed||[]).map(l=>`<div class='lnp-card lnp-locked'><div class='lnp-img' style='filter:grayscale(.6) brightness(.6)'>${img(l.imageUrl)}</div><div style='padding:8px'>
+        <div class='lnp-name' style='color:#aaa'>${escHtml(l.name||'NFT')}</div><div class='lnp-std' style='color:#ffd700;font-weight:800'>🔒 In Prize Booth</div></div></div>`);
+    const all=ownedCards.concat(lockedCards);
+    grid.innerHTML=all.length?all.join(''):"<div style='grid-column:1/-1;text-align:center;color:#94a3b8;font-size:.85rem;padding:30px'>You don't own any NFTs yet. Win some in the Prize Booth, then list them here.</div>";
+  }catch(e){
+    grid.innerHTML="<div style='grid-column:1/-1;text-align:center;color:#ef4444;font-size:.8rem;padding:24px'>"+escHtml(safeUserErrorMessage(e,'NFT scan'))+"</div>";
+  }
+}
+function listPickerChoose(i){
+  const n=(window._listPickerNfts||[])[i]; if(!n) return;
+  closeListNftPicker();
+  openQuickListNftPopup(JSON.stringify(n));
+}
+Object.assign(window,{openListNftPicker,closeListNftPicker,listPickerChoose});
 async function openListNftModal(){
   if(!S.connected) return showConnect();
   const modal=document.createElement('div');
@@ -5566,7 +5561,7 @@ function onExtStdChange(){
 
 function updateNftVerifyListButton(){
   const btn=document.getElementById('nftVerifyListBtn');
-  if(btn) btn.textContent=isAdmin()?'Verify & List · Free':'Verify & List · 2 Tokens';
+  if(btn) btn.textContent=isAdmin()?'Verify & List · Free':'Verify & List · '+NFT_LISTING_FEE_TOKENS_UI+' Tokens';
 }
 
 async function requireListingActorSession(statusEl){
@@ -5625,8 +5620,8 @@ async function verifyAndListNft(){
       try{
         const beCheck=await getBackendActor();
         const bal=Number(await beCheck.getTokens(S.principal));
-        if(bal<2){
-          resEl.innerHTML='<span style="color:var(--red)">Not enough Tokens to list. You need 2 Tokens, you have '+bal+'. Buy Tokens first at the Token Dispenser.</span>';
+        if(bal<NFT_LISTING_FEE_TOKENS_UI){
+          resEl.innerHTML='<span style="color:var(--red)">Not enough Tokens to list. You need '+NFT_LISTING_FEE_TOKENS_UI+' Tokens, you have '+bal+'. Buy Tokens first at the Token Dispenser.</span>';
           restoreButton();
           return;
         }
@@ -5978,8 +5973,8 @@ async function quickListOwnedNft(jsonStr){
     const name=n.name||`${n.collection||'NFT'} #${n.index}`;
 
     const isAdm=isAdmin();
-    const costMsg=isAdm?'Admin - Free':'2 Tokens will be deducted from your balance.';
-    if(!await arcadeConfirm(isAdm?'List NFT':'Listing Fee: 2 Tokens','<b>Standard:</b> '+(n.standard||'')+'<br><br>'+costMsg)){
+    const costMsg=isAdm?'Admin - Free':NFT_LISTING_FEE_TOKENS_UI+' Tokens will be deducted from your balance.';
+    if(!await arcadeConfirm(isAdm?'List NFT':'Listing Fee: '+NFT_LISTING_FEE_TOKENS_UI+' Tokens','<b>Standard:</b> '+(n.standard||'')+'<br><br>'+costMsg)){
       setStatus('Listing cancelled. No NFT was transferred.','gold');
       if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='List';}
       return;
@@ -7446,7 +7441,7 @@ function showTab(tab){
   qs('nftCollection').style.display=tab==='collection'?'block':'none';
   document.getElementById('collectionTopBtns').style.display=tab==='collection'?'flex':'none';
   const scanB=document.getElementById('scanBtn'); if(scanB) scanB.style.display=tab==='collection'?'inline-block':'none';
-  const listBtn=document.getElementById('listNftBtn'); if(listBtn) listBtn.style.display=(tab==='shop'&&S.connected)?'inline-block':'none';
+  const listBtn=document.getElementById('listNftBtn'); if(listBtn) listBtn.style.display=(tab==='shop'&&S.connected)?'inline-block':'none'; const mcTop=document.getElementById('myCollectionBtn'); if(mcTop) mcTop.style.display=(tab!=='collection'&&S.connected)?'block':'none';
   // Hide "My Collection" button in action bar when already on collection tab
   const mcInBar=document.getElementById('prizeBoothMyCollectionBtn');
   if(mcInBar) mcInBar.style.display=tab==='collection'?'none':'inline-block';
@@ -10590,15 +10585,15 @@ async function submitExistingNft(existingActor=null){
   const isAdm=isAdmin();
   if(!isAdm){
     const userTokens=Number(S.quarters||0);
-    if(userTokens<2){arcadeConfirm('Not Enough Tokens','Listing an NFT costs 2 Tokens. You have '+userTokens+'.');return {ok:false,error:new Error('Listing an NFT costs 2 Tokens. You have '+userTokens+'.')};}
+    if(userTokens<NFT_LISTING_FEE_TOKENS_UI){arcadeConfirm('Not Enough Tokens','Listing an NFT costs '+NFT_LISTING_FEE_TOKENS_UI+' Tokens. You have '+userTokens+'.');return {ok:false,error:new Error('Listing an NFT costs '+NFT_LISTING_FEE_TOKENS_UI+' Tokens. You have '+userTokens+'.')};}
   }
-  const costMsg=isAdm?'Admin - Free':'2 Tokens will be deducted from your balance.';
-  if(!await arcadeConfirm(isAdm?'List NFT':'Listing Fee: 2 Tokens','<b>Standard:</b> '+(STD_NAMES[nftStandard]||nftStandard)+'<br><br>'+costMsg)) return {ok:false,error:new Error('Listing cancelled')};
+  const costMsg=isAdm?'Admin - Free':NFT_LISTING_FEE_TOKENS_UI+' Tokens will be deducted from your balance.';
+  if(!await arcadeConfirm(isAdm?'List NFT':'Listing Fee: '+NFT_LISTING_FEE_TOKENS_UI+' Tokens','<b>Standard:</b> '+(STD_NAMES[nftStandard]||nftStandard)+'<br><br>'+costMsg)) return {ok:false,error:new Error('Listing cancelled')};
 
   qs('nftExRes').innerHTML='<span style="color:var(--cyan)">⏳ Creating listing on-chain...</span>';
   try{
     const be=sessionActor;
-    // Store on-chain via backend canister - backend deducts the 2-token listing fee
+    // Store on-chain via backend canister - backend deducts the listing fee
     const limits=await getMyNftLimitStatusClient();
     if(Number(limits.activeListings||0) >= Number(limits.activeListingsCap||3)) throw new Error('Active NFT listing limit reached for your VP tier (max '+Number(limits.activeListingsCap||3)+')');
     const _colLabel=(canisterId===NFT_CANISTER)?((await officialNftCollectionName(numericTokenId))||collectionLabel):collectionLabel;
@@ -16631,7 +16626,7 @@ function showViewHooked(v){
   const legalBtn=document.getElementById('legalFooterBtn'); if(legalBtn) legalBtn.style.display=v==='landing'?'flex':'none';
   const pmBtn=document.getElementById('playerManualBtn'); if(pmBtn) pmBtn.style.display=v==='landing'?'block':'none';
   const mBtn=document.getElementById('manifestoBtn'); if(mBtn) mBtn.style.display=(v==='landing')?'block':'none';
-  const mcBtn=document.getElementById('myCollectionBtn'); if(mcBtn) mcBtn.style.display=(S.connected&&v!=='prizes'&&v!=='arcade'&&v!=='backroom'&&v!=='hole')?'block':'none';
+  const mcBtn=document.getElementById('myCollectionBtn'); if(mcBtn) mcBtn.style.display=(S.connected&&v!=='arcade'&&v!=='backroom'&&v!=='hole')?'block':'none';
   const pbBtns=document.getElementById('prizeBoothBtns'); if(pbBtns) pbBtns.style.display=v==='prizes'?'flex':'none';
 
   const pbu=document.getElementById('prizeBoothUploadBtn'); if(pbu) pbu.style.display=v==='prizes'?'block':'none';
