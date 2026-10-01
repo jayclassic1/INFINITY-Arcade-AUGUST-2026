@@ -2768,6 +2768,7 @@ function isMyPfpNft(n){
 window.pfpOnWallNotice=function(){ arcadeAlert('On your Wall','That NFT is hung on your Wall. Take it off the Wall first, or pick a different NFT for your profile picture.'); };
 window.wallPfpNotice=function(){ arcadeAlert('Profile picture','That NFT is your profile picture. Change your PFP first, or pick a different NFT for the Wall.'); };
 let _wallNfts=[], _wallPicks=[];
+function _wallMax(){ return Math.max(5, Number((window._myPerks&&window._myPerks.wallSlots)||5)); }
 function profileModalShell(id,title,bodyId){
   const old=document.getElementById(id); if(old) old.remove();
   const m=document.createElement('div');
@@ -2792,7 +2793,7 @@ function renderWallEditGrid(){
       ${isPfp?'<div style="position:absolute;top:4px;left:4px;padding:2px 6px;border-radius:6px;background:#00e5ff;color:#012;font-size:.55rem;font-weight:900">PFP</div>':''}
       ${sel?`<div style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#ffd700;color:#000;font-weight:900;font-size:.65rem;display:grid;place-items:center">${pos+1}</div>`:''}
     </div>`;}).join('');
-  body.innerHTML=`<div style='font-size:.72rem;color:#8ab4d8;margin-bottom:10px'>Tap up to 5 NFTs to hang them on your wall, in order. Everyone who visits your profile will see them. <b style='color:#ffd700'>${_wallPicks.length}/5</b></div>
+  body.innerHTML=`<div style='font-size:.72rem;color:#8ab4d8;margin-bottom:10px'>Tap up to ${_wallMax()} NFTs to hang them on your wall, in order. Everyone who visits your profile will see them. <b style='color:#ffd700'>${_wallPicks.length}/${_wallMax()}</b></div>
     <div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px'>${grid}</div>
     <div style='display:flex;gap:10px;align-items:center;margin-top:14px'><button class='btn' onclick='saveWallEdit()' style='border-color:#ffd700;color:#ffd700'>Save Wall</button><span id='wallEditStatus' style='font-size:.7rem;color:#9fb0d6'></span></div>`;
 }
@@ -2801,10 +2802,11 @@ window.openWallEdit=async function(){
   const body=profileModalShell('m-wall-edit','🖼️ Hang NFTs on your Wall','wallEditBody');
   try{
     const be=await getBackendActor();
+    await loadMyPerks();
     const [owned,wall]=await Promise.all([scanNftsOf(S.principalText),be.getProfileWall(Principal.fromText(S.principalText))]);
     _wallNfts=owned;
     const ownedKeys=new Set(owned.map(n=>n.canisterId+':'+n.tokenId));
-    _wallPicks=wall.filter(k=>ownedKeys.has(k)).slice(0,5);
+    _wallPicks=wall.filter(k=>ownedKeys.has(k)).slice(0,_wallMax());
     renderWallEditGrid();
   }catch(e){ console.warn('Wall editor load failed:',e); if(body) body.innerHTML="<div style='color:#ef4444;font-size:.8rem'>Could not load your NFTs. Please try again.</div>"; }
 };
@@ -2813,7 +2815,7 @@ window.toggleWallPick=function(i){
   const key=n.canisterId+':'+n.tokenId; const pos=_wallPicks.indexOf(key);
   if(pos<0&&isMyPfpNft(n)) return wallPfpNotice();
   if(pos>=0) _wallPicks.splice(pos,1);
-  else if(_wallPicks.length<5) _wallPicks.push(key);
+  else if(_wallPicks.length<_wallMax()) _wallPicks.push(key);
   renderWallEditGrid();
 };
 window.saveWallEdit=async function(){
@@ -2917,6 +2919,7 @@ function renderProfileView(){
     }).catch(()=>{});
   }
   nameEl.textContent=own&&local.name?local.name:'...';
+  cosApplyProfile(target);
   av.innerHTML=(own&&(local.avatarUrl||local.avatarNft))?buildProfileAvatarImageTag(local,'width:100%;height:100%;object-fit:cover'):'';
   metaEl.innerHTML=''; bioEl.style.display='none';
   ['profileViewNftCount','profileViewVp','profileViewGames','profileViewGamerXp','profileViewDaoVp','profileViewMarketXp'].forEach(id=>{const el=qs(id); if(el) el.textContent='-';});
@@ -3395,6 +3398,83 @@ function saveProfile(){
   closeProfileModal();
   updateProfileDisplay();
 }
+// === COSMETICS (secret NFT abilities: PFP borders, neon names, collector titles) ===
+(function(){ if(document.getElementById('cosStyles')) return; const st=document.createElement('style'); st.id='cosStyles'; st.textContent=`
+.cos-pfp-gold{box-shadow:0 0 0 3px #ffd700,0 0 14px 3px rgba(255,215,0,.6)!important}
+.cos-pfp-diamond{animation:cosDia 2.4s ease-in-out infinite}
+@keyframes cosDia{0%,100%{box-shadow:0 0 0 3px #b9f2ff,0 0 14px 3px rgba(185,242,255,.6)}50%{box-shadow:0 0 0 3px #f0fdff,0 0 26px 7px rgba(185,242,255,.95)}}
+.cos-pfp-whitelight{animation:cosWl 3s ease-in-out infinite}
+@keyframes cosWl{0%,100%{box-shadow:0 0 0 3px #fff,0 0 20px 7px rgba(255,255,255,.7)}50%{box-shadow:0 0 0 3px #fff,0 0 36px 15px rgba(255,255,255,.95)}}
+.cos-pfp-rainbow{animation:cosRb 3s linear infinite}
+@keyframes cosRb{0%,100%{box-shadow:0 0 0 3px #ff3cac,0 0 16px 3px #ff3cac}25%{box-shadow:0 0 0 3px #ffd700,0 0 16px 3px #ffd700}50%{box-shadow:0 0 0 3px #39ff14,0 0 16px 3px #39ff14}75%{box-shadow:0 0 0 3px #00aaff,0 0 16px 3px #00aaff}}
+.cos-neon{color:var(--cos-neon)!important;text-shadow:0 0 6px var(--cos-neon),0 0 14px var(--cos-neon)!important}
+.cos-title{margin-left:6px;font-size:.6rem;font-weight:800;padding:1px 7px;border-radius:6px;border:1px solid rgba(255,215,0,.5);color:#ffd700;background:rgba(255,215,0,.08);letter-spacing:.5px;vertical-align:middle;white-space:nowrap}
+.cos-title-block{display:inline-block;margin:6px 0 0 0;font-size:.68rem}
+`; document.head.appendChild(st); })();
+window._cosCache={};
+const COS_TTL=5*60*1000;
+let _cosPending=new Set(), _cosTimer=null;
+function _cosValidColor(c){ return /^#[0-9a-fA-F]{6}$/.test(c||'')?c:''; }
+function _cosNorm(c){ return c?{border:['gold','diamond','rainbow','whitelight'].includes(c.border)?c.border:'',neon:_cosValidColor(c.neon),title:String(c.title||'').slice(0,40)}:null; }
+async function _cosFetch(){
+  _cosTimer=null;
+  const ids=[..._cosPending].slice(0,60); ids.forEach(i=>_cosPending.delete(i));
+  if(ids.length){
+    const now=Date.now();
+    try{
+      const res=await (await getBackendActor()).getCosmetics(ids.map(t=>Principal.fromText(t)));
+      ids.forEach(i=>{ window._cosCache[i]={v:null,t:now}; });
+      for(const [p,c] of res) window._cosCache[p.toText()]={v:_cosNorm(c),t:now};
+    }catch(_){ ids.forEach(i=>{ window._cosCache[i]={v:null,t:now}; }); }
+    cosDecorate(document.body);
+  }
+  if(_cosPending.size&&!_cosTimer) _cosTimer=setTimeout(_cosFetch,50);
+}
+function _cosGet(pid){
+  const e=window._cosCache[pid];
+  if(e&&Date.now()-e.t<COS_TTL) return e;
+  if(!_cosPending.has(pid)){ _cosPending.add(pid); if(!_cosTimer) _cosTimer=setTimeout(_cosFetch,120); }
+  return null;
+}
+function _cosApplyName(el,v){
+  const nx=el.nextElementSibling; if(nx&&nx.classList&&nx.classList.contains('cos-title')&&!nx.id) nx.remove();
+  el.classList.remove('cos-neon');
+  if(!v) return;
+  if(v.neon){ el.style.setProperty('--cos-neon',v.neon); el.classList.add('cos-neon'); }
+  if(v.title){ const t=document.createElement('span'); t.className='cos-title'; t.textContent=v.title; el.insertAdjacentElement('afterend',t); }
+}
+function cosDecorate(root){
+  if(!root||!root.querySelectorAll) return;
+  root.querySelectorAll('[onclick*="viewPublicProfile("]').forEach(el=>{
+    if(el.children.length||!el.textContent.trim()) return; // plain name spans only
+    const m=(el.getAttribute('onclick')||'').match(/viewPublicProfile\(['"]([a-z0-9-]{20,})['"]\)/); if(!m) return;
+    const pid=m[1]; if(el.dataset.cosDone===pid) return;
+    const e=_cosGet(pid); if(!e) return;
+    el.dataset.cosDone=pid; _cosApplyName(el,e.v);
+  });
+}
+async function cosApplyProfile(pid){
+  const av=qs('profileViewAvatar'), nm=qs('profileViewName'); if(!av||!nm) return;
+  av.classList.remove('cos-pfp-gold','cos-pfp-diamond','cos-pfp-rainbow','cos-pfp-whitelight');
+  nm.classList.remove('cos-neon');
+  const old=document.getElementById('profileViewCosTitle'); if(old) old.remove();
+  let e=window._cosCache[pid];
+  if(!e||Date.now()-e.t>COS_TTL){
+    try{ const res=await (await getBackendActor()).getCosmetics([Principal.fromText(pid)]); e={v:res.length?_cosNorm(res[0][1]):null,t:Date.now()}; window._cosCache[pid]=e; }
+    catch(_){ return; }
+  }
+  if(typeof _profileTarget!=='undefined'&&_profileTarget!==pid) return;
+  const v=e.v; if(!v) return;
+  if(v.border) av.classList.add('cos-pfp-'+v.border);
+  if(v.neon){ nm.style.setProperty('--cos-neon',v.neon); nm.classList.add('cos-neon'); }
+  if(v.title){ const t=document.createElement('div'); t.id='profileViewCosTitle'; t.className='cos-title cos-title-block'; t.textContent=v.title; nm.insertAdjacentElement('afterend',t); }
+}
+window.cosApplyProfile=cosApplyProfile;
+(function(){
+  const start=()=>{ let q=false; new MutationObserver(()=>{ if(q) return; q=true; requestAnimationFrame(()=>{ q=false; cosDecorate(document.body); }); }).observe(document.body,{childList:true,subtree:true}); cosDecorate(document.body); };
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
+})();
+
 function updateProfileDisplay(){
   const pill=qs('principalPill');
   if(!pill||!S.connected) return;
@@ -6207,7 +6287,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -12800,10 +12880,18 @@ async function adminLoadCollections(){
 }
 
 const ABILITY_LIST=[
-  // Cleared pending redesign — see abilities-audit notes. Re-populate with the new list here.
+  {key:'gxp-amp',label:'GXP Amplifier +5%'},{key:'mxp-amp',label:'MXP Amplifier +5%'},{key:'dxp-amp',label:'DXP Amplifier +5%'},
+  {key:'token-lottery',label:'Token Lottery entry'},{key:'ticket-lottery',label:'Ticket Lottery entry'},
+  {key:'vp-plus',label:'+1 VP'},
+  {key:'access-dev',label:'Game Developer Discussions'},{key:'access-art',label:'Art Contributor Discussions'},{key:'access-veteran',label:'Veteran Discussion'},
+  {key:'access-elite',label:'Elite’s Corner'},{key:'access-diplomat',label:'Diplomat’s Only'},{key:'access-all',label:'All restricted discussions'},
+  {key:'border-rainbow',label:'Rainbow PFP border'},{key:'border-diamond',label:'Diamond PFP border'},{key:'border-gold',label:'Gold PFP border'},{key:'border-whitelight',label:'White Light PFP border'},
+  {key:'neon-name',label:'Neon name',valueType:'color'},{key:'collector-title',label:'Collector title',valueType:'text'},
+  {key:'forum-thread-plus',label:'+1 forum thread / day'},{key:'proposal-plus',label:'+1 proposal / day'}
 ];
 
 async function openCollectionManager(colId){
+  window._colMgrColId=colId;
   const be=await getBackendActor();
   const cols=await be.getOfficialCollections();
   const col=cols.find(c=>c.id===colId);
@@ -12816,7 +12904,7 @@ async function openCollectionManager(colId){
   // Get abilities for all tokens
   let abilityMap={};
   try{
-    const abilities=await be.adminGetCollectionTokenAbilities(colId);
+    const abilities=await (await getBackendActor(true)).adminGetCollectionTokenAbilities(colId);
     for(const [tokenId,ability] of abilities) abilityMap[Number(tokenId)]=ability;
   }catch(e){console.warn('Could not fetch abilities:',e);}
 
@@ -12842,6 +12930,7 @@ async function openCollectionManager(colId){
         <button onclick='colMgrSelectAll()' style='background:rgba(0,170,255,.1);border:1px solid var(--cyan);color:var(--cyan);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Select All</button>
         <button onclick='colMgrDeselectAll()' style='background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Deselect</button>
         <button onclick='colMgrAssignSelected("${colId}")' style='background:rgba(168,85,247,.15);border:1px solid #a855f7;color:#a855f7;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Set Ability for Selected</button>
+        <button onclick='openAbilityEditor("collection",window._colMgrColId)' style='background:rgba(34,211,238,.1);border:1px solid #22d3ee;color:#22d3ee;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Collection-wide</button>
         <button onclick='openDisabledAbilities()' style='background:rgba(255,165,0,.1);border:1px solid #f97316;color:#f97316;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Toggle Abilities</button>
         <button onclick='this.closest("[data-col-mgr]").remove()' style='background:none;border:1px solid #555;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:.65rem'>Close</button>
       </div>
@@ -12855,7 +12944,7 @@ async function openCollectionManager(colId){
     const imgUrl=i<col.imageUrls.length?col.imageUrls[i]:'';
     const price=listing?Number(listing.ticketCost):Number(col.ticketCost);
     const ability=abilityMap[tokenId]||'none';
-    const abilityLabel=ability!=='none'?(ABILITY_LIST.find(a=>a.key===ability)?.label||ability):'No ability';
+    const abilityLabel=ability!=='none'?abilityTextLabel(ability):'No ability';
     const abilityColor=ability!=='none'?(disabledSet.has(ability)?'#ef4444':'#a855f7'):'#3d6090';
     const listingId=listing?listing.id:'';
     const num=i+1;
@@ -12871,9 +12960,9 @@ async function openCollectionManager(colId){
           <span style='color:var(--gold);font-weight:800;font-size:.6rem'>🎟️ ${price.toLocaleString()}</span>
           <button onclick='adminEditNftPrice("${listingId}",${price})' style='background:none;border:1px solid rgba(255,215,0,.3);color:#ffd700;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:.5rem'>Edit Price</button>
         </div>
-        <div style='margin-top:4px;font-size:.55rem;color:${abilityColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis' title='${ability}'>${disabledSet.has(ability)?'[DISABLED] ':''}${abilityLabel}</div>
+        <div style='margin-top:4px;font-size:.55rem;color:${abilityColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis' title='${escHtml(ability)}'>${disabledSet.has(ability)?'[DISABLED] ':''}${abilityLabel}</div>
         <div style='display:flex;gap:4px;margin-top:4px'>
-          <button onclick='adminEditNftAbility(${tokenId},"${ability}")' style='background:none;border:1px solid rgba(168,85,247,.3);color:#a855f7;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:.5rem;flex:1'>Set Ability</button>
+          <button onclick='adminEditNftAbility(${tokenId})' style='background:none;border:1px solid rgba(168,85,247,.3);color:#a855f7;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:.5rem;flex:1'>Set Ability</button>
           ${ability!=='none'?`<button onclick='adminClearNftAbility(${tokenId})' style='background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:4px;padding:1px 4px;cursor:pointer;font-size:.5rem'>X</button>`:''}
         </div>
       </div>
@@ -12930,21 +13019,119 @@ async function adminEditNftPrice(listingId,currentPrice){
   }
 }
 
+// ─── Ability Editor (secret Official NFT abilities) ───
+function abilityTextLabel(raw){
+  const out=[];
+  for(const p of String(raw||'').split('|').map(x=>x.trim()).filter(Boolean)){
+    const [k,...rest]=p.split('='); const v=rest.join('=');
+    const a=ABILITY_LIST.find(x=>x.key===k); if(!a) continue;
+    out.push(a.valueType==='color'&&v?a.label+' '+v:(a.valueType==='text'&&v?a.label+': '+v:a.label));
+  }
+  return out.length?'\u26A1 '+escHtml(out.join(' \u00B7 ')):'No ability';
+}
+async function openAbilityEditor(target,colId){
+  const isCol=target==='collection';
+  const tokens=isCol?[]:(Array.isArray(target)?target:[target]).map(Number).filter(n=>!isNaN(n));
+  if(!colId){arcadeAlert('Abilities','Open a collection in the collection manager first.');return;}
+  if(!isCol&&!tokens.length){arcadeAlert('Abilities','Tick at least one NFT first.');return;}
+  let setup={collection:[],tokens:[]};
+  try{ setup=await (await getBackendActor(true)).adminGetCollectionAbilitySetup(colId); }
+  catch(e){ arcadeAlert('Abilities','Could not load current abilities: '+escHtml(safeUserErrorMessage(e,'abilities'))); return; }
+  const tokMap={}; for(const [t,l] of setup.tokens) tokMap[Number(t)]=l;
+  const current=isCol?setup.collection:(tokens.length===1?(tokMap[tokens[0]]||[]):[]);
+  const has=k=>current.some(([a])=>a===k);
+  const val=k=>{const e=current.find(([a])=>a===k);return e?e[1]:'';};
+  const multi=!isCol&&tokens.length>1;
+  const heading=isCol?'Collection-wide abilities':(multi?tokens.length+' NFTs selected':'Token '+tokens[0]);
+  let h=`<div data-ability-editor style='position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:10000;overflow-y:auto;padding:20px' onclick='if(event.target===this)this.remove()'>
+  <div style='max-width:720px;margin:0 auto'>
+    <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px'>
+      <div><h2 style='font-size:1rem;font-weight:800;color:#a855f7;letter-spacing:2px;margin:0'>\u26A1 SECRET ABILITIES</h2>
+      <div style='font-size:.7rem;color:#5a7a9a;margin-top:4px'>${escHtml(heading)}${isCol?' \u00B7 <b style="color:#f97316">applies to EVERY NFT in this collection</b>':''}</div></div>
+      <button onclick='this.closest("[data-ability-editor]").remove()' style='background:none;border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem'>\u2715</button>
+    </div>`;
+  if(multi) h+=`<div style='font-size:.72rem;color:#cbd5e1;margin-bottom:10px;display:flex;gap:16px;flex-wrap:wrap'>
+      <label style='cursor:pointer'><input type='radio' name='abEdMode' value='add' checked/> Add to their existing abilities</label>
+      <label style='cursor:pointer'><input type='radio' name='abEdMode' value='replace'/> Replace their abilities</label></div>`;
+  h+=`<div id='abEdStatus' style='font-size:.7rem;margin-bottom:10px;min-height:1em'></div>`;
+  for(const [cat,idxs] of Object.entries(ABILITY_CATEGORIES)){
+    const c=ABILITY_COLORS[cat]||'#a855f7';
+    h+=`<div style='margin-bottom:14px'><div style='font-size:.68rem;font-weight:800;color:${c};letter-spacing:2px;margin-bottom:6px;text-transform:uppercase'>${escHtml(cat)}</div><div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px'>`;
+    for(const i of idxs){
+      const a=ABILITY_LIST[i]; if(!a) continue;
+      let extra='';
+      if(a.valueType==='color') extra=`<input type='color' data-ab-val='${a.key}' value='${escHtml(val(a.key)||'#ff3cac')}' style='width:34px;height:22px;border:none;background:none;cursor:pointer'/>`;
+      if(a.valueType==='text') extra=`<input type='text' maxlength='40' data-ab-val='${a.key}' value='${escHtml(val(a.key))}' placeholder='Title text' style='flex:1;min-width:0;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;padding:2px 6px;font-size:.65rem'/>`;
+      h+=`<div style='display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(10,5,20,.9);border:1px solid rgba(168,85,247,.2);border-radius:8px'>
+        <label style='display:flex;align-items:center;gap:8px;cursor:pointer;flex:0 1 auto'><input type='checkbox' data-ab-key='${a.key}' ${has(a.key)?'checked':''} style='accent-color:${c};width:15px;height:15px'/>
+        <span style='font-size:.72rem;font-weight:700;color:#e8eaf6'>${escHtml(a.label)}</span></label>${extra}</div>`;
+    }
+    h+=`</div></div>`;
+  }
+  const tgt=isCol?'"collection"':JSON.stringify(tokens);
+  const cid=JSON.stringify(colId);
+  h+=`<div style='display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'>
+      <button onclick='saveAbilityEditor(${tgt},${cid},false)' style='padding:9px 22px;background:rgba(168,85,247,.2);border:1px solid #a855f7;border-radius:8px;color:#e9d5ff;font-weight:800;cursor:pointer'>Save</button>
+      <button onclick='saveAbilityEditor(${tgt},${cid},true)' style='padding:9px 22px;background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;color:#ef4444;font-weight:700;cursor:pointer'>Clear all</button>
+    </div></div></div>`;
+  document.querySelectorAll('[data-ability-editor]').forEach(e=>e.remove());
+  const el=document.createElement('div'); el.innerHTML=h; document.body.appendChild(el.firstElementChild);
+}
+async function saveAbilityEditor(target,colId,clear){
+  const box=document.querySelector('[data-ability-editor]'); if(!box) return;
+  const st=document.getElementById('abEdStatus');
+  const isCol=target==='collection';
+  const picked=[];
+  if(!clear){
+    box.querySelectorAll('[data-ab-key]').forEach(cb=>{
+      if(!cb.checked) return;
+      const k=cb.getAttribute('data-ab-key');
+      const vi=box.querySelector('[data-ab-val="'+k+'"]');
+      const v=vi?String(vi.value||'').replace(/[|=]/g,'').trim().slice(0,40):'';
+      picked.push([k,v]);
+    });
+  }
+  if(clear&&!await arcadeConfirm('Clear abilities','Remove every ability from '+(isCol?'this collection':(target.length+' NFT'+(target.length>1?'s':'')))+'?')) return;
+  const modeEl=box.querySelector('input[name=abEdMode]:checked');
+  const mode=modeEl?modeEl.value:'replace';
+  st.textContent='Saving...'; st.style.color='#ffd700';
+  try{
+    const be=await getBackendActor(true);
+    if(isCol){
+      const r=await be.adminSetCollectionAbilities(colId,clear?[]:picked);
+      if(r.err!==undefined) throw new Error(r.err);
+    }else{
+      let tokMap={};
+      if(mode==='add'&&!clear){ const s2=await be.adminGetCollectionAbilitySetup(colId); for(const [t,l] of s2.tokens) tokMap[Number(t)]=l; }
+      let n=0;
+      for(const t of target){
+        let list=clear?[]:picked;
+        if(mode==='add'&&!clear){ const keep=(tokMap[t]||[]).filter(([k])=>!picked.some(([p])=>p===k)); list=keep.concat(picked); }
+        const r=await be.adminSetTokenAbilities(BigInt(t),list);
+        if(r.err!==undefined) throw new Error('Token '+t+': '+r.err);
+        n++; st.textContent='Saving... '+n+'/'+target.length;
+      }
+    }
+    st.textContent='\u2705 Saved'; st.style.color='#39ff14';
+    setTimeout(()=>{ try{box.remove();}catch(_){} openCollectionManager(colId); },500);
+  }catch(e){ st.textContent=safeUserErrorMessage(e,'abilities'); st.style.color='#ef4444'; }
+}
+window.openAbilityEditor=openAbilityEditor; window.saveAbilityEditor=saveAbilityEditor;
+
 // ─── Ability Picker ───
 // Categories for visual grouping
 const ABILITY_CATEGORIES={
-  'XP & VP':[0,1,2,3,4,5],
-  'Gameplay':[6,12,13,14],
-  'NFT Discounts':[7,8,9,10,11,20],
-  'Fee Discounts':[15,16,17,18,19],
-  'Special':[29]
+  'XP Amplifiers':[0,1,2],
+  'Lotteries':[3,4],
+  'Governance':[5],
+  'DAO Access':[6,7,8,9,10,11],
+  'PFP Borders':[12,13,14,15],
+  'Profile':[16,17],
+  'Limits':[18,19]
 };
 const ABILITY_COLORS={
-  'XP & VP':'#39ff14',
-  'Gameplay':'#00aaff',
-  'NFT Discounts':'#ffd700',
-  'Fee Discounts':'#f97316',
-  'Special':'#ff44aa'
+  'XP Amplifiers':'#39ff14','Lotteries':'#ffd700','Governance':'#a855f7','DAO Access':'#00aaff',
+  'PFP Borders':'#ff44aa','Profile':'#22d3ee','Limits':'#f97316'
 };
 
 // Track selected NFTs for multi-assign
@@ -13058,6 +13245,7 @@ function colMgrGetSelected(){
   return Array.from(document.querySelectorAll('.colMgrCheck:checked')).map(c=>Number(c.value));
 }
 function colMgrAssignSelected(colId){
+  return openAbilityEditor(colMgrGetSelected().map(Number),colId);
   const selected=colMgrGetSelected();
   if(selected.length===0){arcadeAlert('No Selection','Check the boxes on NFTs you want to assign an ability to.');return;}
   openAbilityPicker(selected,colId);
@@ -13065,6 +13253,7 @@ function colMgrAssignSelected(colId){
 
 // Single NFT ability picker (from Set Ability button)
 function adminEditNftAbility(tokenId,currentAbility){
+  return openAbilityEditor([Number(tokenId)],window._colMgrColId);
   openAbilityPicker([tokenId],_abilityPickerColId,!!currentAbility);
 }
 // Single NFT clear ability (from X button)

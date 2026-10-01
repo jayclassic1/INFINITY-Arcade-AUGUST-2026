@@ -1670,7 +1670,7 @@ persistent actor ArcadeBackend {
       nftIds = collection.nftIds;
       ticketCost = collection.ticketCost;
       totalSupply = collection.totalSupply;
-      abilities = collectionAbilitiesForIds(collection.nftIds);
+      abilities = []; // secret: never derive per-NFT abilities into public collection data
       createdAt = collection.createdAt;
     }
   };
@@ -2783,8 +2783,7 @@ persistent actor ArcadeBackend {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    let wallMax : Nat = 5 + abilityCountOf(caller, "wall-plus");
-    if (items.size() > wallMax) return #err("You can hang at most " # Nat.toText(wallMax) # " NFTs");
+    if (items.size() > 5) return #err("You can hang at most 5 NFTs");
     let buf = Buffer.Buffer<Text>(5);
     for (it in items.vals()) {
       if (Text.size(it) == 0 or Text.size(it) > 200) return #err("Invalid NFT reference");
@@ -3280,7 +3279,8 @@ persistent actor ArcadeBackend {
   };
 
   /// Get token ability assignments for one official collection.
-  public query func adminGetCollectionTokenAbilities(collectionId : Text) : async [(Nat, Text)] {
+  public shared query(msg) func adminGetCollectionTokenAbilities(collectionId : Text) : async [(Nat, Text)] {
+    if (not isAdmin(msg.caller)) return []; // abilities are secret: admin only
     let maybeCollection = if (runtimeStateHydrated) {
       officialCollections.get(collectionId);
     } else {
@@ -3396,7 +3396,7 @@ persistent actor ArcadeBackend {
   transient let ABILITY_IDS : [Text] = ["gxp-amp", "mxp-amp", "dxp-amp", "token-lottery", "ticket-lottery", "vp-plus",
     "access-dev", "access-art", "access-veteran", "access-elite", "access-diplomat", "access-all",
     "border-rainbow", "border-diamond", "border-gold", "border-whitelight",
-    "wall-plus", "neon-name", "collector-title", "forum-thread-plus", "proposal-plus"];
+    "neon-name", "collector-title", "forum-thread-plus", "proposal-plus"];
   func isKnownAbility(id : Text) : Bool { for (a in ABILITY_IDS.vals()) { if (a == id) return true }; false };
   // Normalised (trimmed, lowercased) so escrow canister ids typed or passed in a different form still match.
   func isOfficialNftCanister(c : Text) : Bool {
@@ -3522,6 +3522,25 @@ persistent actor ArcadeBackend {
       } catch (_) { failed += 1 };
     };
     #ok("Synced: " # Nat.toText(players) # " player-held, " # Nat.toText(arcade) # " arcade-held, " # Nat.toText(failed) # " failed")
+  };
+  // Public cosmetics: the visible EFFECT only (border / neon colour / title), never which NFT grants it.
+  public query func getCosmetics(players : [Principal]) : async [(Principal, { border : Text; neon : Text; title : Text })] {
+    let out = Buffer.Buffer<(Principal, { border : Text; neon : Text; title : Text })>(players.size());
+    var n : Nat = 0;
+    label scan for (p in players.vals()) {
+      if (n >= 60) break scan;
+      n += 1;
+      var rank : Nat = 0; var neon = ""; var title = "";
+      for ((a, v) in abilityInstancesOf(p).vals()) {
+        let r : Nat = if (a == "border-whitelight") 4 else if (a == "border-rainbow") 3 else if (a == "border-diamond") 2 else if (a == "border-gold") 1 else 0;
+        if (r > rank) { rank := r };
+        if (a == "neon-name" and neon == "") { neon := if (v == "") "#ff3cac" else v };
+        if (a == "collector-title" and title == "" and v != "") { title := v };
+      };
+      let border = if (rank == 4) "whitelight" else if (rank == 3) "rainbow" else if (rank == 2) "diamond" else if (rank == 1) "gold" else "";
+      if (border != "" or neon != "" or title != "") { out.add((p, { border = border; neon = neon; title = title })) };
+    };
+    Buffer.toArray(out)
   };
   public shared query(msg) func getMyPerks() : async { vp : Nat; access : [Text]; wallSlots : Nat; forumThreads : Nat; proposals : Nat; gxpAmp : Nat; mxpAmp : Nat; dxpAmp : Nat; tokenLottery : Nat; ticketLottery : Nat } {
     var vp : Nat = 0; var wall : Nat = 0; var ft : Nat = 0; var pr : Nat = 0; var ga : Nat = 0; var ma : Nat = 0; var da : Nat = 0; var tl : Nat = 0; var kl : Nat = 0;
