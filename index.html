@@ -12133,7 +12133,7 @@ async function openShowroomTreasuryWithdraw(){
 }
 
 // Session #3: Treasury-tab panel for the per-lane arcade revenue shares (+ read-only DAO pool).
-const ARCADE_SHARE_LANES=[{key:'prizebooth',label:'Prize Booth (NFT listing fees 100% · player NFT sales 1.5% · Official NFTs & VP badges 80%)',get:'getPrizeBoothArcadeShareBalance',wd:'adminWithdrawPrizeBoothArcadeShare'},
+const ARCADE_SHARE_LANES=[{key:'prizebooth',label:'Prize Booth (listing fees · NFT sales · badges)',tip:'NFT listing fees 100% · player NFT sales 1.5% · Official NFTs & VP badges 80% (first sale)',get:'getPrizeBoothArcadeShareBalance',wd:'adminWithdrawPrizeBoothArcadeShare'},
   {key:'ticket',label:'Ticket-game plays (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
   {key:'nonticket',label:'Non-ticket plays & demo tries: Showroom + The Back (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
   {key:'purchase',label:'Game purchases, all tiers (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
@@ -12180,7 +12180,7 @@ async function loadArcadeShareInfo(){
     rows.innerHTML=ARCADE_SHARE_LANES.map((l,i)=>{
       const bal=BigInt(bals[i]); const max=bal>ARCADE_SHARE_FEE_E8S?bal-ARCADE_SHARE_FEE_E8S:0n;
       return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 8px;border:1px solid rgba(57,255,20,.15);border-radius:8px">
-        <div style="flex:1;min-width:170px"><div style="font-size:.72rem;color:#d8fbe4">${l.label}</div>
+        <div style="flex:1;min-width:170px"><div style="font-size:.72rem;color:#d8fbe4"${l.tip?' title="'+escHtml(l.tip)+'"':''}>${l.label}${l.tip?' <span style="opacity:.65;cursor:help">ⓘ</span>':''}</div>
         <div style="font-size:.64rem;color:var(--muted)">Balance ${e8sToIcpInput(bal)} ICP · max withdrawable ${e8sToIcpInput(max)} ICP</div></div>
         <input type="number" id="arcadeShareAmt_${l.key}" placeholder="ICP" step="0.0001" min="0.0001" style="width:110px;padding:5px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(57,255,20,.2);border-radius:6px;color:#fff;font-size:.72rem"/>
         <button class="btn" onclick="document.getElementById('arcadeShareAmt_${l.key}').value='${e8sToIcpInput(max)}'" style="font-size:.65rem;padding:3px 8px">Max</button>
