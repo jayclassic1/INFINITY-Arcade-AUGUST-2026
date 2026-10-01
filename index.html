@@ -6207,7 +6207,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -14127,6 +14127,8 @@ function saveOwnedVpNfts(owned){
   localStorage.setItem('vp_owned_'+S.principalText,JSON.stringify(owned));
   localStorage.setItem('vp_nft_count_'+S.principalText,String(owned.length));
 }
+function _perkGrantsSection(key){ const a=(window._myPerks&&window._myPerks.access)||[]; if(a.includes('access-all')) return true; const m={'dao-game-developers':'access-dev','dao-artists':'access-art','dao-voting':'access-veteran','dao-player-portal':'access-elite','dao-core':'access-diplomat'}; return !!(m[key]&&a.includes(m[key])); }
+async function loadMyPerks(){ try{ window._myPerks=S.connected?await (await getBackendActor(true)).getMyPerks():null; }catch(_){ window._myPerks=null; } }
 function getUserVpCount(){
   if(isAdmin()) return 0; // admin holds no VP (but has full access via isAdmin checks)
   const types=_userBadgeTypes||[];
@@ -14135,9 +14137,9 @@ function getUserVpCount(){
 function getUserVotingPower(){
   if(isAdmin()) return 0;
   const t=_userBadgeTypes||[];
-  return t.filter(x=>x.startsWith('vp-badge-')).length+(t.includes('dev-contributor')?1:0)+(t.includes('artist-contributor')?1:0);
+  return t.filter(x=>x.startsWith('vp-badge-')).length+(t.includes('dev-contributor')?1:0)+(t.includes('artist-contributor')?1:0)+Number((window._myPerks&&window._myPerks.vp)||0);
 }
-function hasDaoEntry(){ return isAdmin()||getUserVotingPower()>=1; }
+function hasDaoEntry(){ return isAdmin()||getUserVotingPower()>=1||!!(window._myPerks&&window._myPerks.access&&window._myPerks.access.length); }
 
 function getUserVpLevel(){
   if(isAdmin()) return 4;
@@ -14248,7 +14250,7 @@ async function getUserBadgeTypes(){
   if(_userBadgeTypes && Date.now()-_userBadgeTypesTime<30000) return _userBadgeTypes;
   try{
     const be=await getBackendActor();
-    const badges=await be.getGamerBadges(Principal.fromText(S.principalText));
+    const badges=await be.getGamerBadges(Principal.fromText(S.principalText)); await loadMyPerks();
     _userBadgeTypes=badges.map(b=>b.badgeType);
     _userBadgeTypesTime=Date.now();
     return _userBadgeTypes;
@@ -14724,9 +14726,10 @@ function getProposalStatus(p){
   return yes>no?'passed':'failed';
 }
 
-function openDaoView(){
+async function openDaoView(){
   if(!S.connected){showConnect();return;}
   const vpCount=getUserVpCount();
+  if(!hasDaoEntry()){ await loadMyPerks(); }
   if(!hasDaoEntry()){
     showDaoRestricted();
     return;
@@ -15606,15 +15609,16 @@ async function submitProposalReply(proposalId){
   }
 
 async function openDaoSection(key){
+  if(!window._myPerks) await loadMyPerks();
   const info=DAO_LEVELS[key];
   if(!info) return;
   const vpLevel=getUserVpLevel();
-  if(vpLevel<info.level&&!isAdmin()){
+  if(vpLevel<info.level&&!isAdmin()&&!_perkGrantsSection(key)){
     arcadeConfirm("You're Restricted","Acquire more Voting Power Badges to unlock this section.");
     return;
   }
   // Badge-gated DAO sections
-  if(info.requireBadge && !isAdmin()){
+  if(info.requireBadge && !isAdmin() && !_perkGrantsSection(key)){
     const types=await getUserBadgeTypes();
     const hasMain=types.includes(info.requireBadge);
     const hasAlt=info.requireBadgeAlt&&types.includes(info.requireBadgeAlt);

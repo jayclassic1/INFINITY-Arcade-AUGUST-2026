@@ -1195,7 +1195,7 @@ persistent actor ArcadeBackend {
   // Soulbound: only ever adds, never subtracts or resets. Tracks the site-wide max as it goes.
   func addGxp(player : Principal, amount : Nat) {
     if (amount == 0) return;
-    let newGxp = getGxpBalance(player) + amount;
+    let newGxp = getGxpBalance(player) + amount * (100 + 5 * abilityCountOf(player, "gxp-amp")) / 100;
     gxp.put(player, newGxp);
     if (newGxp > maxGxpEverSeen) { maxGxpEverSeen := newGxp };
   };
@@ -1210,7 +1210,7 @@ persistent actor ArcadeBackend {
 
   func addDxp(player : Principal, amount : Nat) {
     if (amount == 0) return;
-    let newDxp = getDxpBalance(player) + amount;
+    let newDxp = getDxpBalance(player) + amount * (100 + 5 * abilityCountOf(player, "dxp-amp")) / 100;
     dxp.put(player, newDxp);
     if (newDxp > maxDxpEverSeen) { maxDxpEverSeen := newDxp };
   };
@@ -1225,7 +1225,7 @@ persistent actor ArcadeBackend {
 
   func addMxp(player : Principal, amount : Nat) {
     if (amount == 0) return;
-    let newMxp = getMxpBalance(player) + amount;
+    let newMxp = getMxpBalance(player) + amount * (100 + 5 * abilityCountOf(player, "mxp-amp")) / 100;
     mxp.put(player, newMxp);
     if (newMxp > maxMxpEverSeen) { maxMxpEverSeen := newMxp };
   };
@@ -2783,7 +2783,8 @@ persistent actor ArcadeBackend {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    if (items.size() > 5) return #err("You can hang at most 5 NFTs");
+    let wallMax : Nat = 5 + abilityCountOf(caller, "wall-plus");
+    if (items.size() > wallMax) return #err("You can hang at most " # Nat.toText(wallMax) # " NFTs");
     let buf = Buffer.Buffer<Text>(5);
     for (it in items.vals()) {
       if (Text.size(it) == 0 or Text.size(it) > 200) return #err("Invalid NFT reference");
@@ -3521,6 +3522,19 @@ persistent actor ArcadeBackend {
       } catch (_) { failed += 1 };
     };
     #ok("Synced: " # Nat.toText(players) # " player-held, " # Nat.toText(arcade) # " arcade-held, " # Nat.toText(failed) # " failed")
+  };
+  public shared query(msg) func getMyPerks() : async { vp : Nat; access : [Text]; wallSlots : Nat; forumThreads : Nat; proposals : Nat; gxpAmp : Nat; mxpAmp : Nat; dxpAmp : Nat; tokenLottery : Nat; ticketLottery : Nat } {
+    var vp : Nat = 0; var wall : Nat = 0; var ft : Nat = 0; var pr : Nat = 0; var ga : Nat = 0; var ma : Nat = 0; var da : Nat = 0; var tl : Nat = 0; var kl : Nat = 0;
+    let acc = Buffer.Buffer<Text>(4);
+    if (not isAnonymousPrincipal(msg.caller)) {
+      for ((a, _) in abilityInstancesOf(msg.caller).vals()) {
+        if (a == "vp-plus") { vp += 1 } else if (a == "wall-plus") { wall += 1 } else if (a == "forum-thread-plus") { ft += 1 }
+        else if (a == "proposal-plus") { pr += 1 } else if (a == "gxp-amp") { ga += 1 } else if (a == "mxp-amp") { ma += 1 }
+        else if (a == "dxp-amp") { da += 1 } else if (a == "token-lottery") { tl += 1 } else if (a == "ticket-lottery") { kl += 1 }
+        else if (Text.startsWith(a, #text "access-")) { var dup = false; for (x in acc.vals()) { if (x == a) { dup := true } }; if (not dup) { acc.add(a) } };
+      };
+    };
+    { vp = vp; access = Buffer.toArray(acc); wallSlots = 5 + wall; forumThreads = 1 + ft; proposals = 1 + pr; gxpAmp = ga; mxpAmp = ma; dxpAmp = da; tokenLottery = tl; ticketLottery = kl }
   };
   public shared query(msg) func adminGetPlayerAbilities(p : Principal) : async [(Text, Text)] {
     if (not isAdmin(msg.caller)) return [];
@@ -4702,8 +4716,14 @@ persistent actor ArcadeBackend {
 
   func lotterySnapshot(kind : Text) : [(Principal, Nat)] {
     let thresholds : [Nat] = if (kind == "token") { [3, 6, 9] } else { [4, 8] };
+    let perkId = if (kind == "token") { "token-lottery" } else { "ticket-lottery" };
+    // Candidates: VP badge holders plus Official NFT holders (lottery abilities work without badges).
+    let seen = HashMap.HashMap<Principal, Bool>(64, Principal.equal, Principal.hash);
+    let people = Buffer.Buffer<Principal>(64);
+    for (p in vpHolderPrincipals().vals()) { if (seen.get(p) == null) { seen.put(p, true); people.add(p) } };
+    for ((_, o) in officialNftOwnerEntries.vals()) { if (seen.get(o) == null) { seen.put(o, true); people.add(o) } };
     let buf = Buffer.Buffer<(Principal, Nat)>(16);
-    for (p in vpHolderPrincipals().vals()) {
+    for (p in people.vals()) {
       if (not isAdmin(p)) {
         let n = vpBadgeCountOf(p);
         var tier : Nat = 0;
@@ -4711,6 +4731,8 @@ persistent actor ArcadeBackend {
           tier += 1;
           if (n >= t) { buf.add((p, tier)) };
         };
+        var extra = abilityCountOf(p, perkId); // +1 entry per lottery ability (stacking)
+        while (extra > 0) { tier += 1; buf.add((p, tier)); extra -= 1 };
       };
     };
     Buffer.toArray(buf)
@@ -7532,7 +7554,7 @@ persistent actor ArcadeBackend {
       else if (badge.badgeType == "dev-contributor") { dev := true }
       else if (badge.badgeType == "artist-contributor") { artist := true };
     };
-    vp + (if (dev) 1 else 0) + (if (artist) 1 else 0);
+    vp + (if (dev) 1 else 0) + (if (artist) 1 else 0) + abilityCountOf(owner, "vp-plus");
   };
 
   // DAO forum access by section. Base DAO sections need any VP; tiers count VP Badges only (5 / 7 / 10);
@@ -7540,6 +7562,14 @@ persistent actor ArcadeBackend {
   func daoSectionAllowed(p : Principal, section : Text) : Bool {
     if (not isDaoSection(section)) return true;
     if (isAdmin(p)) return true;
+    let perks = abilityInstancesOf(p);
+    func perkHas(id : Text) : Bool { for ((a, _) in perks.vals()) { if (a == id) return true }; false };
+    if (perkHas("access-all")) return true;
+    if (section == "dao-game-developers" and perkHas("access-dev")) return true;
+    if (section == "dao-artists" and perkHas("access-art")) return true;
+    if (section == "dao-voting" and perkHas("access-veteran")) return true;
+    if (section == "dao-player-portal" and perkHas("access-elite")) return true;
+    if (section == "dao-core" and perkHas("access-diplomat")) return true;
     if (votingPowerOf(p) == 0) return false;
     let n = vpBadgeCountOf(p);
     if (section == "dao-voting" or section == "dao-treasury") return n >= 5;
@@ -7663,13 +7693,18 @@ persistent actor ArcadeBackend {
       let now = Time.now();
       let dayNs : Int = 86_400_000_000_000;
       let wantDao = isDaoSection(section);
-      var lastAt : Int = 0;
+      var inWindow : Nat = 0;
+      var oldestInWindow : Int = now;
       for (t in forumThreadEntries.vals()) {
-        if (Principal.equal(t.author, msg.caller) and isDaoSection(t.section) == wantDao and t.createdAt > lastAt) { lastAt := t.createdAt };
+        if (Principal.equal(t.author, msg.caller) and isDaoSection(t.section) == wantDao and now - t.createdAt < dayNs) {
+          inWindow += 1;
+          if (t.createdAt < oldestInWindow) { oldestInWindow := t.createdAt };
+        };
       };
-      if (lastAt > 0 and now - lastAt < dayNs) {
-        let remainMin : Nat = Nat64.toNat(Nat64.fromIntWrap((dayNs - (now - lastAt)) / 60_000_000_000)) + 1;
-        return #err("You can start one new " # (if (wantDao) "DAO thread" else "forum thread") # " per day. Try again in " # Nat.toText(remainMin / 60) # "h " # Nat.toText(remainMin % 60) # "m.");
+      let allowedThreads : Nat = 1 + abilityCountOf(msg.caller, "forum-thread-plus");
+      if (inWindow >= allowedThreads) {
+        let remainMin : Nat = Nat64.toNat(Nat64.fromIntWrap((dayNs - (now - oldestInWindow)) / 60_000_000_000)) + 1;
+        return #err("You can start " # Nat.toText(allowedThreads) # " new " # (if (wantDao) "DAO thread" else "forum thread") # (if (allowedThreads == 1) "" else "s") # " per day. Next one opens in " # Nat.toText(remainMin / 60) # "h " # Nat.toText(remainMin % 60) # "m.");
       };
     };
     forumThreadCounter += 1;
@@ -7968,7 +8003,7 @@ persistent actor ArcadeBackend {
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
-    if (not isAdmin(msg.caller) and recentProposalBy(msg.caller, Time.now())) return #err("You can create one proposal every 24 hours");
+    if (not isAdmin(msg.caller) and recentProposalBy(msg.caller, Time.now())) return #err("You've reached your proposal limit for the last 24 hours");
     // Proposals cost 5 Tokens only (the paymentLane argument is kept for interface compatibility but ignored).
     if (not isAdmin(msg.caller)) {
       let tokenBal = getTokenBalance(msg.caller);
@@ -8029,9 +8064,11 @@ persistent actor ArcadeBackend {
     while (i < n and i < 4) { if (v == "c" # Nat.toText(i)) return ?i; i += 1 };
     null
   };
+  // True when the player has used up their proposals for the rolling 24h (1 + proposal-plus abilities).
   func recentProposalBy(who : Principal, now : Int) : Bool {
-    for (p in proposalEntries.vals()) { if (Principal.equal(p.author, who) and now - p.createdAt < 86_400_000_000_000) return true };
-    false
+    var n : Nat = 0;
+    for (p in proposalEntries.vals()) { if (Principal.equal(p.author, who) and now - p.createdAt < 86_400_000_000_000) { n += 1 } };
+    n >= 1 + abilityCountOf(who, "proposal-plus")
   };
 
   public shared(msg) func createProposalV2(kind : Text, title : Text, body : Text, duration : Text, images : [Text], choices : [Text], target : Text) : async Result.Result<Text, Text> {
@@ -8056,7 +8093,7 @@ persistent actor ArcadeBackend {
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
     let now = Time.now();
-    if (not admin and recentProposalBy(caller, now)) return #err("You can create one proposal every 24 hours");
+    if (not admin and recentProposalBy(caller, now)) return #err("You've reached your proposal limit for the last 24 hours");
     let cleaned = Buffer.Buffer<Text>(4);
     for (c in choices.vals()) { let t = Text.trim(c, #char ' '); if (Text.size(t) > 0) { cleaned.add(t) } };
     let multiRequired = inList(devOnly);
