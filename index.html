@@ -3410,6 +3410,14 @@ function saveProfile(){
 .cos-neon{color:var(--cos-neon)!important;text-shadow:0 0 6px var(--cos-neon),0 0 14px var(--cos-neon)!important}
 .cos-title{margin-left:6px;font-size:.6rem;font-weight:800;padding:1px 7px;border-radius:6px;border:1px solid rgba(255,215,0,.5);color:#ffd700;background:rgba(255,215,0,.08);letter-spacing:.5px;vertical-align:middle;white-space:nowrap}
 .cos-title-block{display:inline-block;margin:6px 0 0 0;font-size:.68rem}
+.pp-avatar.cos-av{display:inline-block;line-height:0;border-radius:6px}
+.cos-thin.cos-pfp-gold{box-shadow:0 0 0 1.5px #ffd700,0 0 7px 1px rgba(255,215,0,.6)!important}
+.cos-thin.cos-pfp-diamond{animation-name:cosDiaT}
+@keyframes cosDiaT{0%,100%{box-shadow:0 0 0 1.5px #b9f2ff,0 0 7px 1px rgba(185,242,255,.6)}50%{box-shadow:0 0 0 1.5px #f0fdff,0 0 13px 3px rgba(185,242,255,.95)}}
+.cos-thin.cos-pfp-whitelight{animation-name:cosWlT}
+@keyframes cosWlT{0%,100%{box-shadow:0 0 0 1.5px #fff,0 0 10px 3px rgba(255,255,255,.7)}50%{box-shadow:0 0 0 1.5px #fff,0 0 18px 7px rgba(255,255,255,.95)}}
+.cos-thin.cos-pfp-rainbow{animation-name:cosRbT}
+@keyframes cosRbT{0%,100%{box-shadow:0 0 0 1.5px #ff3cac,0 0 8px 1px #ff3cac}25%{box-shadow:0 0 0 1.5px #ffd700,0 0 8px 1px #ffd700}50%{box-shadow:0 0 0 1.5px #39ff14,0 0 8px 1px #39ff14}75%{box-shadow:0 0 0 1.5px #00aaff,0 0 8px 1px #00aaff}}
 `; document.head.appendChild(st); })();
 window._cosCache={};
 const COS_TTL=5*60*1000;
@@ -3441,10 +3449,25 @@ function _cosApplyName(el,v){
   el.classList.remove('cos-neon');
   if(!v) return;
   if(v.neon){ el.style.setProperty('--cos-neon',v.neon); el.classList.add('cos-neon'); }
-  if(v.title){ const t=document.createElement('span'); t.className='cos-title'; t.textContent=v.title; el.insertAdjacentElement('afterend',t); }
+  if(v.title&&!el.hasAttribute('data-cos-notitle')){ const t=document.createElement('span'); t.className='cos-title'; t.textContent=v.title; el.insertAdjacentElement('afterend',t); }
+}
+function _cosApplyAvatar(el,v){
+  el.classList.remove('cos-av','cos-thin','cos-pfp-gold','cos-pfp-diamond','cos-pfp-rainbow','cos-pfp-whitelight');
+  if(v&&v.border){
+    el.classList.add('cos-av','cos-pfp-'+v.border);
+    // Thread list cards (36px avatars) get a half-thickness ring; inside threads keeps the full one.
+    if(el.getAttribute('data-pp-size')==='36'||el.hasAttribute('data-cos-pid')) el.classList.add('cos-thin');
+  }
 }
 function cosDecorate(root){
   if(!root||!root.querySelectorAll) return;
+  root.querySelectorAll('.pp-avatar[data-pp-principal],[data-cos-pid]').forEach(el=>{
+    const pid=el.getAttribute('data-cos-pid')||el.getAttribute('data-pp-principal')||'';
+    if(pid.length<20||el.dataset.cosDone===pid) return;
+    const e=_cosGet(pid); if(!e) return;
+    el.dataset.cosDone=pid;
+    if(el.classList.contains('pp-avatar')) _cosApplyAvatar(el,e.v); else _cosApplyName(el,e.v);
+  });
   root.querySelectorAll('[onclick*="viewPublicProfile("]').forEach(el=>{
     if(el.children.length||!el.textContent.trim()) return; // plain name spans only
     const m=(el.getAttribute('onclick')||'').match(/viewPublicProfile\(['"]([a-z0-9-]{20,})['"]\)/); if(!m) return;
@@ -15869,7 +15892,7 @@ function renderDaoThreadList(){
       <div style="display:flex;align-items:center;gap:8px;margin-top:auto">
         <span class="pp-avatar" data-pp-principal="${p.principal||''}" data-pp-size="36">${avatar}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:.7rem;color:#5a8ab8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.author)}</div>
+          <div data-cos-pid="${p.principal||''}" data-cos-notitle="1" style="font-size:.7rem;color:#5a8ab8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.author)}</div>
           <div style="font-size:.6rem;color:#4a6080;margin-top:2px">${getTimeAgo(new Date(p.timestamp))}</div>
         </div>
         <div style="text-align:center">
@@ -15996,9 +16019,9 @@ function renderForumPosts(){
       ${canDelete?`<button onclick="event.stopPropagation();deletePost(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;opacity:.55;transition:opacity .2s;z-index:1" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.55'">Delete</button>`:''}
       <div style="font-weight:700;font-size:.85rem;color:#e0e6f0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:${canDelete?'40px':'0'}">${escHtml(p.title)}</div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:auto">
-        <span class="pp-avatar">${avatar}</span>
+        <span class="pp-avatar" data-cos-pid="${p.principal||''}">${avatar}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:.7rem;color:#5a8ab8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.author)}</div>
+          <div data-cos-pid="${p.principal||''}" data-cos-notitle="1" style="font-size:.7rem;color:#5a8ab8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.author)}</div>
           <div style="font-size:.6rem;color:#4a6080;margin-top:2px">${timeAgo}</div>
         </div>
         <div style="text-align:center">
@@ -16306,7 +16329,7 @@ function toggleReplies(postIndex){
         return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
             <span class="pp-avatar" data-pp-principal="${r.principal||''}" data-pp-size="22">${avatar}</span>
-            <span style="font-size:.75rem;font-weight:700;color:#e8eaf6">${escHtml(r.author)}</span>
+            <span data-cos-pid="${r.principal||''}" style="font-size:.75rem;font-weight:700;color:#e8eaf6">${escHtml(r.author)}</span>
             <span style="font-size:.65rem;color:var(--muted)">${getTimeAgo(new Date(r.timestamp))}</span>
             ${S.principalText===r.principal||isModerator()?`<button onclick="deleteReply(${postIndex},${ri})" style="background:none;border:none;color:#ef4444;font-size:.65rem;cursor:pointer;padding:0;margin-left:auto">×</button>`:''}
           </div>
