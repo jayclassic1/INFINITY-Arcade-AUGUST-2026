@@ -16422,13 +16422,38 @@ async function submitLatestScoreAndClose(gameId){
     await arcadeAlert('No score queued','Finish a run first, then use the top-right Submit Score button.');
     return;
   }
-  const result=await endArcadeGame(gameId,_arcadeSessionState.latestScore);
+  const _submittedScore=_arcadeSessionState.latestScore;
+  const result=await endArcadeGame(gameId,_submittedScore);
   if(!result) return;
   _arcadeSessionState.scoreSubmitted=true;
   _arcadeSessionState.closeConfirmArmed=false;
   resetArcadeSessionState('');
   closeArcadeSessionWindowOrModal();
   renderShowroom();
+  // Jackpot wins already get their own celebration popup (with the total); everything else gets this one.
+  if(!(Number(result.jackpotTickets)>0)) showTicketResultPopup(result,_submittedScore);
+}
+
+function showTicketResultPopup(result,score){
+  document.querySelectorAll('[data-ticket-result]').forEach(e=>e.remove());
+  const won=Number(result.totalTickets??result.tickets??0);
+  const o=document.createElement('div');
+  o.setAttribute('data-ticket-result','1');
+  o.style.cssText='position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+  o.innerHTML=`<div style="background:linear-gradient(160deg,rgba(30,20,50,.97),rgba(10,10,20,.97));border:1px solid rgba(255,215,0,.45);border-radius:16px;padding:26px 30px;min-width:260px;max-width:92vw;text-align:center;box-shadow:0 0 40px rgba(255,215,0,.18)">
+    ${won>0
+      ? `<div style="font-size:2.3rem;font-weight:900;color:#ffd700;text-shadow:0 0 18px rgba(255,215,0,.5)">&#127903;&#65039; +${won.toLocaleString()} Ticket${won===1?'':'s'}</div>`
+      : `<div style="font-size:1.4rem;font-weight:800;color:#cbd5e1">No tickets this run</div>`}
+    <div style="color:#cbd5e1;font-size:.9rem;margin-top:8px">Score ${Number(score||0).toLocaleString()}</div>
+    ${result.newRecord?`<div style="display:inline-block;margin-top:10px;padding:4px 12px;border-radius:999px;border:1px solid #ffd700;color:#ffd700;font-weight:800;font-size:.8rem">&#127942; New record!</div>`:''}
+    <div style="color:#8bb4ff;font-size:.8rem;margin-top:12px">Ticket balance: ${Math.floor(Number(S.tickets)||0).toLocaleString()}</div>
+    <button class="btn" data-ticket-ok style="margin-top:16px;padding:8px 28px;border-color:#ffd700;color:#ffd700">OK</button>
+  </div>`;
+  const close=()=>{ o.remove(); document.removeEventListener('keydown',onKey); };
+  const onKey=(e)=>{ if(e.key==='Escape') close(); };
+  o.addEventListener('click',e=>{ if(e.target===o||e.target.hasAttribute('data-ticket-ok')) close(); });
+  document.addEventListener('keydown',onKey);
+  document.body.appendChild(o);
 }
 
 async function forceCloseArcadeSession(gameId){
