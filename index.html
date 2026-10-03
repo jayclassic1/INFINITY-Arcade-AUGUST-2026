@@ -888,12 +888,12 @@ window.addEventListener('message', (e) => {
 <div style='margin-bottom:18px'>
 <div style='color:#ffd700;font-weight:800;font-size:.75rem;letter-spacing:1px;margin-bottom:6px'>SCORING & TICKET PAYOUTS</div>
 <div style='display:grid;gap:4px'>
-<div>Ticket payouts use each game's admin-calibrated 7-level score ladder from the live backend source of truth.</div>
+<div>Ticket payouts use each game's admin-calibrated 8-level score ladder from the live backend source of truth.</div>
 <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:5px;color:#d8fbe4;font-size:.72rem'>
 <div>Level 1 -> <b style='color:#fff'>0 Tickets</b></div><div>Level 2 -> <b style='color:#fff'>1 Ticket</b></div><div>Level 3 -> <b style='color:#fff'>2 Tickets</b></div><div>Level 4 -> <b style='color:#fff'>3 Tickets</b></div><div>Level 5 -> <b style='color:#fff'>4 Tickets</b></div><div>Level 6 -> <b style='color:#fff'>5 Tickets</b></div><div>Level 7 -> <b style='color:#fff'>6 Tickets</b></div>
 </div>
 <div>Ticket payouts are capped by the backed ticket pool and may pay 0 if the pool is empty or the game's ladder is not enabled.</div>
-<div style='color:#5a7a9a;font-size:.7rem'>Caps: 20 plays/hour, 30s cooldown, 2,000 tickets/day, 6 tickets/round. No first-5-play no-ticket gate in Phase 1 payout configs.</div>
+<div style='color:#5a7a9a;font-size:.7rem'>Caps: 20 plays/hour, 30s cooldown, 2,000 tickets/day, 7 tickets/round. No first-5-play no-ticket gate in Phase 1 payout configs.</div>
 </div>
 </div>
 
@@ -901,7 +901,7 @@ window.addEventListener('message', (e) => {
 <div style='margin-bottom:18px'>
 <div style='color:#ffd700;font-weight:800;font-size:.75rem;letter-spacing:1px;margin-bottom:6px'>REVENUE SHARE (SHOWROOM ONLY)</div>
 <div style='display:grid;gap:4px'>
-<div>Ticket games: <b style='color:#fff'>20%</b> of tokens inserted goes to you · 70% into the ticket pool · 5% DAO gaming rewards · 5% burned</div>
+<div>Ticket games: <b style='color:#fff'>10%</b> of tokens inserted goes to you · 80% into the ticket pool · 5% arcade · 5% DAO</div>
 <div>Non-ticket games: <b style='color:#fff'>80%</b> of tokens inserted goes to you · 10% DAO gaming rewards · 10% burned</div>
 <div>The Back games: <b style='color:#fff'>no revenue share</b></div>
 <div>Creator/seller earnings accrue as <b style='color:#fff'>ICP-denominated claimable earnings</b> tracked separately from player arcade credits; claiming is manual when you choose to request payout.</div>
@@ -1683,7 +1683,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I create an account?</button><div class='faq-a'>Click "Connect / Create" in the top bar. This opens Internet Identity - a decentralized authentication system by DFINITY. You can create a new identity using your device\'s biometrics (fingerprint, Face ID) or a security key. No email, no password. Your identity is cryptographically yours.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What do I need to play games?</button><div class='faq-a'>You need Tokens. Deposit ICP into your arcade account (1 ICP = 100 Tokens), then spend 1 Token per game play. Your score determines how many Tickets you win from the game\'s prize pool.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What do I need to play games?</button><div class='faq-a'>You need Tokens. Deposit ICP into your arcade account (1 ICP = 100 Tokens), then spend Tokens to play: ticket games charge per run, other games per visit (sessions last up to 2 hours). Your score determines how many Tickets you win from the game\'s prize pool.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Is this a casino?</button><div class='faq-a'>No. You earn Tickets based on your skill and score - not random chance. There are no slot machines, no dice rolls, no house edge. Play well, earn more. Simple as that.</div></div>
 </div>
@@ -1691,11 +1691,11 @@ window.addEventListener('message', (e) => {
 <div class='faq-cat' data-cat='tokens-tickets'>
 <div style='font-size:.75rem;font-weight:800;color:#ffd700;letter-spacing:2px;margin:20px 0 10px;text-shadow:0 0 10px rgba(255,215,0,.3)'>TOKENS & TICKETS</div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What are Tokens?</button><div class='faq-a'>Tokens are your play credits. 1 ICP = 100 Tokens. You spend 1 Token each time you play a game. Tokens are internal credits stored on-chain - they can\'t be transferred, traded, or listed on exchanges. Think of them like arcade quarters.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What are Tokens?</button><div class='faq-a'>Tokens are your play credits. 1 ICP = 100 Tokens. You spend Tokens to play games. Tokens are internal credits stored on-chain - they can\'t be transferred, traded, or listed on exchanges. Think of them like arcade quarters.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What are Tickets?</button><div class='faq-a'>Tickets are prize/perk points. When you play a game and score well, you earn Tickets from that game\'s prize pool. Tickets can be redeemed for NFTs, badges, perks, and Prize Booth items. Tickets cannot be exchanged for ICP, cash, or fiat.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Where does my Token go when I play?</button><div class='faq-a'>It depends on the game type. Ticket games send 70% into that game's Ticket pool, 20% to the game developer as ICP royalties, 5% to the DAO in Tokens, and 5% is burned. Non-ticket games send 80% to the game developer as ICP royalties, 10% to the DAO in Tokens, and 10% is burned.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Where does my Token go when I play?</button><div class='faq-a'>It depends on the game type. Ticket games send 80% into that game's Ticket pool, 10% to the game's creator, 5% to the arcade and 5% to the DAO treasury. Non-ticket games send 50% to the game's creator, 30% to the arcade and 20% to the DAO treasury.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Can I send Tokens or Tickets to another player?</button><div class='faq-a'>No. Tokens and Tickets are internal credits tied to your account. They cannot be transferred, sent, or traded between players. This prevents market manipulation and keeps the economy clean.</div></div>
 
@@ -1705,7 +1705,7 @@ window.addEventListener('message', (e) => {
 <div class='faq-cat' data-cat='games'>
 <div style='font-size:.75rem;font-weight:800;color:#22c55e;letter-spacing:2px;margin:20px 0 10px;text-shadow:0 0 10px rgba(34,197,94,.3)'>GAMES</div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do games work?</button><div class='faq-a'>Games run in your browser inside the arcade. Pay 1 Token to play, then your score at game over determines your Ticket payout from the prize pool. Higher scores = more Tickets. Each game has its own prize pool funded by player Token deposits.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do games work?</button><div class='faq-a'>Games run in your browser inside the arcade. In ticket games, each payment buys one run: when the run ends, press Submit Score and your score sets your Ticket payout from the prize pool of that game. Game sessions last up to 2 hours. Higher scores = more Tickets. Each game has its own prize pool funded by player Token deposits.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Do my saves carry over between sessions?</button><div class='faq-a'>Yes - games that support checkpoints will save your progress to your account. Come back tomorrow and pick up where you left off. Your save data is tied to your identity, so it works on any device you log into.</div></div>
 
@@ -1723,7 +1723,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Can NFTs do anything in games?</button><div class='faq-a'>Yes. Games can check your NFT inventory and unlock exclusive content - secret levels, character skins, special weapons. Owning certain NFTs can give you advantages or access across multiple games. Your NFTs are a portable backpack.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What are Voting Power Badges?</button><div class='faq-a'>Voting Power Badges grant voting power in the DAO. There are four types: Standard Badges (1 VP each, buy with Tickets, max 10), High Score Holder Badges (10 VP, auto-awarded for holding a game\'s all-time high score), Game Contributor NFT Badges (5 VP, earned when your game reaches the Showroom), and Artist Contributor Badges (5 VP, awarded by DAO proposal for approved artwork). All badges except High Score Holder are soulbound.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What are Voting Power Badges?</button><div class='faq-a'>Voting Power Badges grant voting power in the DAO: 1 VP per badge, bought in sequence from the Prize Booth with Tickets (up to 10). Dev and Artist Contributor badges add 1 VP each. More badges unlock more: proposals at 2, lottery entries at 3, 4, 6, 8 and 9, and DAO forum tiers at 5, 7 and 10.</div></div>
 </div>
 
 <div class='faq-cat' data-cat='dao'>
@@ -5048,7 +5048,7 @@ const MANIFESTO_BOOKS = {
 <p><span style="color:#c084fc">The Showroom</span> - Games hosted entirely on the ICP blockchain. Reviewed by admin. Revenue sharing enabled. On-chain saves and leaderboards.</p>
 <p><span style="color:#aa00ff">The Back</span> - Games hosted externally. Goes live instantly. A testing ground for new titles before they graduate to the Showroom.</p>
 <p><b style="color:#fff">For developers:</b> No blockchain experience required. No wallet integration. No canister calls. You make the game, we make it Web3. Ticket games and non-ticket Showroom games accrue ICP-denominated claimable creator earnings.</p>
-<p><b style="color:#fff">Scoring:</b> Ticket payouts use each ticket game's admin-calibrated 7-level score ladder. Phase 1 payouts are fixed at 0-6 Tickets, capped by each game's backed ticket pool and may pay 0 if the pool is empty or the ladder is not enabled.</p>
+<p><b style="color:#fff">Scoring:</b> Ticket payouts use each ticket game's admin-calibrated 8-level score ladder. Payouts are 0-7 Tickets, capped by each game's backed ticket pool and may pay 0 if the pool is empty or the ladder is not enabled.</p>
 `
   },
   nfts: {
@@ -5127,7 +5127,7 @@ const MANIFESTO_BOOKS = {
 
 <p>Eligibility to win <b style="color:#ffd700">JACKPOTS</b>, which are the Arcade\u2019s primary mechanism for gameplay-funded DAO rewards</p>
 
-<p>Every week a gaming-funded DAO rewards draw can deposit Tokens or Tickets to randomized eligible DAO Members.</p>
+<p>The DAO treasury funds two lotteries (Token and Ticket) that pay eligible Voting Power Badge holders in 8-week cycles.</p>
 
 <p>And everyone wins equally, no one ever wins again before everyone else has (unless they have more Voting Power)</p>
 
@@ -5200,7 +5200,7 @@ const MANIFESTO_BOOKS = {
 <p><b style="color:#fff">Proposal categories:</b> Arcade upgrades, treasury grants, game approvals, community initiatives, dev team questions, artist showcases, and more.</p>
 <p><b style="color:#fff">What the DAO controls:</b> Advisory votes. Game approval to "DAO Favourites" tier. Community direction. Aesthetic decisions. The DAO can recommend - it cannot unilaterally execute.</p>
 <p><b style="color:#fff">What the DAO cannot do:</b> Drain the treasury. Modify smart contracts. Override admin safety decisions. Ban users. The DAO is deliberately limited to prevent capture by bad actors.</p>
-<p><b style="color:#fff">Four lotteries</b> run weekly - Token, Ticket, Game Boost, and NFT Boost. Badge holders are automatically entered. Wins are announced via popup notification.</p>
+<p><b style="color:#fff">Two lotteries</b> - Token and Ticket - run in 8-week cycles funded by the DAO treasury. Voting Power Badges unlock entries (Token Lottery at 3, 6 and 9 badges; Ticket Lottery at 4 and 8). Everyone entered in a cycle wins once, and wins are announced via popup.</p>
 <p style="color:#5a7a9a;font-style:italic;margin-top:20px">The DAO is training wheels for a community. Learn to govern small things well before governing big things at all.</p>
 `
   }
@@ -6740,7 +6740,7 @@ function normalizeGamePayoutConfig(result){
     gameId:String(cfg.gameId||''),
     enabled:!!cfg.enabled,
     thresholds:(cfg.thresholds||[]).map(n=>Number(n)),
-    payouts:(cfg.payouts||[]).map(n=>Number(n)),
+    payouts:(cfg.thresholds||[]).map((_,i)=>i), // level N pays N tickets (same rule as the backend)
     updatedAt:cfg.updatedAt,
   };
 }
@@ -6982,8 +6982,8 @@ async function saveGameTicketJackpotConfig(gameId){
 }
 
 function defaultPayoutThresholds(){return [0,100,500,1000,2500,5000,10000];}
-function payoutConfigThresholds(cfg){return cfg?.thresholds?.length===7?cfg.thresholds:defaultPayoutThresholds();}
-function payoutConfigPayouts(cfg){return cfg?.payouts?.length===7?cfg.payouts:[0,1,2,3,4,5,6];}
+function payoutConfigThresholds(cfg){const n=cfg?.thresholds?.length;return (n===7||n===8)?cfg.thresholds:defaultPayoutThresholds();}
+function payoutConfigPayouts(cfg){return payoutConfigThresholds(cfg).map((_,i)=>i);}
 function payoutDomId(gameId){return String(gameId).replace(/[^a-zA-Z0-9_-]/g,'_');}
 
 function renderPayoutLadder(gameId,cfg,opts={}){
@@ -7001,7 +7001,7 @@ function renderPayoutLadder(gameId,cfg,opts={}){
   return `<div class='payout-config' style='margin-top:${compact?'8':'4'}px;padding:${compact?'8px 10px':'12px 14px'};border-radius:12px;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22)'>
     <div style='display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap'>
       <div style='font-size:.72rem;letter-spacing:1.6px;color:#ffe08a;text-transform:uppercase'>Payout Ladder</div>
-      <div style='font-size:.68rem;color:#d8fbe4'>7 levels · 0-6 tickets · backed-pool capped</div>
+      <div style='font-size:.68rem;color:#d8fbe4'>${thresholds.length} levels · 0-${Math.max(0,thresholds.length-1)} tickets · backed-pool capped</div>
     </div>
     <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(${compact?'120':'138'}px,1fr));gap:6px;margin-top:8px;font-size:.74rem;color:#f8e7a6'>${rows}</div>
     <div style='margin-top:8px;color:#d8fbe4;font-size:.78rem;line-height:1.45'>Scores earn the highest matching level, then the backend enforces the daily cap and backed ticket pool. A ticket jackpot, when enabled, is score-threshold based for the low score jackpot; high replaces low, and a new high score bonus can stack only when a validated new record is set before backend pool, daily, and per-play caps decide any extra tickets.</div>
@@ -7011,12 +7011,12 @@ function renderPayoutLadder(gameId,cfg,opts={}){
 
 function renderPayoutConfigAdmin(gameId,cfg){
   const domId=payoutDomId(gameId);
-  const thresholds=payoutConfigThresholds(cfg);
+  const thresholds=(()=>{ const t=payoutConfigThresholds(cfg).slice(0,8); while(t.length<8) t.push(t.length?t[t.length-1]:0); return t; })();
   const enabled=cfg?.enabled!==false;
   const inputs=thresholds.map((score,i)=>`<label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>${i} ticket${i===1?'':'s'}<input id='payoutThreshold_${domId}_${i}' type='number' min='0' step='1' value='${Number(score)}' style='width:100%;padding:4px 6px;background:#071224;border:1px solid #3456aa;color:#fff;border-radius:5px;font-size:.7rem'/></label>`).join('');
   return `<div style='padding:10px;border:1px solid rgba(255,215,0,.22);border-radius:10px;background:rgba(255,215,0,.05)' class='payout-config'>
     <div style='display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px'>
-      <div><div style='font-size:.68rem;color:#ffe08a;letter-spacing:1.2px;text-transform:uppercase'>Ticket Payout Ladder</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Exactly 7 ascending minimum scores. Payouts are fixed at 0-6 tickets.</div></div>
+      <div><div style='font-size:.68rem;color:#ffe08a;letter-spacing:1.2px;text-transform:uppercase'>Ticket Payout Ladder</div><div style='font-size:.62rem;color:#9fb0d6;margin-top:3px'>Exactly 8 ascending minimum scores. Payouts are fixed at 0-6 tickets.</div></div>
       <label style='font-size:.68rem;color:#d8fbe4;display:flex;align-items:center;gap:5px'><input id='payoutEnabled_${domId}' type='checkbox' ${enabled?'checked':''}/> Enabled</label>
     </div>
     <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px'>${inputs}</div>
@@ -7041,7 +7041,7 @@ async function saveGamePayoutConfig(gameId){
   const status=document.getElementById('payoutConfigStatus_'+domId);
   const enabled=!!document.getElementById('payoutEnabled_'+domId)?.checked;
   const thresholds=[];
-  for(let i=0;i<7;i++){
+  for(let i=0;i<8;i++){
     const raw=document.getElementById('payoutThreshold_'+domId+'_'+i)?.value;
     const n=Number(raw);
     if(!Number.isFinite(n)||n<0||Math.floor(n)!==n){if(status)status.innerHTML='<span style="color:#ef4444">Use whole-number score thresholds.</span>';return;}
@@ -7053,7 +7053,7 @@ async function saveGamePayoutConfig(gameId){
     const be=await getBackendActor(true);
     const res=await be.setGamePayoutConfig(gameId,enabled,thresholds.map(BigInt));
     if(res.err){if(status)status.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(res.err,'payout config'))+'</span>';return;}
-    if(status) status.innerHTML='<span style="color:#22c55e">Saved 7-level payout ladder.</span>';
+    if(status) status.innerHTML='<span style="color:#22c55e">Saved 8-level payout ladder.</span>';
     const ladder=document.getElementById('payoutLadder_'+domId);
     if(ladder) ladder.innerHTML=renderPayoutLadder(gameId,normalizeGamePayoutConfig(res.ok),{admin:true});
   }catch(e){
@@ -12240,7 +12240,7 @@ async function openShowroomTreasuryWithdraw(){
 
 // Session #3: Treasury-tab panel for the per-lane arcade revenue shares (+ read-only DAO pool).
 const ARCADE_SHARE_LANES=[{key:'prizebooth',label:'Prize Booth (listing fees · NFT sales · badges)',tip:'NFT listing fees 100% · player NFT sales 1.5% · Official NFTs & VP badges 80% (first sale)',get:'getPrizeBoothArcadeShareBalance',wd:'adminWithdrawPrizeBoothArcadeShare'},
-  {key:'ticket',label:'Ticket-game plays (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
+  {key:'ticket',label:'Ticket-game plays (5%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
   {key:'nonticket',label:'Non-ticket game plays (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
   {key:'purchase',label:'Game purchases, all tiers (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
   {key:'boost',label:'Boost Treasury (creator Spotlight boosts)',get:'getBoostTreasuryBalance',wd:'adminWithdrawBoostTreasury'}
@@ -14234,7 +14234,7 @@ async function renderGameAdminList(){
     const pricingMap5=new Map(pricingEntries5.map(([id,v])=>[id,v]));
     subs=raw.map(g=>normalizeGameSubmission(g,monMap5,pricingMap5)).filter(s=>s.status==='live'||s.status==='suspended');
     subs.forEach(s=>{ s.gameCategory=categoryMap.get(s.id)||''; });
-    {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&v.thresholds.length===7).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
+    {const pay=new Set(payoutEntries5.filter(v=>v.enabled&&v.thresholds&&(v.thresholds.length===7||v.thresholds.length===8)).map(v=>v.gameId));for(const g of subs){g.hasPayoutTable=pay.has(g.id);}}
     {const favMap=new Map(favEntries5.map(f=>[f.gameId,f]));for(const g of subs){const f=favMap.get(g.id);g.daoFav=!!f;g.daoFavCrowned=!!(f&&f.crowned);g.daoFavScore=f?Number(f.score):0;}}
   }catch(_e){el.innerHTML=renderBackendSlicePending('Game admin list is temporarily unavailable. Backend admin game-list support is pending.');return;}
   // Session #3: 3 admin categories. Ticket vs non-ticket comes from the creator's monetization
@@ -16517,7 +16517,7 @@ async function endArcadeGame(gameId,score){
   const inputHash=hashInputs(_gameInputs);
   _currentGamePlaying=null;
 
-  // Score is submitted to the backend; the configured 7-level payout ladder is authoritative.
+  // Score is submitted to the backend; the configured 8-level payout ladder is authoritative.
 
   try{
     const be=await getBackendActor(true);

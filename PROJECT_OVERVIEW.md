@@ -67,24 +67,24 @@ Jay clarified the forward target economics:
 
 ### Ticket games
 
-When a player spends Tokens on a ticket-paying game:
+When a player spends Tokens on a ticket-paying game (one payment = one run):
 
-- **20%** to the game creator
-- **5%** to DAO
-- **5%** burned
-- **70%** converts into that game's ticket balance / ticket pool
+- **80%** to that game's ticket pool (8 Tickets per Token)
+- **10%** to the game creator
+- **5%** to the arcade
+- **5%** to the DAO treasury
 
-Meaning: Ticket games are not pure creator-revenue games. Most value funds the game's ticket payout pool.
+Payouts use each game's admin-set 8-level ladder (0-7 Tickets), capped by the backed pool.
 
 ### Regular / non-ticket games
 
-There is a regular game category that does **not** pay Tickets. For those games:
+Non-ticket games (one payment = one visit, up to 2 hours; owners play free):
 
-- **80%** to the game creator
-- **10%** to DAO
-- **10%** burned
+- **50%** to the game creator
+- **30%** to the arcade
+- **20%** to the DAO treasury
 
-Meaning: non-ticket games are creator-heavy because there is no ticket-pool liability.
+No burns anywhere.
 
 ### Important current drift
 
@@ -93,7 +93,7 @@ The live backend currently still reports:
 - `gameCreatorShare = 75`
 - `nftCreatorShare = 90`
 
-and `spendTokensOnGame()` currently credits creator royalties using the old 75% game-creator model. That is **not aligned** with Jay's newly confirmed target split above.
+- (Resolved) `spendTokensOnGame()` uses the current splits above.
 
 Treat this as the next economy reconciliation target, not as finished truth.
 
@@ -225,8 +225,7 @@ Scripts in `scripts/` include:
 ## Known issues / next important work
 
 1. **Economy split mismatch**
-   - Jay's intended split is now 20/5/5/70 for ticket games and 80/10/10 for regular games.
-   - Backend still has the old 75% game-creator share constant and behavior.
+  - (Resolved) Splits are 80/10/5/5 (ticket) and 50/30/20 (non-ticket).
    - Needs a backend/frontend reconciliation plan before claiming economy complete.
 
 2. **Admin panel red errors**
@@ -265,4 +264,4 @@ Scripts in `scripts/` include:
 - Wallet pass was good 2026-04-25.
 - ICP balance chip opens wallet panel; refresh remains independent.
 - My Collection button/scan behavior has recent validation coverage.
-- Creator earnings safety validators pass, but economics need update to Jay's newly clarified splits.
+- Creator earnings safety validators pass, and the economics match the current splits.

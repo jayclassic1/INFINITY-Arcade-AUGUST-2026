@@ -1,39 +1,26 @@
 # Infinity Arcade Session Pricing Policy
 
-## Core rule
-A creator/admin-set token price opens **one live session**.
+## Every session
+- A game session lasts **at most 2 hours** from payment. After that it expires: the arcade shows SESSION EXPIRED and the next Play charges again.
+- Pressing **Close** ends the session at any time.
 
-- `X tokens = one live session`
-- `X` is configured by the creator/admin when the game is added to Showroom
-- the price is **not** per death
-- the price is **not** per retry
-- the price is **not** per single run
+## Ticket games: one payment = one run
+- The arcade charges the game's Token price when the player presses Play; this opens one paid **run**.
+- The game decides when the run ends (lives, timer, etc.) and then sends **one** final score (`arcade-latest-score`).
+- The **first** score message of a run is final; later ones are ignored until a new run is paid for. The arcade shows a small "Run over - final score" label.
+- The player presses **Submit Score** to be paid Tickets from the game's 8-level ladder (0-7 Tickets), or **Close** to discard the run.
+- Paying again while a previous run is still open starts a new run and forfeits the unsubmitted one.
+- Games must not offer an in-game "Play again" after the final score.
 
-## Inside a live session
-Once a session is opened:
-- the player may die and retry repeatedly
-- the arcade should not force a post-death paywall prompt
-- the player ends the session manually with:
-  - `Submit Score & Close`
-  - `Force Close`
+## Non-ticket games: one payment = one visit
+- One payment opens a **visit**: play, die and restart freely until Close or the 2-hour limit.
+- Progress can be saved with **on-chain checkpoints** (`arcade-checkpoint` / `arcade-load-checkpoint` / `arcade-clear-checkpoint`; max 32,000 characters; publicly readable, so no private data).
+- **Owners** (bought outright, or auto-unlocked once their total spend reaches the purchase price) play **free**.
 
-## Score resolution rule
-When the player chooses `Submit Score & Close`, the submitted score is the **latest run score**.
+## Not available
+- In-game continues (`arcade-request-coin` is answered "Continues are not available yet"; planned).
+- Demo / "Try" plays (retired).
 
-## Product wording guidance
-Use wording like:
-- `1 Token opens a live session`
-- `3 Tokens open a live session`
-- `Session Price`
-
-Avoid wording like:
-- `per life`
-- `per death`
-- `insert another token after every run`
-
-## Rationale
-This keeps the integration simpler for game developers and reduces arcade-shell complexity:
-- one payment event
-- one session lifecycle
-- one final score resolution
-- no death interruption loop
+## Splits (per Token spent)
+- Ticket games: 80% ticket pool (8 Tickets per Token), 10% creator, 5% arcade, 5% DAO.
+- Non-ticket games (plays and purchases): 50% creator, 30% arcade, 20% DAO.

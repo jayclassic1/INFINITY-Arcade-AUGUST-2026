@@ -565,13 +565,13 @@ persistent actor ArcadeBackend {
   };
 
   // === REVENUE SPLIT CONSTANTS (Economy v6) ===
-  // Showroom ticket games: 70% to game's ticket pool, 15% to game dev, 10% arcade, 5% DAO.
+  // Showroom ticket games: 80% to game's ticket pool (8 tickets per Token), 10% to game dev, 5% arcade, 5% DAO.
   // Supersedes the old, never-wired "5% burn" concept - that 10% is now an explicit, tracked
   // arcade-share accumulator (see showroomTicketArcadeShareE8s) rather than an untracked remainder.
-  transient let TICKET_GAME_CREATOR_SHARE : Nat = 15; // percent
+  transient let TICKET_GAME_CREATOR_SHARE : Nat = 10; // percent
   transient let TICKET_GAME_DAO_SHARE : Nat = 5; // percent
-  transient let TICKET_GAME_ARCADE_SHARE : Nat = 10; // percent
-  transient let TICKET_GAME_POOL_SHARE : Nat = 70; // percent
+  transient let TICKET_GAME_ARCADE_SHARE : Nat = 5; // percent
+  transient let TICKET_GAME_POOL_SHARE : Nat = 80; // percent
   // The Back's regular/non-ticket games: 50% to game dev, 30% arcade, 20% DAO.
   transient let REGULAR_GAME_CREATOR_SHARE : Nat = 50; // percent
   transient let REGULAR_GAME_DAO_SHARE : Nat = 20; // percent
@@ -1606,7 +1606,7 @@ persistent actor ArcadeBackend {
     // Model A funding pass: align gameplay-funded pool growth with the published
     // fixed funding lane semantics of 1 ICP = 1000 tickets and 1 ICP = 100 tokens.
     // Ticket-game gameplay spends route only the published pool lane into explicit
-    // ticket credit: 70% of the ICP-equivalent lane, or 7 tickets per token at the
+    // ticket credit: 80% of the ICP-equivalent lane, or 8 tickets per token at the
     // fixed 1 ICP = 100 tokens / 1000 tickets semantics. Raw and backed stay
     // mirrored on funding, while payouts still drain only the backed/public side.
     (amount * 10 * TICKET_GAME_POOL_SHARE) / 100;
@@ -1977,7 +1977,7 @@ persistent actor ArcadeBackend {
   transient let DAILY_TICKET_CAP : Nat = 2000;
   transient let COOLDOWN_NS : Int = 30_000_000_000; // 30 seconds in nanoseconds
   transient let TRIAL_PLAYS : Nat = 0; // legacy stat only; per-game payout config now controls calibration
-  transient let MAX_TICKETS_PER_ROUND : Nat = 6;
+  transient let MAX_TICKETS_PER_ROUND : Nat = 7;
   transient let JACKPOT_MAX_TICKETS_PER_WIN : Nat = 25;
   transient let JACKPOT_POOL_BASIS_POINTS : Nat = 1000; // 10% of remaining backed pool
   transient let JACKPOT_POOL_PERCENT : Nat = JACKPOT_POOL_BASIS_POINTS / 100; // v1 compatibility default = 10%
@@ -2070,8 +2070,8 @@ persistent actor ArcadeBackend {
   func payoutLevels() : [Nat] { [0, 1, 2, 3, 4, 5, 6] };
 
   func validatePayoutThresholds(thresholds : [Nat]) : Result.Result<(), Text> {
-    if (thresholds.size() != 7) {
-      return #err("Exactly 7 score thresholds are required");
+    if (thresholds.size() != 8) {
+      return #err("Exactly 8 score thresholds are required");
     };
     var i : Nat = 1;
     while (i < thresholds.size()) {
@@ -2084,7 +2084,8 @@ persistent actor ArcadeBackend {
   };
 
   func calculateConfiguredTicketPayout(score : Nat, config : GamePayoutConfig) : Nat {
-    if (not config.enabled or config.thresholds.size() != 7) {
+    // 8-level ladder pays 0-7 tickets; older 7-level ladders still work (0-6) until re-saved.
+    if (not config.enabled or (config.thresholds.size() != 7 and config.thresholds.size() != 8)) {
       return 0;
     };
     let thresholds = config.thresholds;
@@ -2096,7 +2097,7 @@ persistent actor ArcadeBackend {
       };
       i += 1;
     };
-    if (level > 6) { 6 } else { level };
+    if (level > 7) { 7 } else { level };
   };
 
   func minNat(a : Nat, b : Nat) : Nat {
@@ -2198,13 +2199,13 @@ persistent actor ArcadeBackend {
       gameId = gameId;
       enabled = config.enabled;
       thresholds = config.thresholds;
-      payouts = payoutLevels();
+      payouts = Array.tabulate<Nat>(config.thresholds.size(), func(i : Nat) : Nat { i }); // level N pays N tickets
       updatedAt = config.updatedAt;
     };
   };
 
-  /// Admin: set or update one game's 7-level ticket payout ladder.
-  /// Level 1 pays 0 tickets, level 7 pays 6 tickets; thresholds are minimum scores.
+  /// Admin: set or update one game's 8-level ticket payout ladder.
+  /// Level 1 pays 0 tickets, level 8 pays 7 tickets; thresholds are minimum scores.
   public shared(msg) func setGamePayoutConfig(gameId : Text, enabled : Bool, thresholds : [Nat]) : async Result.Result<GamePayoutConfigView, Text> {
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -2217,8 +2218,8 @@ persistent actor ArcadeBackend {
         };
       };
     };
-    if (thresholds.size() != 7) {
-      return #err("Exactly 7 score thresholds are required");
+    if (thresholds.size() != 8) {
+      return #err("Exactly 8 score thresholds are required");
     };
     switch (validatePayoutThresholds(thresholds)) {
       case (#err(message)) { return #err(message) };
@@ -2485,7 +2486,7 @@ persistent actor ArcadeBackend {
       case (?config) calculateConfiguredTicketPayout(score, config);
     };
 
-    // CHECK 5: Hard cap normal payouts at 6 tickets for payout-system v1.
+    // CHECK 5: Hard cap normal payouts at 7 tickets (top of the 8-level ladder).
     if (ticketPayout > MAX_TICKETS_PER_ROUND) { ticketPayout := MAX_TICKETS_PER_ROUND };
 
     // CHECK 7: Daily ticket cap
@@ -5384,7 +5385,7 @@ persistent actor ArcadeBackend {
       switch (gamePayoutConfigs.get(gameId)) {
         case null { return #err("Set the payout table before accepting this Ticket game (7 score thresholds) - without one every score pays 0 tickets.") };
         case (?cfg) {
-          if (not cfg.enabled or cfg.thresholds.size() != 7) return #err("Enable a complete 7-threshold payout table before accepting this Ticket game.");
+          if (not cfg.enabled or (cfg.thresholds.size() != 7 and cfg.thresholds.size() != 8)) return #err("Enable a complete payout ladder before accepting this Ticket game.");
         };
       };
     };
@@ -5784,7 +5785,7 @@ persistent actor ArcadeBackend {
           switch (gamePayoutConfigs.get(gameId)) {
             case null { return #err("Set the payout table before relisting this Ticket game (7 score thresholds) - without one every score pays 0 tickets.") };
             case (?cfg) {
-              if (not cfg.enabled or cfg.thresholds.size() != 7) return #err("Enable a complete 7-threshold payout table before relisting this Ticket game.");
+              if (not cfg.enabled or (cfg.thresholds.size() != 7 and cfg.thresholds.size() != 8)) return #err("Enable a complete payout ladder before relisting this Ticket game.");
             };
           };
         };
