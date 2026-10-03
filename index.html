@@ -2202,7 +2202,7 @@ const C = Object.freeze({Q_PER_ICP:100,CASH_FEE:0.1,CASH_DAILY:500,JACKPOT_BASE:
 const S = {connected:false,name:'Player',muted:false,quarters:0,tickets:0,games:0,wins:0,cashoutToday:0,jackpot:C.JACKPOT_BASE,shared:false,view:'landing',principal:null,principalText:'',depositAddress:'',icpBalanceE8s:0n,identity:null};
 Object.seal(S);
 window.S=S; // expose for admin console access
-let _arcadeSessionState={gameId:'',latestScore:null,scoreSubmitted:false,closeConfirmArmed:false};
+let _arcadeSessionState={gameId:'',latestScore:null,scoreSubmitted:false,closeConfirmArmed:false,runOver:false};
 
 const qs = id=>document.getElementById(id);
 const rnd = n=>Math.floor(Math.random()*n);
@@ -3494,7 +3494,16 @@ async function cosApplyProfile(pid){
 }
 window.cosApplyProfile=cosApplyProfile;
 (function(){
-  const start=()=>{ let q=false; new MutationObserver(()=>{ if(q) return; q=true; requestAnimationFrame(()=>{ q=false; cosDecorate(document.body); }); }).observe(document.body,{childList:true,subtree:true}); cosDecorate(document.body); };
+  // Performance: never work while a game is open; otherwise only look at newly added elements, at most 5x/second.
+  const pending=new Set(); let t=null;
+  const flush=()=>{ t=null; if(document.getElementById('m-backroom-game')){ pending.clear(); return; }
+    const nodes=[...pending]; pending.clear();
+    for(const n of nodes){ if(n.isConnected) cosDecorate(n.parentElement||n); } };
+  const start=()=>{ new MutationObserver(muts=>{
+      if(document.getElementById('m-backroom-game')) return;
+      for(const m of muts){ for(const n of m.addedNodes){ if(n.nodeType===1) pending.add(n); } }
+      if(pending.size&&!t) t=setTimeout(flush,200);
+    }).observe(document.body,{childList:true,subtree:true}); cosDecorate(document.body); };
   if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
 })();
 
@@ -4607,11 +4616,14 @@ window.addEventListener('message',async(event)=>{
 
   if(msgType==='arcade-latest-score'){
     hideArcadeStartOverlay('latest-score');
-    const score=setArcadeLatestScore(gameId,event.data.score);
     if(!gameId||!S.connected) return;
-    // Phase 3: keep the paid live session open after death/run end.
-    // Do not prompt for another token or interrupt the session loop.
-    showGameOverOverlay(score, null, false, gameId);
+    window._ticketKind=window._ticketKind||{};
+    if(window._ticketKind[gameId]===undefined){ const _gsub=getSubmissions().find(s=>s.id===gameId); window._ticketKind[gameId]=!!(_gsub&&_gsub.paysTickets!==false); }
+    const _isTicketRun=window._ticketKind[gameId];
+    // Ticket games: the first score of a paid run is final; the run stays locked until a new token starts the next one.
+    if(_isTicketRun&&_arcadeSessionState.gameId===gameId&&_arcadeSessionState.runOver) return;
+    const score=setArcadeLatestScore(gameId,event.data.score);
+    if(_isTicketRun){ _arcadeSessionState.runOver=true; showRunOverOverlay(gameId,score); }
   }
 
   // Checkpoint save (on-chain + localStorage fallback)
@@ -4669,6 +4681,9 @@ window.addEventListener('message',async(event)=>{
   if(msgType==='arcade-request-coin'){
     if(!gameId||!S.connected) return;
     const src=event.source;
+    // Continues are not available yet (planned). Never charge from inside a game.
+    src?.postMessage({type:'arcade-coin-result',success:false,reason:'Continues are not available yet'},'*');
+    return;
     const cost=Number(event.data.cost)||1;
     const label=event.data.label||'Continue?';
     // Ask player to confirm
@@ -6310,7 +6325,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),clearCheckpoint:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyOpenSession:IDL.Func([IDL.Text],[IDL.Opt(IDL.Int)],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -6407,9 +6422,9 @@ function backendIdl({IDL}){
     // adminSetTickets REMOVED - no admin ticket manipulation
 
 
-    saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
-    getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),
-    clearCheckpoint:IDL.Func([IDL.Text],[Result],[]),
+    
+    
+    
     getAdminAuditLog:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Principal,IDL.Nat,IDL.Int))],['query']),
     awardDevContributorBadge:IDL.Func([IDL.Principal,IDL.Text],[Result],[]),
     awardArtistContributorBadge:IDL.Func([IDL.Principal],[Result],[]),
@@ -8931,11 +8946,14 @@ async function openBackroomGame(id){
       <button class='btn red' onclick='arcadeButtonHit(this);forceCloseArcadeSession("${id}")' style='font-size:.82rem'>Close</button>
     </div>
     <div style='display:flex;justify-content:flex-start;align-items:center;gap:8px;padding:4px 132px 10px 4px;flex-wrap:wrap;min-height:38px'>
+      <span id='sessionTimeLeft' style='display:none;font-size:.75rem;font-weight:700;padding:4px 10px;border:1px solid #3456aa;border-radius:6px'></span>
+      <span id='sessionRunOver' style='display:none;font-size:.75rem;font-weight:800;padding:4px 10px;border:1px solid rgba(255,215,0,.5);border-radius:6px;color:#ffd700;background:rgba(255,215,0,.08)'></span>
       <button id='insertMoreBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' style='display:none;padding:8px 18px;font-size:.82rem;background:rgba(0,0,0,.9);border:1px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;letter-spacing:1px'>INSERT TOKEN</button>
     </div>
     <div id='coinGate' style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;border:1px solid #3456aa;border-radius:8px'>
       <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>INSERT TOKEN</div>
-      ${sub.paysTickets!==false?`<div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per session &gt; Submitting Score ends session</div>`:`<div style='margin:16px 0 8px'></div>`}
+      ${sub.paysTickets!==false?`<div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per run &middot; when the run ends, submit your score</div>`:`<div style='margin:16px 0 8px'></div>`}
+      <div style='color:#8bb4ff;font-size:.75rem;margin-bottom:8px'>⏱ Game sessions last up to 2 hours</div>
       <div id='highScoreDisplay' style='display:none;color:#3d6090;font-size:.75rem;margin-bottom:8px'></div>
       <div id='ownedNotice' style='display:none;color:#22c55e;font-size:.9rem;font-weight:700;margin-bottom:12px'>YOU OWN THIS GAME - PLAY FREE</div>
       <div id='coinGateButtons' style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center'>
@@ -9262,11 +9280,19 @@ function toggleInlineGameAdminTools(gameId){
 }
 
 async function insertCoin(id){
+  if(window._insertCoinBusy) return;
+  window._insertCoinBusy=true;
+  try{ return await _insertCoinInner(id); } finally { window._insertCoinBusy=false; }
+}
+async function _insertCoinInner(id){
   const sub=getSubmissions().find(s=>s.id===id); if(!sub) return;
   const balSpan=document.getElementById('coinGateBalance');
 
   const isTicketGame=sub.paysTickets!==false; // default true for legacy games without the field
   let usedFree=false;
+  if(isTicketGame&&hasOpenArcadeSession(id)){ arcadeAlert('Run in progress','Submit your score or close this run before starting a new one.'); return; }
+  // Owners of a purchased / auto-unlocked game play free (the backend also refuses to charge them).
+  if(!isTicketGame&&sub.purchasePrice>0){ try{ const beO=await getBackendActor(true); if(await beO.hasGameAccess(Principal.fromText(S.principalText),id)) usedFree=true; }catch(_){} }
   // Paid-session validator invariant: const replayingExistingSession=hasOpenArcadeSession(id);
   // Backend spend remains guarded by: if(!replayingExistingSession) spendTokensOnGame
   let replayingExistingSession=hasOpenArcadeSession(id);
@@ -9353,6 +9379,8 @@ async function insertCoin(id){
     _currentGamePlaying=id;
   }
 
+  ['runOverOverlay','sessionExpiredOverlay'].forEach(x=>{const e=document.getElementById(x); if(e) e.remove();});
+  if(!usedFree) startArcadeSessionTimer(id);
   // Load or reload the game iframe
   resetArcadeInputReadiness('insert-coin-iframe-load');
   resetArcadeStartOverlay('insert-coin-iframe-load');
@@ -9400,81 +9428,49 @@ async function buyGame(id){
   }catch(e){alert(safeGamePaymentErrorMessage(e));}
 }
 
-// === TRY GAME (1 token demo, 5 min timer) ===
-async function tryGameDemo(id){
-  const sub=getSubmissions().find(s=>s.id===id); if(!sub) return;
 
-  try{
-    const be=await getBackendActor(true);
-    const r=await be.tryGame(id);
-    if(r.err){alert(safeGamePaymentErrorMessage(r.err)); return;}
-    S.quarters=Number(r.ok.tokenBalance);
-    const demoSeconds=Number(r.ok.demoSeconds);
-    await syncOnChainTickets();
-    const balEl=document.getElementById('coinGateBalance');
-    if(balEl) balEl.textContent=Math.floor(S.quarters);
-  }catch(e){alert(safeGamePaymentErrorMessage(e)); return;}
-
-  // Load game
-  const detailPage=document.getElementById('gameDetailPage');
-  const gate=document.getElementById('coinGate');
-  const container=document.getElementById('gameContainer');
-  const insertBtn=document.getElementById('insertMoreBtn');
-  const wrap=document.getElementById('gameIframeWrap');
-
-  if(detailPage) detailPage.style.display='none';
-  if(gate) gate.style.display='none';
-  if(container) container.style.display='flex';
-  if(insertBtn) insertBtn.style.display='none';
-
-  const oldOverlay=document.getElementById('gameOverOverlay');
-  if(oldOverlay) oldOverlay.remove();
-
-  resetArcadeInputReadiness('demo-iframe-load');
-  resetArcadeStartOverlay('demo-iframe-load');
-  wrap.innerHTML=`<iframe id='gameIframe' src='${arcadeVersionedGameUrl(sub.url)}' style='flex:1;border:none;border-radius:8px;background:#000;width:100%;height:100%' allow='fullscreen;gamepad' tabindex='0'></iframe>`;
-
-  startGamepadForwarding();
-  setTimeout(()=>{ ensureGameIframeFocus(); },300);
-  setTimeout(()=>{ ensureGameIframeFocus(); },900);
-
-  // Demo timer overlay
-  let remaining=300; // 5 minutes
-  const timerDiv=document.createElement('div');
-  timerDiv.id='demoTimer';
-  timerDiv.style.cssText='position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.85);border:1px solid #c084fc;border-radius:8px;padding:6px 14px;color:#c084fc;font-weight:700;font-size:.85rem;letter-spacing:1px';
-  container.appendChild(timerDiv);
-
-  const updateTimer=()=>{
-    const m=Math.floor(remaining/60);
-    const s=remaining%60;
-    timerDiv.textContent='DEMO '+m+':'+String(s).padStart(2,'0');
-    if(remaining<=30) timerDiv.style.color='#ef4444';
-    if(remaining<=0){
-      clearInterval(demoInterval);
-      // Remove iframe, show buy prompt
-      wrap.innerHTML='';
-      timerDiv.remove();
-      const buyOverlay=document.createElement('div');
-      buyOverlay.id='demoExpiredOverlay';
-      buyOverlay.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;border-radius:8px';
-      buyOverlay.innerHTML=`
-        <div style='font-size:1.8rem;color:#c084fc;letter-spacing:3px;margin-bottom:12px'>DEMO OVER</div>
-        <div style='color:var(--muted);margin-bottom:20px;font-size:.9rem'>Your 5-minute demo has expired</div>
-        <div style='display:flex;gap:12px'>
-          <button onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer'>BUY FULL GAME (${sub.purchasePrice} Tokens)</button>
-          <button onclick='insertCoin("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:var(--gold);color:var(--gold);cursor:pointer'>INSERT TOKEN (${sub.tokenCost||1} Token)</button>
-        </div>
-      `;
-      container.appendChild(buyOverlay);
-    }
-    remaining--;
+// === Ticket run game-over screen + 2-hour session limit ===
+(function(){ if(document.getElementById('sessionUiStyles')) return; const st=document.createElement('style'); st.id='sessionUiStyles'; st.textContent=`
+#arcadeStartOverlay{display:none!important}
+#coinBuyBtn{border:2px solid transparent!important;color:#fff!important;font-weight:800!important;
+  background:linear-gradient(#0b0b14,#0b0b14) padding-box,linear-gradient(90deg,#ff3cac,#ffd700,#39ff14,#00aaff,#a855f7,#ff3cac) border-box!important;
+  background-size:100% 100%,300% 100%!important;animation:buyRainbow 3s linear infinite,buyGlow 3s linear infinite}
+#coinBuyBtn span,#coinBuyBtn b{background:none!important;-webkit-text-fill-color:#22c55e!important;color:#22c55e!important;font-weight:900}
+@keyframes buyRainbow{0%{background-position:0 0,0% 50%}100%{background-position:0 0,300% 50%}}
+@keyframes buyGlow{0%,100%{box-shadow:0 0 12px rgba(255,60,172,.5)}25%{box-shadow:0 0 12px rgba(255,215,0,.5)}50%{box-shadow:0 0 12px rgba(57,255,20,.5)}75%{box-shadow:0 0 12px rgba(0,170,255,.5)}}
+`; document.head.appendChild(st); })();
+function showRunOverOverlay(gameId,score){
+  // The game decides when a run ends; the arcade only locks the score and shows a small top-bar label.
+  const el=document.getElementById('sessionRunOver');
+  if(el){ el.textContent='Run over \u00b7 final score '+Number(score).toLocaleString(); el.style.display='inline-block'; }
+}
+function showSessionExpired(gameId){
+  const c=document.getElementById('gameContainer'); if(!c) return;
+  const wrap=document.getElementById('gameIframeWrap'); if(wrap) wrap.innerHTML='';
+  const ro=document.getElementById('runOverOverlay'); if(ro) ro.remove();
+  if(document.getElementById('sessionExpiredOverlay')) return;
+  const sub=getSubmissions().find(s=>s.id===gameId);
+  const ticket=!!(sub&&sub.paysTickets!==false);
+  const o=document.createElement('div'); o.id='sessionExpiredOverlay';
+  o.style.cssText='position:absolute;inset:0;z-index:16;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;gap:12px;text-align:center;padding:20px';
+  o.innerHTML=`<div style="font-size:1.7rem;font-weight:900;letter-spacing:3px;color:#ef4444">SESSION EXPIRED</div>
+    <div style="color:#cbd5e1;font-size:.88rem">Game sessions last up to 2 hours.${ticket?' This run can no longer be submitted.':''}</div>
+    <button class="btn red" onclick='arcadeButtonHit(this);forceCloseArcadeSession(${JSON.stringify(gameId)})'>Close</button>`;
+  c.appendChild(o);
+}
+async function startArcadeSessionTimer(id){
+  if(window._arcadeSessionTimer){ clearInterval(window._arcadeSessionTimer); window._arcadeSessionTimer=null; }
+  let openedMs=Date.now();
+  try{ const r=await (await getBackendActor(true)).getMyOpenSession(id); if(r&&r.length) openedMs=Number(r[0])/1e6; }catch(_){}
+  const endMs=openedMs+2*60*60*1000;
+  const tick=()=>{
+    if(!document.getElementById('m-backroom-game')||_currentGamePlaying!==id){ clearInterval(window._arcadeSessionTimer); window._arcadeSessionTimer=null; return; }
+    const left=endMs-Date.now();
+    const el=document.getElementById('sessionTimeLeft');
+    if(el){ const m=Math.max(0,Math.ceil(left/60000)); el.textContent='\u23f1 '+(m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+'m')+' left'; el.style.display='inline-block'; el.style.color=left<10*60000?'#ef4444':'#8bb4ff'; }
+    if(left<=0){ clearInterval(window._arcadeSessionTimer); window._arcadeSessionTimer=null; showSessionExpired(id); }
   };
-  updateTimer();
-  const demoInterval=setInterval(updateTimer,1000);
-
-  // Store interval so it can be cleared if modal closes
-  container._demoInterval=demoInterval;
+  tick(); window._arcadeSessionTimer=setInterval(tick,15000);
 }
 
 function showGameOverOverlay(score, tickets, newRecord, gameId){
@@ -9896,7 +9892,7 @@ async function showRoyaltyTab(tab){
 const DAO_GAMING_REWARD_SOURCE_LABELS=Object.freeze({
   'gameplay':'Gameplay',
   'game-purchase':'Game Purchase',
-  'game-demo':'Game Demo'
+  'game-demo':'Game Demo (retired)'
 });
 
 // ── DAO Public Dashboard ──────────────────────────────────────
@@ -12245,7 +12241,7 @@ async function openShowroomTreasuryWithdraw(){
 // Session #3: Treasury-tab panel for the per-lane arcade revenue shares (+ read-only DAO pool).
 const ARCADE_SHARE_LANES=[{key:'prizebooth',label:'Prize Booth (listing fees · NFT sales · badges)',tip:'NFT listing fees 100% · player NFT sales 1.5% · Official NFTs & VP badges 80% (first sale)',get:'getPrizeBoothArcadeShareBalance',wd:'adminWithdrawPrizeBoothArcadeShare'},
   {key:'ticket',label:'Ticket-game plays (10%)',get:'getShowroomTicketArcadeShareBalance',wd:'adminWithdrawShowroomTicketArcadeShare'},
-  {key:'nonticket',label:'Non-ticket plays & demo tries: Showroom + The Back (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
+  {key:'nonticket',label:'Non-ticket game plays (30%)',get:'getShowroomNonTicketArcadeShareBalance',wd:'adminWithdrawShowroomNonTicketArcadeShare'},
   {key:'purchase',label:'Game purchases, all tiers (30%)',get:'getShowroomPurchaseArcadeShareBalance',wd:'adminWithdrawShowroomPurchaseArcadeShare'},
   {key:'boost',label:'Boost Treasury (creator Spotlight boosts)',get:'getBoostTreasuryBalance',wd:'adminWithdrawBoostTreasury'}
 ];
@@ -16395,7 +16391,7 @@ let _gameInputs=[]; // track inputs for replay hash
 let _currentGamePlaying=null;
 
 function resetArcadeSessionState(gameId=''){
-  _arcadeSessionState={gameId,latestScore:null,scoreSubmitted:false,closeConfirmArmed:false};
+  _arcadeSessionState={gameId,latestScore:null,scoreSubmitted:false,closeConfirmArmed:false,runOver:false};
   const latestEl=document.getElementById('sessionLatestScore');
   if(latestEl) latestEl.textContent='Latest score: waiting for a run';
 }
@@ -16808,7 +16804,7 @@ function closeNftDetail(){
 // exposed functions
 [
   ['toggleMute',toggleMute],['showConnect',showConnect],['disconnectWallet',disconnectWallet],['openWalletPanel',openWalletPanel],['closeWalletPanel',closeWalletPanel],['walletBackdrop',walletBackdrop],['copyDepositAddress',copyDepositAddress],['copyPrincipal',copyPrincipal],['openSupportedCollectionsModal',openSupportedCollectionsModal],['listNftInBooth',listNftInBooth],['openListNftModal',openListNftModal],['returnNftFromEscrow',returnNftFromEscrow],['showFullCatalog',showFullCatalog],['refreshWalletBalance',refreshWalletBalance],['withdrawComingSoon',withdrawComingSoon],['buyQuartersPrompt',buyQuartersPrompt],['cashOutPrompt',cashOutPrompt],['shareToX',shareToX],['showView',showView],['toggleGamesCatalog',toggleGamesCatalog],
-  ['openGame',openGame],['closeGame',closeGame],['arcadeButtonHit',arcadeButtonHit],['renderPayoutLadder',renderPayoutLadder],['loadPayoutConfig',loadPayoutConfig],['hydratePayoutConfigAdmin',hydratePayoutConfigAdmin],['saveGamePayoutConfig',saveGamePayoutConfig],['saveGameTicketJackpotConfig',saveGameTicketJackpotConfig],['insertCoin',insertCoin],['buyGame',buyGame],['tryGameDemo',tryGameDemo],['showGameOverOverlay',showGameOverOverlay],['submitLatestScoreAndClose',submitLatestScoreAndClose],['forceCloseArcadeSession',forceCloseArcadeSession],['openCategoryPage',openCategoryPage],['checkFreePlay',checkFreePlay],['useFreePlay',useFreePlay],
+  ['openGame',openGame],['closeGame',closeGame],['arcadeButtonHit',arcadeButtonHit],['renderPayoutLadder',renderPayoutLadder],['loadPayoutConfig',loadPayoutConfig],['hydratePayoutConfigAdmin',hydratePayoutConfigAdmin],['saveGamePayoutConfig',saveGamePayoutConfig],['saveGameTicketJackpotConfig',saveGameTicketJackpotConfig],['insertCoin',insertCoin],['buyGame',buyGame],['showGameOverOverlay',showGameOverOverlay],['submitLatestScoreAndClose',submitLatestScoreAndClose],['forceCloseArcadeSession',forceCloseArcadeSession],['openCategoryPage',openCategoryPage],['checkFreePlay',checkFreePlay],['useFreePlay',useFreePlay],
 
   ['dismissJackpot',dismissJackpot],
   ['approvalColor',approvalColor],['approvalPctBadge',approvalPctBadge],['approvalButtons',approvalButtons],['castApprovalVote',castApprovalVote],['toggleSubmitMode',toggleSubmitMode],['handleHostedThumbnailUpload',handleHostedThumbnailUpload],['handleSubmissionThumbUpload',handleSubmissionThumbUpload],['refreshBackSubmissionFeeDisplay',refreshBackSubmissionFeeDisplay],['handleSubmissionZipSelect',handleSubmissionZipSelect],['renderPendingSubmissionsByTier',renderPendingSubmissionsByTier],['downloadPendingZipUpload',downloadPendingZipUpload],['approveSubmission',approveSubmission],['deleteAllPendingUploadsForGame',deleteAllPendingUploadsForGame],['submitBackGame',submitBackGame],['submitShowroomGame',submitShowroomGame],['fetchHoleSubmissions',fetchHoleSubmissions],['fetchNewestHoleSubmissions',fetchNewestHoleSubmissions],['fetchTopHoleSubmissions',fetchTopHoleSubmissions],['fetchLegendaryHoleSubmissions',fetchLegendaryHoleSubmissions],['fetchHoleSubmission',fetchHoleSubmission],['fetchMyHoleSubmissions',fetchMyHoleSubmissions],['submitHoleLink',submitHoleLink],['deleteHoleSubmission',deleteHoleSubmission],['upvoteHoleSubmission',upvoteHoleSubmission],['setHoleLegendary',setHoleLegendary],['canModerateHoleSubmission',canModerateHoleSubmission],['normalizeHoleSubmission',normalizeHoleSubmission],['renderHole',renderHole],['renderHoleCard',renderHoleCard],['handleHoleSubmit',handleHoleSubmit],['closeBlackholeAdminPanel',closeBlackholeAdminPanel],['openBlackholeAdminPanel',openBlackholeAdminPanel],['handleBlackholeOpen',handleBlackholeOpen],['handleHoleUpvote',handleHoleUpvote],['handleHoleVote',handleHoleVote],['handleHoleDelete',handleHoleDelete],['handleHoleLegendaryToggle',handleHoleLegendaryToggle],['openBackroomGame',openBackroomGame],['openGameDetails',openGameDetails],['openTipModal',openTipModal],['setTokenTipAmount',setTokenTipAmount],['confirmTokenTip',confirmTokenTip],['galleryNav',galleryNav],['galleryGoTo',galleryGoTo],['renderBackroom',renderBackroom],['renderShowroom',renderShowroom],['renderDevDash',renderDevDash],['renderRoyaltiesDash',renderRoyaltiesDash],['claimCreatorEarnings',claimCreatorEarnings],['claimTipEarningsUi',claimTipEarningsUi],['showRoyaltyTab',showRoyaltyTab],['loadDaoDashboard',loadDaoDashboard],['exportDevCsv',exportDevCsv],['devRequestRemoval',devRequestRemoval],['devSaveSessionConfig',devSaveSessionConfig],['getGameApprovals',getGameApprovals],['getMyVote',getMyVote],['refreshGameVoteCache',refreshGameVoteCache],['doIILogin',doIILogin],['closeGameModal',closeGameModal],['closeArcadeSessionWindowOrModal',closeArcadeSessionWindowOrModal],['hideGameChrome',hideGameChrome],['showGameChrome',showGameChrome],['startGamepadForwarding',startGamepadForwarding],['stopGamepadForwarding',stopGamepadForwarding],['getKeyMap',getKeyMap],['saveKeyMap',saveKeyMap],['openInputConfig',openInputConfig],['showCfgTab',showCfgTab],['startKeyBind',startKeyBind],['startPadBind',startPadBind],['resetInputConfig',resetInputConfig],['toggleFaq',toggleFaq],['filterFaq',filterFaq],['openArcadeBot',openArcadeBot],['arcadeBotAsk',arcadeBotAsk],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['loadModeratorsFromChain',loadModeratorsFromChain],

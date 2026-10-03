@@ -12,6 +12,7 @@ import Error "mo:base/Error";
 import Hash "mo:base/Hash";
 import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
+import Trie "mo:base/Trie";
 import Option "mo:base/Option";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
@@ -1269,10 +1270,12 @@ persistent actor ArcadeBackend {
     Principal.toText(player) # "::" # gameId;
   };
 
+  // Every game session (a ticket run or a non-ticket visit) lasts at most 2 hours; older ones count as expired.
+  transient let SESSION_MAX_NS : Int = 7_200_000_000_000;
   func getOpenPaidGameSession(player : Principal, gameId : Text) : ?PaidGameSession {
     switch (paidGameSessions.get(paidGameSessionKey(player, gameId))) {
       case null null;
-      case (?session) { if (session.open) ?session else null };
+      case (?session) { if (session.open and Time.now() - session.openedAt < SESSION_MAX_NS) ?session else null };
     };
   };
 
@@ -1744,7 +1747,12 @@ persistent actor ArcadeBackend {
     if (amount == 0) return #err("Amount must be greater than zero");
     if (isBlankText(gameId)) return #err("Game ID is required");
     switch (getOpenPaidGameSession(caller, gameId)) {
-      case (?_) { return #err("Session already open") };
+      case (?_) {
+        // Ticket games: one paid play = one run, so paying again starts a new run and forfeits an
+        // unsubmitted previous one. Non-ticket games: the open session is the player's visit (resume).
+        let ticketRun = switch (gameSubmissions.get(gameId)) { case (?g0) isTicketGameSubmission(g0); case null false };
+        if (ticketRun) { closePaidGameSession(caller, gameId) } else { return #err("Session already open") };
+      };
       case null {};
     };
     let balance = getTokenBalance(caller);
@@ -1753,6 +1761,9 @@ persistent actor ArcadeBackend {
     switch (gameSubmissions.get(gameId)) {
       case null { return #err("Game not found: " # gameId) };
       case (?game) {
+        if (not isTicketGameSubmission(game) and gamePurchases.get(gamePurchaseKey(caller, gameId)) == ?true) {
+          return #err("You own this game - it's free to play");
+        };
         let newBal = balance - amount;
         tokens.put(caller, newBal);
         addGxp(caller, amount * 10);
@@ -1879,6 +1890,7 @@ persistent actor ArcadeBackend {
   /// hood, not a separate economic event - the only difference is the fixed demoSeconds window the
   /// frontend uses to time-limit the loaded game.
   public shared(msg) func tryGame(gameId : Text) : async Result.Result<{ tokenBalance : Nat; demoSeconds : Nat }, Text> {
+    if (true) return #err("Demo tries have been retired");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -2566,6 +2578,35 @@ persistent actor ArcadeBackend {
   };
 
   /// Force-close an open paid game session without ticket payout.
+  // === On-chain checkpoints (saved spots), keyed player::gameId; survives upgrades (stable Trie). ===
+  stable var gameCheckpoints : Trie.Trie<Text, Text> = Trie.empty();
+  transient let CHECKPOINT_MAX_CHARS : Nat = 32_000;
+  func checkpointKey(k : Text) : Trie.Key<Text> { { hash = Text.hash(k); key = k } };
+  public shared(msg) func saveCheckpoint(gameId : Text, data : Text) : async Result.Result<Text, Text> {
+    if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
+    if (isBlankText(gameId)) return #err("Game ID is required");
+    if (Text.size(data) > CHECKPOINT_MAX_CHARS) return #err("Checkpoint too large (max 32,000 characters)");
+    hydrateRuntimeStateIfNeeded();
+    switch (gameSubmissions.get(gameId)) { case null { return #err("Game not found") }; case (?_) {} };
+    let k = Principal.toText(msg.caller) # "::" # gameId;
+    gameCheckpoints := Trie.put(gameCheckpoints, checkpointKey(k), Text.equal, data).0;
+    #ok("Checkpoint saved")
+  };
+  public query func getCheckpoint(player : Principal, gameId : Text) : async ?Text {
+    Trie.get(gameCheckpoints, checkpointKey(Principal.toText(player) # "::" # gameId), Text.equal)
+  };
+  public shared(msg) func clearCheckpoint(gameId : Text) : async Result.Result<Text, Text> {
+    if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
+    let k = Principal.toText(msg.caller) # "::" # gameId;
+    gameCheckpoints := Trie.remove(gameCheckpoints, checkpointKey(k), Text.equal).0;
+    #ok("Checkpoint cleared")
+  };
+  // When the caller's open (non-expired) session for this game started, so the frontend can enforce the 2-hour limit.
+  public shared query(msg) func getMyOpenSession(gameId : Text) : async ?Int {
+    hydrateRuntimeStateIfNeeded();
+    switch (getOpenPaidGameSession(msg.caller, gameId)) { case (?ses) ?ses.openedAt; case null null }
+  };
+
   public shared(msg) func endGameSession(gameId : Text) : async Result.Result<Text, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
