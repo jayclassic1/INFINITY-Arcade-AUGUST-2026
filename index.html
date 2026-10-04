@@ -3389,22 +3389,16 @@ async function checkMyBan(){
 function showBanPopup(){
   if(!_banActive()) return;
   const b=window._banInfo;
-  const ends=b.until>0?('Ends: '+new Date(b.until/1e6).toLocaleString()):'Permanent';
+  const ends=b.until>0?('Until '+new Date(b.until/1e6).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})):'Permanent';
   document.querySelectorAll('#m-banned').forEach(e=>e.remove());
   const o=document.createElement('div'); o.id='m-banned';
-  o.innerHTML=`<div style='position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px'>
-    <div style='background:#1a0a0a;border:2px solid #dc2626;border-radius:16px;max-width:460px;width:100%;padding:28px;text-align:center'>
-      <div style='font-size:2rem;margin-bottom:10px'>&#128683;</div>
-      <h2 style='color:#dc2626;margin:0 0 6px;font-size:1.2rem'>Account Suspended</h2>
-      <div style='color:#f59e0b;font-size:.8rem;font-weight:700;margin-bottom:14px'>${escHtml(ends)}</div>
-      <div style='background:rgba(0,0,0,.4);border-radius:8px;padding:12px;margin-bottom:14px;text-align:left'>
-        <div style='font-size:.7rem;color:#8ab4d8;margin-bottom:4px'>Reason</div>
-        <div style='font-size:.85rem;color:#e0e6f0'>${escHtml(b.reason||'No reason provided')}</div>
-      </div>
-      <div style='font-size:.78rem;color:#cfd8dc;margin-bottom:16px;line-height:1.5'>While suspended you can only <b>withdraw ICP</b> and <b>claim your earnings</b> (Wallet), and view <b>My Collection</b> (including listing NFTs). Your Tokens and Tickets are frozen until the suspension ends.</div>
-      <div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap'>
-        <button class='btn' data-ban-wallet style='border-color:#ffd700;color:#ffd700'>Open Wallet</button>
-      </div>
+  o.innerHTML=`<div style='position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(239,68,68,.45);border-radius:12px;max-width:340px;width:100%;padding:22px 22px 18px;text-align:center'>
+      <div style='font-size:1.05rem;font-weight:700;color:#ef4444;letter-spacing:.02em'>Suspended</div>
+      <div style='font-size:.75rem;color:#9aa4b2;margin-top:2px'>${escHtml(ends)}</div>
+      ${b.reason?`<div style='font-size:.8rem;color:#e0e6f0;margin-top:12px'><span style='color:#9aa4b2'>Reason:</span> ${escHtml(b.reason)}</div>`:''}
+      <div style='font-size:.75rem;color:#9aa4b2;line-height:1.5;margin:14px 0 16px'>You can still withdraw ICP, claim earnings, and list NFTs. Tokens and Tickets are frozen.</div>
+      <button class='btn' data-ban-wallet style='width:100%;border-color:#ef4444;color:#ef4444'>Open Wallet</button>
     </div></div>`;
   document.body.appendChild(o);
   o.querySelector('[data-ban-wallet]').addEventListener('click',()=>{ o.remove(); try{ openWalletPanel(); }catch(e){ console.warn('Open wallet failed:',e); } });
@@ -3463,35 +3457,55 @@ async function adminUnban(principal){
 
 async function renderBanList(){
   const container=document.getElementById('adminBanList');
-  if(!container) return;
   try{
     const be=await getBackendActor(true);
-    if(!backendMethodAvailable(be,'getBannedUsers')){
-      container.innerHTML=renderBackendSlicePending('Ban management list is not installed on this backend slice yet. Existing local admin tools remain available.');
-      return;
-    }
-    const bans=await be.getBannedUsers();
-    if(!bans.length){container.innerHTML='<div style="color:#1a3050;font-size:.8rem;padding:8px">No banned users.</div>';return;}
-    container.innerHTML=bans.map(b=>{
-      const principal=b[0].toText();
-      const banType=b[1];
-      const reason=b[2];
-      const untilNs=Number(b[3]);
-      const date=untilNs>0?('Until '+new Date(untilNs/1e6).toLocaleString()):'Permanent';
-      const pub=getProfileFor(principal)||{};
-      const typeColor=banType==='hard'?'#dc2626':'#f59e0b';
-      return `<div style='display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03)'>
-        <div style='flex:1'>
-          <div style='font-size:.8rem;color:#e0e6f0'>${escHtml(pub.name||principal.slice(0,12)+'...')}</div>
-          <div style='font-size:.6rem;color:#3d6090'>${principal}</div>
-          <div style='font-size:.65rem;color:${typeColor};margin-top:2px'>${banType.toUpperCase()} - ${escHtml(reason)}</div>
-          <div style='font-size:.55rem;color:#2d5a8a'>${date}</div>
+    const raw=await be.getBannedUsers();
+    window._banList=await Promise.all(raw.map(async b=>{
+      let name='';
+      try{ const o=await be.getPlayerProfile(b[0]); if(o&&o.length&&o[0].name) name=o[0].name; }catch(_){}
+      return {principal:b[0].toText(),name,reason:b[2],untilNs:Number(b[3])};
+    }));
+    if(container) container.innerHTML=`<button class='btn' onclick='showBannedPlayersPopup()' style='font-size:.75rem;padding:6px 14px;border-color:#ef4444;color:#ef4444'>View Banned Players (${window._banList.length})</button>`;
+  }catch(e){
+    console.warn('Ban list load failed:',e);
+    window._banList=null;
+    if(container) container.innerHTML=renderBackendSlicePending('Could not load the ban list.');
+  }
+  if(document.getElementById('m-banlist')) showBannedPlayersPopup();
+}
+function showBannedPlayersPopup(){
+  const bans=window._banList;
+  document.querySelectorAll('#m-banlist').forEach(e=>e.remove());
+  const rows=bans===null
+    ?`<div style='font-size:.8rem;color:#9aa4b2;padding:12px 0'>Could not load the ban list.</div>`
+    :!bans||!bans.length
+    ?`<div style='font-size:.8rem;color:#9aa4b2;padding:12px 0'>No banned players.</div>`
+    :bans.map(b=>{
+      const status=b.untilNs>0?('Until '+new Date(b.untilNs/1e6).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})):'Permanent';
+      return `<div style='display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);text-align:left'>
+        <div style='flex:1;min-width:0'>
+          <div style='font-size:.85rem;color:#e0e6f0;font-weight:600'>${escHtml(b.name||'(no name)')}</div>
+          <div style='font-size:.68rem;color:#9aa4b2;font-family:monospace;word-break:break-all;user-select:all;margin-top:2px'>${escHtml(b.principal)}</div>
+          <div style='font-size:.7rem;color:#9aa4b2;margin-top:4px'><span style='color:#ef4444'>${escHtml(status)}</span>${b.reason?' · '+escHtml(b.reason):''}</div>
         </div>
-        <button onclick='adminUnban("${principal}")' style='padding:3px 10px;background:none;border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:.65rem;cursor:pointer'>Unban</button>
+        <button class='btn' data-unban='${b.principal}' style='font-size:.7rem;padding:4px 10px;border-color:#22c55e;color:#22c55e;flex-shrink:0'>Unban</button>
       </div>`;
     }).join('');
-  }catch(_e){container.innerHTML=renderBackendSlicePending('Ban management list is temporarily unavailable.');}
+  const o=document.createElement('div'); o.id='m-banlist';
+  o.innerHTML=`<div data-backdrop style='position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(239,68,68,.45);border-radius:12px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:18px 20px'>
+      <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:6px'>
+        <div style='font-size:1rem;font-weight:700;color:#ef4444'>Banned Players${bans&&bans.length?' ('+bans.length+')':''}</div>
+        <button data-close style='background:none;border:none;color:#9aa4b2;font-size:1.1rem;cursor:pointer;padding:2px 6px'>&#10005;</button>
+      </div>
+      <div style='overflow-y:auto'>${rows}</div>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector('[data-close]').addEventListener('click',()=>o.remove());
+  o.querySelector('[data-backdrop]').addEventListener('click',e=>{ if(e.target===e.currentTarget) o.remove(); });
+  o.querySelectorAll('[data-unban]').forEach(btn=>btn.addEventListener('click',()=>adminUnban(btn.getAttribute('data-unban'))));
 }
+window.showBannedPlayersPopup=showBannedPlayersPopup;
 
 async function showBanUserModal(){
   const principal=prompt('Enter principal to ban:'); if(!principal) return;
@@ -6612,8 +6626,7 @@ function backendIdl({IDL}){
 
 let backendActor=null;
 const OPTIONAL_BACKEND_METHODS_PENDING=new Set([
-  'adminSweepMainToOperating','adminWithdrawToAccountId',
-  'getBannedUsers'
+  'adminSweepMainToOperating','adminWithdrawToAccountId'
 ]);
 const TREASURY_BACKEND_PENDING_COPY='Treasury backend slice not installed yet. Deposit targets remain available; balance, sweep, and withdrawal actions stay disabled until the backend exposes those methods.';
 const COMMON_OPERATING_WITHDRAW_ACCOUNT_ID='4124447f786d4f994a51581bde316bd383a634f92e60df6c9b7453db16ec4206';
