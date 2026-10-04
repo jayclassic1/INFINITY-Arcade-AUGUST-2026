@@ -2539,7 +2539,32 @@ function clearPfpIfNftGone(canisterId,tokenId){
     renderProfileView();
   }
 }
+// Which Official NFT is worn as PFP (cosmetics come only from it). The PFP NFT is stored per browser,
+// so we only SET when an Official NFT is chosen, and only CLEAR when the picture actually changes -
+// never just because this browser has no local record of it.
+function avatarNftJson(n){
+  if(!n) return '';
+  let j=JSON.stringify(n);
+  if(j.length>3900) j=JSON.stringify({...n,imageUrl:''});
+  return j.length>3900?'':j;
+}
+function officialPfpToken(profile){
+  const an=profile&&profile.avatarNft;
+  return (an&&an.canisterId===NFT_CANISTER&&/^\d+$/.test(String(an.tokenId||'')))?String(an.tokenId):null;
+}
+function syncPfpNft(actor,tok){
+  try{
+    return actor.setMyPfpNft(tok===null?[]:[BigInt(tok)]).then(()=>{
+      // Backend confirmed the new PFP: re-apply my cosmetics everywhere right away (no refresh needed).
+      const me=S.principalText; if(!me) return;
+      if(window._cosCache) delete window._cosCache[me];
+      try{ if(typeof _profileTarget!=='undefined'&&_profileTarget===me) cosApplyProfile(me); }catch(_){}
+      try{ document.querySelectorAll('[data-cos-done="'+me+'"]').forEach(el=>{ delete el.dataset.cosDone; }); cosDecorate(document.body); }catch(_){}
+    }).catch(e=>console.warn('PFP NFT sync failed:',e));
+  }catch(e){ console.warn('PFP NFT sync failed:',e); }
+}
 function saveProfileData(data){
+  let _prevProfile=null; try{ _prevProfile=getProfile(); }catch(_){}
   if(!S.principalText) return;
   localStorage.setItem('arcade_profile_'+S.principalText,JSON.stringify(data));
   const profileName=data?.name||'';
@@ -2549,6 +2574,16 @@ function saveProfileData(data){
   if(S.connected){
     getBackendActor(true).then(actor=>{
       actor.setPlayerProfile(data.name||'',data.avatarUrl||'',data.bio||'').catch(e=>console.warn('Profile sync failed:',e));
+      try{
+        const tok=officialPfpToken(data);
+        const pfpChanged=String((data&&data.avatarUrl)||'')!==String((_prevProfile&&_prevProfile.avatarUrl)||'');
+        if(tok!==null) syncPfpNft(actor,tok);
+        else if(pfpChanged) syncPfpNft(actor,null);
+      }catch(_){}
+      try{
+        const nj=avatarNftJson(data&&data.avatarNft), pj=avatarNftJson(_prevProfile&&_prevProfile.avatarNft);
+        if(nj!==pj) actor.setMyAvatarNft(nj).catch(e=>console.warn('Avatar NFT sync failed:',e));
+      }catch(_){}
     }).catch(()=>{});
   }
 }
@@ -3250,11 +3285,44 @@ function getProfileFor(principal){
 // design: no power to change it later, to keep names meaningful/permanent). Checked on every
 // login (fresh connect and restored session alike) — if the real on-chain profile has no name
 // yet, this blocks with no way to dismiss until one is set.
+async function restoreProfileFromChain(cp){
+  try{
+    const me=S.principalText||(S.principal&&S.principal.toText?S.principal.toText():'');
+    if(!me||!cp) return;
+    let local=null; try{ local=JSON.parse(localStorage.getItem('arcade_profile_'+me)); }catch(_){}
+    local=local||{};
+    const be=await getBackendActor(true);
+    let chainNft=null;
+    try{ const r=await be.getMyAvatarNft(); if(r&&r.length&&r[0]) chainNft=JSON.parse(r[0]); }catch(_){}
+    const chainUrl=cp.avatarUrl||'';
+    const merged={...local, name:cp.name||local.name||'', bio:(cp.bio&&cp.bio.length)?cp.bio:(local.bio||'')};
+    let repairProfile=false, pushNft=false;
+    if(chainUrl){
+      merged.avatarUrl=chainUrl;
+      merged.avatarNft=chainNft||((local.avatarUrl===chainUrl&&local.avatarNft)?local.avatarNft:null);
+      pushNft=!chainNft&&!!merged.avatarNft;
+    }else if(local.avatarUrl){
+      repairProfile=true; pushNft=!!local.avatarNft;   // chain likely wiped by the old per-browser bug: repair it from this device
+    }else{
+      merged.avatarUrl=null; merged.avatarNft=null;
+    }
+    localStorage.setItem('arcade_profile_'+me,JSON.stringify(merged));
+    selectedAvatarUrl=merged.avatarUrl||null; selectedAvatarNft=merged.avatarNft||null;
+    if(repairProfile) be.setPlayerProfile(merged.name||'',merged.avatarUrl||'',merged.bio||'').catch(()=>{});
+    if(pushNft) be.setMyAvatarNft(avatarNftJson(merged.avatarNft)).catch(()=>{});
+    const tok=officialPfpToken(merged); if(tok!==null) syncPfpNft(be,tok);
+    // The profile exists on-chain: close the first-time profile popup a new device may have opened.
+    if(merged.name){ try{ if(typeof closeProfileModal==='function') closeProfileModal(); }catch(_){} }
+    updateProfileDisplay();
+    try{ if(typeof _profileTarget!=='undefined'&&_profileTarget===me) renderProfileView(); }catch(_){}
+  }catch(e){ console.warn('Profile restore failed:',e); }
+}
 async function ensureNameChosen(){
   try{
     const be=await getBackendActor(false);
     const opt=await be.getPlayerProfile(S.principal);
     const hasName=opt&&opt.length&&opt[0].name&&opt[0].name.trim().length>0;
+    if(hasName) await restoreProfileFromChain(opt[0]);
     if(!hasName){
       const modal=qs('chooseNameModal');
       modal.style.display='flex';
@@ -6325,7 +6393,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),clearCheckpoint:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyOpenSession:IDL.Func([IDL.Text],[IDL.Opt(IDL.Int)],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    setMyAvatarNft:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAvatarNft:IDL.Func([],[IDL.Opt(IDL.Text)],['query']),setMyPfpNft:IDL.Func([IDL.Opt(IDL.Nat)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),clearCheckpoint:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyOpenSession:IDL.Func([IDL.Text],[IDL.Opt(IDL.Int)],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -10733,7 +10801,7 @@ async function submitExistingNft(existingActor=null){
     if(listedImg){
       const prof=getProfile();
       if(prof&&prof.avatarUrl===listedImg){
-        saveProfileData({...prof,avatarUrl:null});
+        saveProfileData({...prof,avatarUrl:null,avatarNft:null});
         updateProfileDisplay();
       }
     }
@@ -14336,7 +14404,9 @@ function saveOwnedVpNfts(owned){
   localStorage.setItem('vp_nft_count_'+S.principalText,String(owned.length));
 }
 function _perkGrantsSection(key){ const a=(window._myPerks&&window._myPerks.access)||[]; if(a.includes('access-all')) return true; const m={'dao-game-developers':'access-dev','dao-artists':'access-art','dao-voting':'access-veteran','dao-player-portal':'access-elite','dao-core':'access-diplomat'}; return !!(m[key]&&a.includes(m[key])); }
-async function loadMyPerks(){ try{ window._myPerks=S.connected?await (await getBackendActor(true)).getMyPerks():null; }catch(_){ window._myPerks=null; } }
+async function loadMyPerks(){ try{ window._myPerks=S.connected?await (await getBackendActor(true)).getMyPerks():null; }catch(_){ window._myPerks=null; }
+  // One-time link per visit for players whose Official PFP was set before this update (only ever sets, never clears).
+  if(S.connected&&!window._pfpNftSynced){ window._pfpNftSynced=true; try{ const tok=officialPfpToken(getProfile()); if(tok!==null) syncPfpNft(await getBackendActor(true),tok); }catch(_){} } }
 function getUserVpCount(){
   if(isAdmin()) return 0; // admin holds no VP (but has full access via isAdmin checks)
   const types=_userBadgeTypes||[];

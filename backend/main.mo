@@ -3565,15 +3565,60 @@ persistent actor ArcadeBackend {
     };
     #ok("Synced: " # Nat.toText(players) # " player-held, " # Nat.toText(arcade) # " arcade-held, " # Nat.toText(failed) # " failed")
   };
+  // === Cosmetics come ONLY from the Official NFT a player wears as their PFP (functional abilities still stack). ===
+  stable var pfpNftEntries : [(Principal, Nat)] = [];
+  func pfpNftOf(p : Principal) : ?Nat {
+    for ((k, t) in pfpNftEntries.vals()) { if (Principal.equal(k, p)) return ?t };
+    null
+  };
+  func setPfpNftEntry(p : Principal, t : ?Nat) {
+    let rest = Array.filter<(Principal, Nat)>(pfpNftEntries, func(e) { not Principal.equal(e.0, p) });
+    pfpNftEntries := switch (t) { case (?x) { Array.append<(Principal, Nat)>(rest, [(p, x)]) }; case null { rest } };
+  };
+  // One token's abilities: its collection-wide abilities plus its own extras (disabled ones skipped).
+  func abilitiesOfToken(t : Nat) : [(Text, Text)] {
+    let out = Buffer.Buffer<(Text, Text)>(4);
+    switch (collectionOfOfficialToken(t)) {
+      case (?c) { for ((id, v) in collectionAbilitiesOf(c.id).vals()) { if (isKnownAbility(id) and disabledAbilities.get(id) == null) { out.add((id, v)) } } };
+      case null {};
+    };
+    switch (officialCollectionAbilities.get(t)) {
+      case (?raw) { for ((id, v) in parseAbilityText(raw).vals()) { if (disabledAbilities.get(id) == null) { out.add((id, v)) } } };
+      case null {};
+    };
+    Buffer.toArray(out)
+  };
+  func cosmeticSourceOf(p : Principal) : [(Text, Text)] {
+    switch (pfpNftOf(p)) {
+      case (?t) { if (officialOwnerOf(t) == ?p and not tokenHeldInArcadeEscrow(t)) { abilitiesOfToken(t) } else { [] } };
+      case null { [] };
+    }
+  };
+  public shared(msg) func setMyPfpNft(tokenId : ?Nat) : async Result.Result<Text, Text> {
+    let caller = msg.caller;
+    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
+    hydrateRuntimeStateIfNeeded();
+    switch (tokenId) {
+      case null { setPfpNftEntry(caller, null); #ok("PFP NFT cleared") };
+      case (?t) {
+        if (not tokenBelongsToOfficialCollection(t)) { setPfpNftEntry(caller, null); return #ok("Not an Official NFT - no cosmetics") };
+        if (officialOwnerOf(t) != ?caller or tokenHeldInArcadeEscrow(t)) { setPfpNftEntry(caller, null); return #err("You don't currently hold that Official NFT") };
+        setPfpNftEntry(caller, ?t);
+        #ok("PFP NFT set")
+      };
+    }
+  };
+
   // Public cosmetics: the visible EFFECT only (border / neon colour / title), never which NFT grants it.
   public query func getCosmetics(players : [Principal]) : async [(Principal, { border : Text; neon : Text; title : Text })] {
+    hydrateRuntimeStateIfNeeded();
     let out = Buffer.Buffer<(Principal, { border : Text; neon : Text; title : Text })>(players.size());
     var n : Nat = 0;
     label scan for (p in players.vals()) {
       if (n >= 60) break scan;
       n += 1;
       var rank : Nat = 0; var neon = ""; var title = "";
-      for ((a, v) in abilityInstancesOf(p).vals()) {
+      for ((a, v) in cosmeticSourceOf(p).vals()) {
         let r : Nat = if (a == "border-whitelight") 4 else if (a == "border-rainbow") 3 else if (a == "border-diamond") 2 else if (a == "border-gold") 1 else 0;
         if (r > rank) { rank := r };
         if (a == "neon-name" and neon == "") { neon := if (v == "") "#ff3cac" else v };
@@ -3769,6 +3814,20 @@ persistent actor ArcadeBackend {
     let profile : PlayerProfile = { name = name; avatarUrl = avatarUrl; bio = bio; createdAt = createdAt; lastSeen = now };
     playerProfiles.put(msg.caller, profile);
     #ok("Profile saved");
+  };
+
+  // The profile picture's NFT details (canister, token, image...) as JSON, so every device shows the same PFP.
+  stable var avatarNftEntries : [(Principal, Text)] = [];
+  public shared(msg) func setMyAvatarNft(json : Text) : async Result.Result<Text, Text> {
+    if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
+    if (Text.size(json) > 4_000) return #err("Avatar NFT details too large");
+    let rest = Array.filter<(Principal, Text)>(avatarNftEntries, func(e) { not Principal.equal(e.0, msg.caller) });
+    avatarNftEntries := if (json == "") { rest } else { Array.append<(Principal, Text)>(rest, [(msg.caller, json)]) };
+    #ok("Avatar NFT saved")
+  };
+  public shared query(msg) func getMyAvatarNft() : async ?Text {
+    for ((k, v) in avatarNftEntries.vals()) { if (Principal.equal(k, msg.caller)) return ?v };
+    null
   };
 
   func getPlayerProfileOpt(player : Principal) : ?PlayerProfile {
