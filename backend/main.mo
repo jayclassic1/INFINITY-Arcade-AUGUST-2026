@@ -520,6 +520,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only: point the backend at the real NFT canister once it's deployed.
   public shared(msg) func adminSetNftCanisterId(canisterId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     nftCanisterIdText := canisterId;
     #ok("NFT canister ID set to " # canisterId);
@@ -1709,6 +1710,7 @@ persistent actor ArcadeBackend {
 
   /// Credit tokens after ICP deposit (admin only)
   public shared(msg) func creditTokens(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -1727,6 +1729,7 @@ persistent actor ArcadeBackend {
 
   /// Spend tokens to play a game (no revenue share — legacy/generic)
   public shared(msg) func spendTokens(amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (true) return #err("Retired: token spends go through game play, purchases or tips");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
@@ -1741,6 +1744,7 @@ persistent actor ArcadeBackend {
   /// Spend tokens on a Showroom game and write explicit Model A ticket accounting.
   /// tokenValue = ICP value in e8s of the tokens spent (amount * 1_000_000 for 1:100 ratio)
   public shared(msg) func spendTokensOnGame(amount : Nat, gameId : Text) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -1839,6 +1843,7 @@ persistent actor ArcadeBackend {
   /// spend (creator to royalties, DAO to daoTreasuryE8s), but credits the arcade share to its own
   /// dedicated showroomPurchaseArcadeShareE8s accumulator, separate from per-play revenue.
   public shared(msg) func purchaseGame(gameId : Text) : async Result.Result<{ tokenBalance : Nat }, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -1890,6 +1895,7 @@ persistent actor ArcadeBackend {
   /// hood, not a separate economic event - the only difference is the fixed demoSeconds window the
   /// frontend uses to time-limit the loaded game.
   public shared(msg) func tryGame(gameId : Text) : async Result.Result<{ tokenBalance : Nat; demoSeconds : Nat }, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (true) return #err("Demo tries have been retired");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
@@ -1944,6 +1950,7 @@ persistent actor ArcadeBackend {
 
   /// Win tickets from a game
   public shared(msg) func winTickets(amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     // Only callable by admin or the game canister in the future
     if (not isAdmin(msg.caller)) return #err("Not authorized — game payout must be admin-verified");
@@ -2207,6 +2214,7 @@ persistent actor ArcadeBackend {
   /// Admin: set or update one game's 8-level ticket payout ladder.
   /// Level 1 pays 0 tickets, level 8 pays 7 tickets; thresholds are minimum scores.
   public shared(msg) func setGamePayoutConfig(gameId : Text, enabled : Bool, thresholds : [Nat]) : async Result.Result<GamePayoutConfigView, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (isBlankText(gameId)) return #err("Game ID is required");
@@ -2315,6 +2323,7 @@ persistent actor ArcadeBackend {
   /// The high score jackpot replaces the low score jackpot, and the new high
   /// score bonus can stack with either score tier when a validated record is set.
   public shared(msg) func setGameTicketJackpotConfig(gameId : Text, enabled : Bool, lowScoreThreshold : Nat, lowPayoutPercent : Nat, highScoreThreshold : Nat, highPayoutPercent : Nat, newHighScorePayoutPercent : Nat) : async Result.Result<GameTicketJackpotConfigView, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (Text.size(gameId) == 0) return #err("Game id is required");
@@ -2356,6 +2365,7 @@ persistent actor ArcadeBackend {
 
   // Jackpot tiers V2: low/high tiers are either % of pool in basis points (1 = 0.01%) or fixed tickets (1..per-win cap).
   public shared(msg) func setGameTicketJackpotConfigV2(gameId : Text, enabled : Bool, lowScoreThreshold : Nat, lowAmount : Nat, lowFixed : Bool, highScoreThreshold : Nat, highAmount : Nat, highFixed : Bool, newHighScoreBps : Nat) : async Result.Result<GameTicketJackpotConfigView, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (Text.size(gameId) == 0) return #err("Game id is required");
@@ -2436,6 +2446,7 @@ persistent actor ArcadeBackend {
     inputHash : Text,
     durationMs : Nat
   ) : async Result.Result<{ tickets : Nat; baseTickets : Nat; jackpotTickets : Nat; newRecord : Bool; jackpotTierLabels : [Text]; jackpotUncappedTickets : Nat; jackpotCapped : Bool; jackpotPoolRemaining : Nat; tokenBalance : Nat; ticketBalance : Nat }, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -2584,6 +2595,7 @@ persistent actor ArcadeBackend {
   transient let CHECKPOINT_MAX_CHARS : Nat = 32_000;
   func checkpointKey(k : Text) : Trie.Key<Text> { { hash = Text.hash(k); key = k } };
   public shared(msg) func saveCheckpoint(gameId : Text, data : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
     if (isBlankText(gameId)) return #err("Game ID is required");
     if (Text.size(data) > CHECKPOINT_MAX_CHARS) return #err("Checkpoint too large (max 32,000 characters)");
@@ -2597,6 +2609,7 @@ persistent actor ArcadeBackend {
     Trie.get(gameCheckpoints, checkpointKey(Principal.toText(player) # "::" # gameId), Text.equal)
   };
   public shared(msg) func clearCheckpoint(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
     let k = Principal.toText(msg.caller) # "::" # gameId;
     gameCheckpoints := Trie.remove(gameCheckpoints, checkpointKey(k), Text.equal).0;
@@ -2744,6 +2757,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRetireBreaker(gameId : Text, player : Principal) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     let current = switch (leaderboards.get(gameId)) {
@@ -2822,6 +2836,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func setProfileWall(items : [Text]) : async Result.Result<[Text], Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -2915,6 +2930,7 @@ persistent actor ArcadeBackend {
   /// Submit high score manually. Player-facing high scores must go through
   /// submitGameScore() so records are tied to a validated paid session.
   public shared(msg) func submitHighScore(gameId : Text, score : Nat) : async Result.Result<Bool, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -2926,6 +2942,7 @@ persistent actor ArcadeBackend {
 
   /// Award tickets to a player (admin only for manual awards)
   public shared(msg) func awardTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized — use submitGameScore for game rewards");
     hydrateRuntimeStateIfNeeded();
@@ -3134,6 +3151,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: promote to Jay's Picks
   public shared(msg) func promoteNftToJaysPicks(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (nftListings.get(listingId)) {
@@ -3157,6 +3175,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: remove NFT listing
   public shared(msg) func removeNftListing(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     hydrateRuntimeStateIfNeeded();
     switch (nftListings.get(listingId)) {
       case null { return #err("Listing not found") };
@@ -3203,6 +3222,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: create an official collection shell from image URLs.
   public shared(msg) func adminCreateCollection(name : Text, description : Text, ticketCost : Nat, imageUrls : [Text]) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     if (Text.size(name) == 0) return #err("Collection name is required");
     if (imageUrls.size() == 0) return #err("At least one image URL is required");
@@ -3226,6 +3246,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: mint each image in an official collection into internal arcade listings.
   public shared(msg) func adminMintCollection(collectionId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (officialCollections.get(collectionId)) {
@@ -3303,6 +3324,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: delete an unminted official collection.
   public shared(msg) func adminDeleteCollection(collectionId : Text) : async Result.Result<Bool, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (officialCollections.get(collectionId)) {
@@ -3317,6 +3339,7 @@ persistent actor ArcadeBackend {
 
   /// Backward-compatible alias for admin UI callsites that use the shorter name.
   public shared(msg) func adminDeleteCol(collectionId : Text) : async Result.Result<Bool, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     await adminDeleteCollection(collectionId);
   };
 
@@ -3360,6 +3383,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminAssignAbility(tokenId : Nat, ability : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     if (Text.size(ability) == 0) return #err("Ability is required");
     hydrateRuntimeStateIfNeeded();
@@ -3374,6 +3398,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminSetCollectionTokenAbility(collectionId : Text, tokenId : Nat, ability : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (officialCollections.get(collectionId)) {
@@ -3388,6 +3413,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminBatchAssignAbilities(assignments : [(Nat, Text)]) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     var assigned : Nat = 0;
@@ -3404,6 +3430,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRemoveAbility(tokenId : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (not tokenBelongsToOfficialCollection(tokenId)) return #err("Official collection token not found");
@@ -3417,6 +3444,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminClearCollectionTokenAbility(collectionId : Text, tokenId : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (officialCollections.get(collectionId)) {
@@ -3504,6 +3532,7 @@ persistent actor ArcadeBackend {
   // Every ability instance a player holds right now (duplicates = stacking).
   func abilityInstancesOf(p : Principal) : [(Text, Text)] {
     hydrateRuntimeStateIfNeeded();
+    if (isBannedNow(p)) return [];
     let out = Buffer.Buffer<(Text, Text)>(8);
     for ((t, o) in officialNftOwnerEntries.vals()) {
       if (Principal.equal(o, p) and not tokenHeldInArcadeEscrow(t)) {
@@ -3530,6 +3559,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminSetCollectionAbilities(collectionId : Text, list : [(Text, Text)]) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let clean = switch (cleanAbilityList(list)) { case (#ok(l)) { l }; case (#err(e)) { return #err(e) } };
@@ -3539,6 +3569,7 @@ persistent actor ArcadeBackend {
     }
   };
   public shared(msg) func adminSetTokenAbilities(tokenId : Nat, list : [(Text, Text)]) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     if (not tokenBelongsToOfficialCollection(tokenId)) return #err("Official collection token not found");
@@ -3547,6 +3578,7 @@ persistent actor ArcadeBackend {
     #ok("NFT abilities saved (" # Nat.toText(clean.size()) # ")")
   };
   public shared(msg) func adminSyncOfficialOwners() : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let self = Principal.fromActor(ArcadeBackend);
@@ -3589,12 +3621,14 @@ persistent actor ArcadeBackend {
     Buffer.toArray(out)
   };
   func cosmeticSourceOf(p : Principal) : [(Text, Text)] {
+    if (isBannedNow(p)) return [];
     switch (pfpNftOf(p)) {
       case (?t) { if (officialOwnerOf(t) == ?p and not tokenHeldInArcadeEscrow(t)) { abilitiesOfToken(t) } else { [] } };
       case null { [] };
     }
   };
   public shared(msg) func setMyPfpNft(tokenId : ?Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -3661,6 +3695,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminDisableAbility(ability : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     disabledAbilities.put(ability, true);
@@ -3668,6 +3703,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminEnableAbility(ability : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     disabledAbilities.delete(ability);
@@ -3806,7 +3842,59 @@ persistent actor ArcadeBackend {
 
   /// Save the caller's own real on-chain profile (name/bio/avatar), visible to anyone via
   /// getPlayerProfile — previously this call existed in the frontend but not the backend at all.
+  // === Ban system: banned players can only withdraw ICP, claim earnings and list NFTs (fee still charged). ===
+  stable var bannedEntries : [(Principal, Text, Int, Int)] = []; // (player, reason, until (0 = permanent), bannedAt)
+  func banEntryOf(p : Principal) : ?(Principal, Text, Int, Int) {
+    for (e in bannedEntries.vals()) { if (Principal.equal(e.0, p)) return ?e };
+    null
+  };
+  func isBannedNow(p : Principal) : Bool {
+    switch (banEntryOf(p)) { case null { false }; case (?e) { e.2 == 0 or Time.now() < e.2 } }
+  };
+  func setBanEntry(p : Principal, e : ?(Principal, Text, Int, Int)) {
+    let rest = Array.filter<(Principal, Text, Int, Int)>(bannedEntries, func(x) { not Principal.equal(x.0, p) });
+    bannedEntries := switch (e) { case (?v) { Array.append<(Principal, Text, Int, Int)>(rest, [v]) }; case null { rest } };
+  };
+  func banPlayer(caller : Principal, p : Principal, reason : Text, durationDays : Nat) : Result.Result<Text, Text> {
+    if (not isAdmin(caller)) return #err("Not authorized");
+    if (isAdmin(p)) return #err("Admins can't be banned");
+    if (Principal.isAnonymous(p)) return #err("Invalid principal");
+    if (Text.size(reason) > 300) return #err("Reason too long (max 300 characters)");
+    let until : Int = if (durationDays == 0) { 0 } else { Time.now() + durationDays * 86_400_000_000_000 };
+    setBanEntry(p, ?(p, reason, until, Time.now()));
+    #ok(if (durationDays == 0) { "Banned permanently" } else { "Banned for " # Nat.toText(durationDays) # " day(s)" })
+  };
+  public shared(msg) func adminBanUserFor(p : Principal, reason : Text, durationDays : Nat) : async Result.Result<Text, Text> {
+    banPlayer(msg.caller, p, reason, durationDays)
+  };
+  // Legacy entry point (existing admin button): permanent ban.
+  public shared(msg) func adminBanUser(p : Principal, banType : Text, reason : Text) : async Result.Result<Text, Text> {
+    ignore banType;
+    banPlayer(msg.caller, p, reason, 0)
+  };
+  public shared(msg) func adminUnbanUser(p : Principal) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    setBanEntry(p, null);
+    #ok("Unbanned")
+  };
+  public shared query(msg) func getBannedUsers() : async [(Principal, Text, Text, Int)] {
+    if (not isAdmin(msg.caller)) return [];
+    let out = Buffer.Buffer<(Principal, Text, Text, Int)>(bannedEntries.size());
+    for (e in bannedEntries.vals()) {
+      if (e.2 == 0 or Time.now() < e.2) { out.add((e.0, if (e.2 == 0) { "permanent" } else { "timed" }, e.1, e.2)) };
+    };
+    Buffer.toArray(out)
+  };
+  public query func checkBanStatus(p : Principal) : async { banned : Bool; banType : Text; reason : Text; until : Int } {
+    switch (banEntryOf(p)) {
+      case (?e) { if (e.2 == 0 or Time.now() < e.2) { return { banned = true; banType = "soft"; reason = e.1; until = e.2 } } };
+      case null {};
+    };
+    { banned = false; banType = ""; reason = ""; until = 0 }
+  };
+
   public shared(msg) func setPlayerProfile(name : Text, avatarUrl : Text, bio : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
     let now = Time.now();
@@ -3819,6 +3907,7 @@ persistent actor ArcadeBackend {
   // The profile picture's NFT details (canister, token, image...) as JSON, so every device shows the same PFP.
   stable var avatarNftEntries : [(Principal, Text)] = [];
   public shared(msg) func setMyAvatarNft(json : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
     if (Text.size(json) > 4_000) return #err("Avatar NFT details too large");
     let rest = Array.filter<(Principal, Text)>(avatarNftEntries, func(e) { not Principal.equal(e.0, msg.caller) });
@@ -3918,6 +4007,7 @@ persistent actor ArcadeBackend {
     description : Text,
     compatibility : Text
   ) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -3987,6 +4077,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only withdrawal from the dedicated Back Treasury subaccount.
   public shared(msg) func adminWithdrawBackTreasury(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (backTreasuryWithdrawalInFlight) return #err("Back Treasury withdrawal already in progress");
     if (amountE8s <= ICP_LEDGER_FEE_E8S) {
@@ -4025,6 +4116,7 @@ persistent actor ArcadeBackend {
 
   /// Read-only: current live balance of the dedicated Back Treasury subaccount (admin only).
   public shared(msg) func getBackTreasuryBalance() : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let balanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?BACK_TREASURY_SUBACCOUNT });
@@ -4061,6 +4153,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminSetBoostPrice(priceE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (priceE8s <= ICP_LEDGER_FEE_E8S) return #err("Boost price must exceed the ledger fee");
     boostPriceE8s := priceE8s;
@@ -4074,6 +4167,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func buyGameBoost(gameId : Text) : async Result.Result<Int, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -4136,6 +4230,7 @@ persistent actor ArcadeBackend {
   /// Admin: free Spotlight boost - identical rules to buyGameBoost (live Showroom games only, 7 days stacking,
   /// counts toward the Spotlight slot cap) minus the payment. No await, so the check-and-write is atomic.
   public shared(msg) func adminBoostGame(gameId : Text) : async Result.Result<Int, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -4185,6 +4280,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminAddNftSpotlight(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     if (not isLiveNftListing(listingId)) return #err("Only live NFT listings can be spotlighted");
@@ -4199,6 +4295,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRemoveNftSpotlight(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let before = nftSpotlightIds.size();
     nftSpotlightIds := Array.filter<Text>(nftSpotlightIds, func(id) { id != listingId });
@@ -4216,6 +4313,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminAddNftGrail(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     if (not isLiveNftListing(listingId)) return #err("Only live NFT listings can be Grails");
@@ -4226,6 +4324,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRemoveNftGrail(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let before = nftGrailIds.size();
     nftGrailIds := Array.filter<Text>(nftGrailIds, func(id) { id != listingId });
@@ -4316,6 +4415,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminSetDaoFavourite(gameId : Text, on : Bool) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     if (on) {
@@ -4386,6 +4486,7 @@ persistent actor ArcadeBackend {
   public query func getLocalMultiplayerGameIds() : async [Text] { localMultiplayerGameIds };
 
   public shared(msg) func setGameLocalMultiplayer(gameId : Text, on : Bool) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -4406,6 +4507,7 @@ persistent actor ArcadeBackend {
   public query func getShowroomHopefulGameIds() : async [Text] { showroomHopefulGameIds };
 
   public shared(msg) func setGameShowroomHopeful(gameId : Text, on : Bool) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -4423,6 +4525,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func getBoostTreasuryBalance() : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let balanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?BOOST_TREASURY_SUBACCOUNT });
@@ -4430,6 +4533,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminWithdrawBoostTreasury(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (boostTreasuryWithdrawalInFlight) return #err("Boost Treasury withdrawal already in progress");
     if (amountE8s <= ICP_LEDGER_FEE_E8S) {
@@ -4475,6 +4579,7 @@ persistent actor ArcadeBackend {
   transient var ticketFundInFlight = HashMap.HashMap<Principal, Bool>(8, Principal.equal, Principal.hash);
 
   public shared(msg) func fundGameTickets(gameId : Text, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -4578,6 +4683,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: seed (or retry seeding) a live Showroom Ticket game's pool - also backfills games published before seeding existed.
   public shared(msg) func adminSeedTicketPool(gameId : Text) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -4614,6 +4720,7 @@ persistent actor ArcadeBackend {
     description : Text,
     compatibility : Text
   ) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -4683,6 +4790,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only withdrawal from the dedicated Showroom Treasury subaccount.
   public shared(msg) func adminWithdrawShowroomTreasury(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (showroomTreasuryWithdrawalInFlight) return #err("Showroom Treasury withdrawal already in progress");
     if (amountE8s <= ICP_LEDGER_FEE_E8S) {
@@ -4721,6 +4829,7 @@ persistent actor ArcadeBackend {
 
   /// Read-only: current live balance of the dedicated Showroom Treasury subaccount (admin only).
   public shared(msg) func getShowroomTreasuryBalance() : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let balanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?SHOWROOM_TREASURY_SUBACCOUNT });
@@ -4775,12 +4884,14 @@ persistent actor ArcadeBackend {
   stable var lotteryTestHoursPerWeek : Nat = 0; // 0 = normal speed; N = one lottery "week" lasts N hours (local testing)
 
   public shared(msg) func adminSetLotteryEnabled(on : Bool) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     lotteryEnabled := on;
     #ok(if (on) "Lottery ON: new cycles start when affordable" else "Lottery PAUSED: running cycles still finish, no new cycles start")
   };
 
   public shared(msg) func adminSetLotteryPayoutBps(kind : Text, bps : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (bps < 100 or bps > 5000) return #err("Payout must be between 1.00% and 50.00% (100-5000 basis points)");
     if (kind == "token") { tokenLotteryPayoutBps := bps; return #ok("Token lottery payout set; applies from the next cycle") };
@@ -4789,6 +4900,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminSetLotteryTestSpeed(hoursPerWeek : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (hoursPerWeek > 168) return #err("Use 0 for normal speed, or 1-168 hours per lottery week");
     lotteryTestHoursPerWeek := hoursPerWeek;
@@ -4844,7 +4956,7 @@ persistent actor ArcadeBackend {
     for ((_, o) in officialNftOwnerEntries.vals()) { if (seen.get(o) == null) { seen.put(o, true); people.add(o) } };
     let buf = Buffer.Buffer<(Principal, Nat)>(16);
     for (p in people.vals()) {
-      if (not isAdmin(p)) {
+      if (not isAdmin(p) and not isBannedNow(p)) {
         let n = vpBadgeCountOf(p);
         var tier : Nat = 0;
         for (t in thresholds.vals()) {
@@ -4970,6 +5082,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRunLottery() : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     await lotteryTick();
     #ok("Lottery check complete: due draws run, new cycles started if on and affordable")
@@ -4977,6 +5090,7 @@ persistent actor ArcadeBackend {
 
   // TESTING ONLY (remove before mainnet): make the current cycle's next draw due now, then run a check.
   public shared(msg) func adminLotteryDrawNow(kind : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (lotteryCycleOf(kind)) {
       case null { return #err("No running " # kind # " lottery cycle") };
@@ -5008,6 +5122,7 @@ persistent actor ArcadeBackend {
     arcadeSharesE8s : Nat; daoTreasuryE8s : Nat; lotteryLockedE8s : Nat;
     totalLiabilitiesE8s : Nat; ledgerBalanceE8s : Nat; surplusE8s : Nat; shortfallE8s : Nat;
   }, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     var tok : Nat = 0; for (v in tokens.vals()) { tok += v };
@@ -5103,6 +5218,7 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the Showroom ticket-game arcade-share accumulator (from_subaccount=null: this is
   /// a plain internal counter against the canister's general ICP balance, not a dedicated subaccount).
   public shared(msg) func adminWithdrawShowroomTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
     let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
@@ -5134,6 +5250,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only withdrawal from the Showroom non-ticket per-play arcade-share accumulator.
   public shared(msg) func adminWithdrawShowroomNonTicketArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
     let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
@@ -5165,6 +5282,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only withdrawal from the Showroom full-game-purchase arcade-share accumulator.
   public shared(msg) func adminWithdrawShowroomPurchaseArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
     let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
@@ -5197,6 +5315,7 @@ persistent actor ArcadeBackend {
 
   /// Admin-only withdrawal from the Prize Booth (NFT + VP badge sales) arcade-share accumulator.
   public shared(msg) func adminWithdrawPrizeBoothArcadeShare(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     // Session #3: this share pays its own ledger fee (debited with the amount), never general custody.
     let totalDebit = amountE8s + ICP_LEDGER_FEE_E8S;
@@ -5268,6 +5387,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func startZipUpload(gameId : Text, purpose : Text, filename : Text, totalBytes : Nat, chunkCount : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5304,6 +5424,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func uploadZipChunk(uploadId : Text, chunkIndex : Nat, data : Blob) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     let upload = switch (pendingZipUploads.get(uploadId)) {
@@ -5327,6 +5448,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func finalizeZipUpload(uploadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     let upload = switch (pendingZipUploads.get(uploadId)) {
@@ -5343,6 +5465,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminGetPendingZipUploads() : async Result.Result<[PendingZipUpload], Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let out = Buffer.Buffer<PendingZipUpload>(pendingZipUploads.size());
@@ -5353,6 +5476,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminGetZipChunk(uploadId : Text, chunkIndex : Nat) : async Result.Result<Blob, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (zipChunks.get(uploadId # "#" # Nat.toText(chunkIndex))) {
       case null #err("Chunk not found");
@@ -5361,6 +5485,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminMarkZipDownloaded(uploadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (pendingZipUploads.get(uploadId)) {
       case null #err("Upload not found");
@@ -5395,6 +5520,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminDeletePendingZipUpload(uploadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (pendingZipUploads.get(uploadId)) {
       case null #err("Upload not found");
@@ -5410,6 +5536,7 @@ persistent actor ArcadeBackend {
   /// while the submission's own record - and every per-game setting keyed by its ID (monetization,
   /// category, accessibility, pricing) - stays the one record that goes live on Accept.
   public shared(msg) func adminStageZipGameUrl(gameId : Text, hostedUrl : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -5430,6 +5557,7 @@ persistent actor ArcadeBackend {
   /// "showroom-pending" review stage and approveGameShowroom are no longer reachable from here).
   /// hostedUrl may be empty, in which case the URL staged by adminStageZipGameUrl is used.
   public shared(msg) func adminPublishZipGame(gameId : Text, hostedUrl : Text, uploadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -5472,6 +5600,7 @@ persistent actor ArcadeBackend {
   /// their own already-trusted identity, same as the existing admin thumbnail-upload path), sets
   /// the game's real thumbnail URL and clears the pending upload.
   public shared(msg) func adminSetGameThumbnail(gameId : Text, thumbnailUrl : Text, uploadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -5524,6 +5653,7 @@ persistent actor ArcadeBackend {
   /// admin (per Jay's "auto-set by user's choice, admin adjustable" spec). Stored separately from
   /// GameSubmission itself — see gameCategoryEntries' comment for why.
   public shared(msg) func setGameCategory(gameId : Text, category : Text) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5545,6 +5675,7 @@ persistent actor ArcadeBackend {
   /// admin-only pattern, since these are meant to be the creator's own honest self-description of
   /// their game, not something admin decides for them.
   public shared(msg) func setGameAccessibility(gameId : Text, keyboardOnly : Bool, keyboardAndMouse : Bool, controllerReady : Bool, madeWithAi : Bool) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5559,6 +5690,7 @@ persistent actor ArcadeBackend {
 
   /// Session #3: creator (or admin) edits their own game's description from the Developer Dashboard.
   public shared(msg) func setGameDescription(gameId : Text, description : Text) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5587,6 +5719,7 @@ persistent actor ArcadeBackend {
   /// wantsPurchasable is a request/hint only; admin still sets the real price via
   /// adminSetGamePricing when approving.
   public shared(msg) func setGameMonetization(gameId : Text, paysTickets : Bool, wantsPurchasable : Bool) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5614,6 +5747,7 @@ persistent actor ArcadeBackend {
   /// layered on top. Stored in the separate gamePricing map, not on GameSubmission itself (see
   /// gamePricingEntries' comment for why).
   public shared(msg) func adminSetGamePricing(gameId : Text, tokenCost : Nat, purchasePrice : Nat) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5628,6 +5762,7 @@ persistent actor ArcadeBackend {
   /// before the game is live, and only for non-ticket games marked Purchasable; admin anytime. Writes the
   /// same pricing record adminSetGamePricing does, keeping the existing per-play token cost (default 1).
   public shared(msg) func setGameRequestedPurchasePrice(gameId : Text, purchasePrice : Nat) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -5678,6 +5813,7 @@ persistent actor ArcadeBackend {
   /// given reason and clears the associated pending upload (zip or thumbnail — whichever the
   /// admin was reviewing when they rejected).
   public shared(msg) func adminRejectZipGame(gameId : Text, uploadId : Text, reason : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -5757,6 +5893,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: return every game submission, including removed records.
   public shared(msg) func adminGetAllGames() : async [GameSubmission] {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return [];
     hydrateRuntimeStateIfNeeded();
     Iter.toArray(gameSubmissions.vals());
@@ -5764,6 +5901,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: promote game to Jay's Picks
   public shared(msg) func promoteGameToJaysPicks(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5785,6 +5923,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: remove game
   public shared(msg) func removeGameSubmission(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5810,6 +5949,7 @@ persistent actor ArcadeBackend {
   /// adminRelistGame below. Distinct from the older "removed" status above, which has no relist
   /// path - suspend is specifically for "needs work, will come back."
   public shared(msg) func adminSuspendGame(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5833,6 +5973,7 @@ persistent actor ArcadeBackend {
   /// paid for once, this is purely a visibility toggle back on. Only allowed from "suspended" so
   /// this can't accidentally resurrect a "removed" or already-live game via the wrong button.
   public shared(msg) func adminRelistGame(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5870,6 +6011,7 @@ persistent actor ArcadeBackend {
   /// action. Also sweeps any lingering pending zip/thumbnail uploads for this game, same as the
   /// existing removeGameSubmission does.
   public shared(msg) func adminDeleteGamePermanently(gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (gameSubmissions.get(gameId)) {
@@ -5928,6 +6070,7 @@ persistent actor ArcadeBackend {
     displayName : Text,
     txRef : Text
   ) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
     let game = switch (gameSubmissions.get(gameId)) {
@@ -6119,6 +6262,7 @@ persistent actor ArcadeBackend {
 
   /// Admin: credit game creator earnings to a creator. This intentionally does not credit NFT seller earnings.
   public shared(msg) func creditRoyalty(creator : Principal, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -6245,6 +6389,7 @@ persistent actor ArcadeBackend {
   let TOKEN_TIP_E8S_PER_TOKEN : Nat = 1_000_000; // 100 Tokens = 1 ICP, same rate as convertDepositToTokens
 
   public shared(msg) func tipCreatorWithTokens(gameId : Text, tokenAmount : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     if (tokenAmount == 0) return #err("Tip amount must be greater than zero");
@@ -6428,6 +6573,7 @@ persistent actor ArcadeBackend {
   /// Transfers the escrowed NFT first; only after transfer success are buyer Tickets burned
   /// and seller claimable ICP credited at the fixed 1 ICP = 1,000 Tickets rate.
   public shared(msg) func redeemUserNft(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated via Internet Identity");
     hydrateRuntimeStateIfNeeded();
@@ -6563,6 +6709,7 @@ persistent actor ArcadeBackend {
 
   /// Return an escrowed NFT to the player who listed it (delisting). Allowed for that player or an admin.
   public shared(msg) func returnEscrowNft(listingId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     hydrateRuntimeStateIfNeeded();
 
     switch (escrows.get(listingId)) {
@@ -6654,6 +6801,7 @@ persistent actor ArcadeBackend {
 
   /// Credit tickets to a player (admin only)
   public shared(msg) func addTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -6665,6 +6813,7 @@ persistent actor ArcadeBackend {
 
   /// Set tickets to exact amount (admin only) — for resets
   public shared(msg) func adminSetTickets(player : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (not ALLOW_TEST_MINTING and amount > getTicketBalance(player)) return #err("Raising ticket balances is disabled on this network (reductions still allowed)");
@@ -6674,6 +6823,7 @@ persistent actor ArcadeBackend {
 
   /// Batch credit tickets (admin only)
   public shared(msg) func batchAddTickets(entries : [(Principal, Nat)]) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not ALLOW_TEST_MINTING) return #err("Test minting is disabled on this network");
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
@@ -6688,6 +6838,7 @@ persistent actor ArcadeBackend {
 
   /// Set ticket cost for an NFT (admin only)
   public shared(msg) func setNftCost(tokenId : TokenId, cost : Nat) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     costs.put(tokenId, cost);
@@ -6696,6 +6847,7 @@ persistent actor ArcadeBackend {
 
   /// Batch set NFT costs (admin only)
   public shared(msg) func batchSetNftCosts(entries : [(TokenId, Nat)]) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     for ((id, cost) in entries.vals()) {
@@ -6706,6 +6858,7 @@ persistent actor ArcadeBackend {
 
   /// Set default ticket cost (admin only)
   public shared(msg) func setDefaultCost(cost : Nat) : async Result.Result<(), Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     defaultCost := cost;
     #ok();
@@ -6771,6 +6924,7 @@ persistent actor ArcadeBackend {
 
   /// Redeem an NFT by spending tickets
   public shared(msg) func redeem(tokenId : TokenId) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (true) return #err("Retired: redeem Official NFTs through the Prize Booth");
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated via Internet Identity");
@@ -6922,6 +7076,7 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the separated Operating Treasury subaccount.
   /// Amount is the net ICP e8s sent to destination; the operating subaccount must also cover the ledger fee.
   public shared(msg) func adminWithdrawOperatingTreasury(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     await adminWithdrawOperatingTreasuryImpl(destination, amountE8s)
   };
@@ -6967,12 +7122,14 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the dedicated Blackhole Treasury subaccount.
   /// Amount is the net ICP e8s sent to destination; the subaccount must also cover the ledger fee.
   public shared(msg) func adminWithdrawBlackholeTreasury(destination : Account, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     await adminWithdrawBlackholeTreasuryImpl(destination, amountE8s)
   };
 
   /// Read-only: current live balance of the dedicated Blackhole Treasury subaccount (admin only).
   public shared(msg) func getBlackholeTreasuryBalance() : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let balanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?BLACKHOLE_TREASURY_SUBACCOUNT });
@@ -6982,6 +7139,7 @@ persistent actor ArcadeBackend {
   /// Admin-only withdrawal from the separated Operating Treasury subaccount to a raw ICP ledger account ID.
   /// Amount is the net ICP e8s sent; the operating subaccount must also cover the classic ledger fee.
   public shared(msg) func adminWithdrawOperatingTreasuryToAccountId(toAccountHex : Text, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (operatingTreasuryWithdrawalInFlight) return #err("Operating Treasury withdrawal already in progress");
     if (amountE8s == 0) return #err("Operating Treasury withdrawal amount must be greater than zero");
@@ -7033,6 +7191,7 @@ persistent actor ArcadeBackend {
 
   /// Legacy admin-panel wrapper: withdraw Operating Treasury ICP to a principal main account.
   public shared(msg) func adminWithdrawTreasury(toPrincipal : Principal, amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     await adminWithdrawOperatingTreasuryImpl({ owner = toPrincipal; subaccount = null }, amountE8s)
   };
@@ -7063,6 +7222,7 @@ persistent actor ArcadeBackend {
   /// Moves the converted ICP out of the player subaccount before crediting Tokens, which prevents
   /// double-conversion or later withdrawal of the same ICP.
   public shared(msg) func convertDepositToTokens(amountE8s : Nat) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
@@ -7197,6 +7357,7 @@ persistent actor ArcadeBackend {
   /// Toggleable: voting the same way you already voted removes your vote; voting the other way
   /// changes it. Any connected user may vote — no Voting Power requirement.
   public shared(msg) func voteGameApproval(gameId : Text, isLike : Bool) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Connect wallet to vote");
     hydrateRuntimeStateIfNeeded();
@@ -7234,6 +7395,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func submitHoleLink(title : Text, description : Text, url : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Connect wallet to submit to Blackhole");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
@@ -7344,6 +7506,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func deleteHoleSubmission(id : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     switch (findHoleSubmission(id)) {
       case null { #err("Submission not found") };
       case (?s) {
@@ -7368,6 +7531,7 @@ persistent actor ArcadeBackend {
   // voting power they hold (not weighted) — self-voting on your own submission is allowed, and
   // once cast a vote cannot be switched or removed, per Jay's spec.
   public shared(msg) func voteHoleSubmission(id : Text, isLike : Bool) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Connect wallet to vote");
     if (votingPowerOf(caller) == 0 and not isAdmin(caller)) return #err("Only Voting Power holders can vote on Blackhole submissions");
@@ -7394,6 +7558,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func upvoteHoleSubmission(id : Text) : async Result.Result<Nat, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Connect wallet to signal approval");
     switch (findHoleSubmission(id)) {
       case null { #err("Submission not found") };
@@ -7415,6 +7580,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func setHoleLegendary(id : Text, isLegendary : Bool) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (findHoleSubmission(id)) {
       case null { #err("Submission not found") };
@@ -7436,6 +7602,7 @@ persistent actor ArcadeBackend {
   // Admin-only for now — Jay's to-do: extend this power to moderators once the moderator-powers
   // system is built out.
   public shared(msg) func adminSoftPunishBlackholeUploader(who : Principal, reason : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let punishment : HolePunishment = { principal = who; until = Time.now() + HOLE_SOFT_PUNISH_NS; permanent = false; reason };
     holePunishmentEntries := Array.append<HolePunishment>(
@@ -7448,6 +7615,7 @@ persistent actor ArcadeBackend {
   // Admin-only for now — same to-do as above. Hard ban also removes the uploader's existing
   // active submissions, since a permanent ban is reserved for real abuse (not just a cooldown).
   public shared(msg) func adminHardBanBlackholeUploader(who : Principal, reason : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let punishment : HolePunishment = { principal = who; until = 0; permanent = true; reason };
     holePunishmentEntries := Array.append<HolePunishment>(
@@ -7468,6 +7636,7 @@ persistent actor ArcadeBackend {
 
   // Admin-only for now — same to-do as above.
   public shared(msg) func adminClearBlackholePunishment(who : Principal) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     holePunishmentEntries := Array.filter<HolePunishment>(holePunishmentEntries, func(p) { not Principal.equal(p.principal, who) });
     #ok("Blackhole punishment cleared")
@@ -7798,6 +7967,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func createForumThread(section : Text, title : Text, body : Text, image : ?Text, authorName : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to post");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     switch (validateForumText(section, "Section", FORUM_SECTION_MAX_CHARS, true)) { case (#err(e)) return #err(e); case (#ok(())) {} };
@@ -7848,6 +8018,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func addForumReply(threadId : Text, body : Text, image : ?Text, authorName : Text, parentReplyId : ?Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to reply");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     switch (validateForumText(threadId, "Thread", FORUM_SECTION_MAX_CHARS, true)) { case (#err(e)) return #err(e); case (#ok(())) {} };
@@ -7917,6 +8088,7 @@ persistent actor ArcadeBackend {
   /// refresh). Soft-deletes via the existing `deleted` flag (already read by publicForumThread,
   /// but never set anywhere until now) rather than removing the record outright.
   public shared(msg) func adminDeleteForumThread(threadId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     ensureForumIndexBuilt();
     var found = false;
     var authorized = false;
@@ -7954,6 +8126,7 @@ persistent actor ArcadeBackend {
   /// risking a memory-incompatible upgrade), so this hard-removes the reply and any of its own
   /// nested child replies from the thread's replies array instead.
   public shared(msg) func adminDeleteForumReply(threadId : Text, replyId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     ensureForumIndexBuilt();
     var found = false;
     var authorized = false;
@@ -8007,6 +8180,7 @@ persistent actor ArcadeBackend {
   public query func getVotingPower(owner : Principal) : async Nat { votingPowerOf(owner) };
 
   public shared(msg) func awardDevContributorBadge(owner : Principal, gameId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (isAdmin(owner)) return #err("Admin accounts don't hold badges");
     for (b in getBadgesForOwner(owner).vals()) { if (b.badgeType == "dev-contributor") return #err("This account already has a Dev Contributor badge") };
@@ -8019,6 +8193,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func awardArtistContributorBadge(owner : Principal) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (isAdmin(owner)) return #err("Admin accounts don't hold badges");
     for (b in getBadgesForOwner(owner).vals()) { if (b.badgeType == "artist-contributor") return #err("This account already has an Artist Contributor badge") };
@@ -8041,6 +8216,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func buyStandardBadge() : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to buy a badge");
     if (isAdmin(msg.caller)) return #err("Admin accounts don't hold Voting Power Badges");
     let owned = vpBadgeCountOf(msg.caller);
@@ -8064,6 +8240,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminResetVpBadges() : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     gamerBadgeEntries := Array.filter<GamerBadge>(gamerBadgeEntries, func(badge) {
       not (Principal.equal(badge.owner, msg.caller) and Text.startsWith(badge.badgeType, #text "vp-badge-"))
@@ -8078,6 +8255,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminAddExternalCollection(canisterId : Text, name : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     if (Text.size(Text.trim(canisterId, #char ' ')) == 0) return #err("Canister ID required");
@@ -8087,6 +8265,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRemoveExternalCollection(canisterId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     externalCollections.delete(canisterId);
@@ -8098,6 +8277,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminAddModerator(principal : Principal) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     switch (moderators.get(principal)) {
@@ -8107,6 +8287,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func adminRemoveModerator(principal : Principal) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     moderators.delete(principal);
@@ -8118,6 +8299,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func createProposal(title : Text, body : Text, category : Text, duration : Text, images : [Text], paymentLane : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to create a proposal");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
@@ -8192,6 +8374,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func createProposalV2(kind : Text, title : Text, body : Text, duration : Text, images : [Text], choices : [Text], target : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
     if (isAnonymousPrincipal(caller)) return #err("Connect wallet to create a proposal");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
@@ -8384,6 +8567,7 @@ persistent actor ArcadeBackend {
     if (t > Time.now()) t else 0
   };
   public shared(msg) func adminSetMute(p : Principal, days : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (days == 0) { setMute(p, 0); return #ok("Unmuted") };
     if (days > 30) return #err("Mute length must be 1-30 days (0 to unmute)");
@@ -8391,6 +8575,7 @@ persistent actor ArcadeBackend {
     #ok("Muted for " # Nat.toText(days) # " day(s)")
   };
   public shared(msg) func adminRestoreHoleSubmission(id : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     switch (findHoleSubmission(id)) {
       case null { return #err("Submission not found") };
@@ -8447,16 +8632,19 @@ persistent actor ArcadeBackend {
     #ok("Proposal closed")
   };
   public shared(msg) func adminVetoProposal(proposalId : Text, reason : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     let r = if (Text.size(reason) > 200) { "vetoed" } else { "vetoed:" # reason };
     closeProposalWithStatus(proposalId, r)
   };
   public shared(msg) func closeProposal(proposalId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     closeProposalWithStatus(proposalId, "closed")
   };
   // TESTING ONLY (lock before mainnet): lower quorum / timelock, and end a proposal's voting now.
   public shared(msg) func adminSetBindingTestMode(quorum : Nat, timelockMinutes : Nat) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     if (quorum < 1 or quorum > 50) return #err("Quorum must be 1-50");
     if (timelockMinutes > 10_080) return #err("Timelock must be 0-10080 minutes");
@@ -8465,6 +8653,7 @@ persistent actor ArcadeBackend {
     #ok("Binding proposals: quorum " # Nat.toText(quorum) # ", timelock " # Nat.toText(timelockMinutes) # " min")
   };
   public shared(msg) func adminTestEndProposalVoting(proposalId : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
     var found = false;
     let now = Time.now();
@@ -8478,6 +8667,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func castVote(proposalId : Text, vote : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to vote");
     let meta = findProposalMeta(proposalId);
     let isMulti = switch (meta) { case (?m) { m.choices.size() > 0 }; case null { false } };
@@ -8537,6 +8727,7 @@ persistent actor ArcadeBackend {
   };
 
   public shared(msg) func addProposalReply(proposalId : Text, body : Text) : async Result.Result<Text, Text> {
+    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (isAnonymousPrincipal(msg.caller)) return #err("Connect wallet to reply");
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     if (votingPowerOf(msg.caller) == 0 and not isAdmin(msg.caller)) return #err("Voting Power Badge required for proposal discussion");

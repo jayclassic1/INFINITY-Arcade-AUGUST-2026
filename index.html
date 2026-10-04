@@ -3367,6 +3367,49 @@ async function viewPublicProfile(principal){
   _profileNextTarget=String(principal);
   showView('profile');
 }
+// === Ban: popup + navigation lock (banned players: My Collection page + Wallet popup only) ===
+function _openMyCollectionPage(){
+  const mc=document.getElementById('myCollectionBtn');
+  if(mc){ mc.click(); return; }
+  try{ showView('prizes'); showTab('collection'); if(typeof renderCollection==='function') renderCollection(true); }catch(_){}
+}
+function _banActive(){ const b=window._banInfo; if(!b) return false; if(b.until>0&&Date.now()>=b.until/1e6){ window._banInfo=null; return false; } return true; }
+async function checkMyBan(){
+  try{
+    const r=await (await getBackendActor(false)).checkBanStatus(S.principal);
+    if(r&&r.banned){
+      window._banInfo={reason:String(r.reason||''),until:Number(r.until||0)};
+      _openMyCollectionPage();
+      showBanPopup();
+      return true;
+    }
+  }catch(e){ console.warn('Ban check failed:',e); }
+  window._banInfo=null; return false;
+}
+function showBanPopup(){
+  if(!_banActive()) return;
+  const b=window._banInfo;
+  const ends=b.until>0?('Ends: '+new Date(b.until/1e6).toLocaleString()):'Permanent';
+  document.querySelectorAll('#m-banned').forEach(e=>e.remove());
+  const o=document.createElement('div'); o.id='m-banned';
+  o.innerHTML=`<div style='position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#1a0a0a;border:2px solid #dc2626;border-radius:16px;max-width:460px;width:100%;padding:28px;text-align:center'>
+      <div style='font-size:2rem;margin-bottom:10px'>&#128683;</div>
+      <h2 style='color:#dc2626;margin:0 0 6px;font-size:1.2rem'>Account Suspended</h2>
+      <div style='color:#f59e0b;font-size:.8rem;font-weight:700;margin-bottom:14px'>${escHtml(ends)}</div>
+      <div style='background:rgba(0,0,0,.4);border-radius:8px;padding:12px;margin-bottom:14px;text-align:left'>
+        <div style='font-size:.7rem;color:#8ab4d8;margin-bottom:4px'>Reason</div>
+        <div style='font-size:.85rem;color:#e0e6f0'>${escHtml(b.reason||'No reason provided')}</div>
+      </div>
+      <div style='font-size:.78rem;color:#cfd8dc;margin-bottom:16px;line-height:1.5'>While suspended you can only <b>withdraw ICP</b> and <b>claim your earnings</b> (Wallet), and view <b>My Collection</b> (including listing NFTs). Your Tokens and Tickets are frozen until the suspension ends.</div>
+      <div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap'>
+        <button class='btn' data-ban-wallet style='border-color:#ffd700;color:#ffd700'>Open Wallet</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector('[data-ban-wallet]').addEventListener('click',()=>{ o.remove(); try{ openWalletPanel(); }catch(e){ console.warn('Open wallet failed:',e); } });
+}
+window.checkMyBan=checkMyBan; window.showBanPopup=showBanPopup;
 function showBanOverlay(reason,isHard){
   const existing=document.getElementById('m-banned');
   if(existing) existing.remove();
@@ -3422,7 +3465,7 @@ async function renderBanList(){
   const container=document.getElementById('adminBanList');
   if(!container) return;
   try{
-    const be=await getBackendActor(false);
+    const be=await getBackendActor(true);
     if(!backendMethodAvailable(be,'getBannedUsers')){
       container.innerHTML=renderBackendSlicePending('Ban management list is not installed on this backend slice yet. Existing local admin tools remain available.');
       return;
@@ -3433,8 +3476,8 @@ async function renderBanList(){
       const principal=b[0].toText();
       const banType=b[1];
       const reason=b[2];
-      const ts=Number(b[3])/(1000000);
-      const date=new Date(ts).toLocaleString();
+      const untilNs=Number(b[3]);
+      const date=untilNs>0?('Until '+new Date(untilNs/1e6).toLocaleString()):'Permanent';
       const pub=getProfileFor(principal)||{};
       const typeColor=banType==='hard'?'#dc2626':'#f59e0b';
       return `<div style='display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03)'>
@@ -3450,12 +3493,16 @@ async function renderBanList(){
   }catch(_e){container.innerHTML=renderBackendSlicePending('Ban management list is temporarily unavailable.');}
 }
 
-function showBanUserModal(){
-  const principal=prompt('Enter principal to ban:');
-  if(!principal) return;
-  const type=prompt('Ban type: "soft" or "hard"?');
-  if(type!=='soft'&&type!=='hard'){alert('Must be "soft" or "hard"');return;}
-  adminBanUser(principal,type);
+async function showBanUserModal(){
+  const principal=prompt('Enter principal to ban:'); if(!principal) return;
+  const reason=prompt('Ban reason (shown to the player):'); if(!reason) return;
+  const daysRaw=prompt('Ban length in days (0 = permanent):','7'); if(daysRaw===null) return;
+  const days=Math.max(0,Math.floor(Number(daysRaw)||0));
+  try{
+    const be=await getBackendActor(true);
+    const r=await be.adminBanUserFor(Principal.fromText(principal.trim()),reason,BigInt(days));
+    if(r.ok!==undefined){ alert(r.ok); renderBanList(); } else alert(r.err);
+  }catch(e){ alert(safeUserErrorMessage(e,'admin ban')); }
 }
 
 function saveProfile(){
@@ -3786,22 +3833,8 @@ async function doIILogin(){
     S.principal=identityPrincipal;
     S.principalText=principalText;
     await getUserBadgeTypes();
-    // Check ban status BEFORE loading anything else
-    try{
-      const be=await getBackendActor(false);
-      const banStatus=await be.checkBanStatus(identityPrincipal);
-      if(banStatus.banned){
-        S.banType=banStatus.banType;
-        S.banReason=banStatus.reason;
-        if(banStatus.banType==='hard'){
-          showBanOverlay(banStatus.reason,true);
-          return; // Hard ban: stop login flow entirely
-        } else {
-          showBanOverlay(banStatus.reason,false);
-          // Soft ban: continue loading so they can see wallet, but interactions blocked
-        }
-      }
-    }catch(e){console.warn('Ban check failed:',e);}
+    // Check ban status BEFORE loading anything else (banned players are limited to My Collection + Wallet)
+    await checkMyBan();
     loadState();
     S.depositAddress=await deriveDepositAddress(principalText);
     await refreshWalletBalance();
@@ -4500,6 +4533,7 @@ async function initWalletSession(){
     S.identity=identity;
     S.principal=identityPrincipal;
     S.principalText=identityPrincipal.toText();
+    await checkMyBan();
     await getUserBadgeTypes();
     loadState();
     S.depositAddress=await deriveDepositAddress(S.principalText);
@@ -6410,14 +6444,14 @@ function backendIdl({IDL}){
     setGameScreenshots:IDL.Func([IDL.Text,IDL.Vec(IDL.Text)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     buyGameBoost:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Int,err:IDL.Text})],[]),
     adminBoostGame:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Int,err:IDL.Text})],[]),
-    adminBanUser:IDL.Func([IDL.Principal,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    adminBanUserFor:IDL.Func([IDL.Principal,IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminBanUser:IDL.Func([IDL.Principal,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminSoftPunishBlackholeUploader:IDL.Func([IDL.Principal,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminHardBanBlackholeUploader:IDL.Func([IDL.Principal,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminClearBlackholePunishment:IDL.Func([IDL.Principal],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     getBlackholePunishmentStatus:IDL.Func([IDL.Principal],[IDL.Record({blocked:IDL.Bool,mode:IDL.Text,reason:IDL.Text,untilNs:IDL.Int})],['query']),
     adminUnbanUser:IDL.Func([IDL.Principal],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     getBannedUsers:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Text,IDL.Text,IDL.Int))],['query']),
-    checkBanStatus:IDL.Func([IDL.Principal],[IDL.Record({banned:IDL.Bool,banType:IDL.Text,reason:IDL.Text})],['query']),
+    checkBanStatus:IDL.Func([IDL.Principal],[IDL.Record({banned:IDL.Bool,banType:IDL.Text,reason:IDL.Text,until:IDL.Int})],['query']),
     getLeaderboard:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Nat,IDL.Int))],['query']),
     getHighScore:IDL.Func([IDL.Text],[IDL.Opt(LeaderboardEntry)],['query']),
     submitGameUpdate:IDL.Func([IDL.Text,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -7630,6 +7664,7 @@ async function loadMyTokens(){
 
 
 function showTab(tab){
+  if(_banActive()&&tab!=='collection'){ showBanPopup(); tab='collection'; }
   qs('nftShop').style.display=tab==='shop'?'block':'none';
   qs('nftCollection').style.display=tab==='collection'?'block':'none';
   document.getElementById('collectionTopBtns').style.display=tab==='collection'?'flex':'none';
@@ -8436,6 +8471,7 @@ function isSessionAlreadyOpenError(e){
 }
 function safeGamePaymentErrorMessage(e,context){
   const raw=getSafeErrorText(e).trim();
+  if(_banActive()||/assertion failed/i.test(raw)) return 'Your account is suspended. Only withdrawals, earnings claims and NFT listing are available.';
   const label=String(context||'payment').toLowerCase();
   const normalized=raw.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
   if(/not enough|insufficient|balance|tokens?|quarters?|funds/i.test(normalized)){
@@ -16928,6 +16964,7 @@ function showViewHooked(v){
     if(v!=='landing') showConnect();
     v='landing';
   }
+  if(S.connected&&_banActive()&&!['prizes','legal-tos','legal-privacy'].includes(v)){ showBanPopup(); v='prizes'; }
   if(!window._skipHistory && S.view && S.view!==v) window._viewHistory.push(S.view);
   S.view=v;
   // Sessions can last up to 30 days, so a submission decision could easily land while the user is
@@ -16936,6 +16973,7 @@ function showViewHooked(v){
   if(v==='landing' && S.connected) checkSubmissionNotifications();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   const t=qs('view-'+v); if(t) t.classList.add('active');
+  if(v==='prizes'&&_banActive()){ try{ showTab('collection'); }catch(_){} }
   window.scrollTo(0,0);
   const rb=document.getElementById('returnBtn'); if(rb) rb.style.display=v==='landing'?'none':'block';
   const sb=document.getElementById('forumScanBtn'); if(sb) sb.style.display='none';
