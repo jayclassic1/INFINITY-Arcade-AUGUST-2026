@@ -15550,9 +15550,9 @@ function renderProposalCard(p){
   const authorName=profile?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'...');
 
   const isOfficial=p.official;
-  const cardBorder=isOfficial?'2px solid rgba(160,80,255,.5)':('1px solid '+(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)'));
-  const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'';
-  const hoverBorder=isOfficial?'rgba(180,100,255,.7)':(status==='active'?'rgba(239,68,68,.4)':'');
+  const cardBorder=isOfficial?'2px solid rgba(160,80,255,.5)':'2px solid rgba(239,68,68,.5)';
+  const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'box-shadow:0 0 18px rgba(239,68,68,.2),0 0 36px rgba(239,68,68,.08)';
+  const hoverBorder=isOfficial?'rgba(180,100,255,.7)':'rgba(255,90,90,.7)';
 
   return `<div data-proposal-id='${p.id}' onclick='if(!event.target.closest("button,img,span[onclick]"))openProposalPopup("${p.id}")' style='cursor:pointer;background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
