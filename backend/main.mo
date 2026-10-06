@@ -2439,6 +2439,64 @@ persistent actor ArcadeBackend {
   stable var gameResultLog : [GameResult] = [];
 
   /// Submit a game score and earn tickets (with anti-bot checks)
+  // === Anti-cheat: per-game plausibility limits (0 = off), flagged-score review, large-jackpot hold ===
+  type FlaggedScore = { id : Nat; player : Principal; gameId : Text; score : Nat; elapsedMs : Nat; reason : Text; heldJackpot : Nat; status : Text; at : Int };
+  stable var gameAntiCheatEntries : [(Text, (Nat, Nat, Nat))] = []; // gameId -> (maxScorePerSecond, maxScore, holdJackpotsAbove)
+  stable var flaggedScoreEntries : [FlaggedScore] = [];
+  stable var flaggedScoreCounter : Nat = 0;
+  func antiCheatOf(gameId : Text) : (Nat, Nat, Nat) {
+    for ((k, v) in gameAntiCheatEntries.vals()) { if (k == gameId) return v };
+    (0, 0, 0)
+  };
+  func recordFlag(player : Principal, gameId : Text, score : Nat, elapsedMs : Nat, reason : Text, heldJackpot : Nat) {
+    flaggedScoreCounter += 1;
+    let f : FlaggedScore = { id = flaggedScoreCounter; player = player; gameId = gameId; score = score; elapsedMs = elapsedMs; reason = reason; heldJackpot = heldJackpot; status = if (heldJackpot > 0) { "held" } else { "flagged" }; at = Time.now() };
+    var list = flaggedScoreEntries;
+    if (list.size() >= 1000) { // drop the oldest entry that is not a held jackpot
+      let b = Buffer.Buffer<FlaggedScore>(list.size());
+      var dropped = false;
+      for (x in list.vals()) { if (not dropped and x.status != "held") { dropped := true } else { b.add(x) } };
+      list := Buffer.toArray(b);
+    };
+    flaggedScoreEntries := Array.append<FlaggedScore>(list, [f]);
+  };
+  public shared(msg) func adminSetGameAntiCheat(gameId : Text, maxScorePerSecond : Nat, maxScore : Nat, holdJackpotsAbove : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    let rest = Array.filter<(Text, (Nat, Nat, Nat))>(gameAntiCheatEntries, func(e) { e.0 != gameId });
+    gameAntiCheatEntries := if (maxScorePerSecond == 0 and maxScore == 0 and holdJackpotsAbove == 0) { rest } else { Array.append<(Text, (Nat, Nat, Nat))>(rest, [(gameId, (maxScorePerSecond, maxScore, holdJackpotsAbove))]) };
+    #ok("Anti-cheat limits saved")
+  };
+  public shared query(msg) func getGameAntiCheat(gameId : Text) : async (Nat, Nat, Nat) {
+    if (not isAdmin(msg.caller)) return (0, 0, 0);
+    antiCheatOf(gameId)
+  };
+  public shared query(msg) func adminGetFlaggedScores() : async [FlaggedScore] {
+    if (not isAdmin(msg.caller)) return [];
+    let n = flaggedScoreEntries.size();
+    Array.tabulate<FlaggedScore>(n, func(i) { flaggedScoreEntries[n - 1 - i] }) // newest first
+  };
+  public shared(msg) func adminResolveFlaggedScore(id : Nat, approve : Bool) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    hydrateRuntimeStateIfNeeded();
+    var target : ?FlaggedScore = null;
+    for (x in flaggedScoreEntries.vals()) { if (x.id == id) { target := ?x } };
+    let f = switch (target) { case null { return #err("Flag not found") }; case (?x) { x } };
+    if (f.status != "held" and f.status != "flagged") return #err("Already resolved");
+    var paid : Nat = 0;
+    if (approve and f.status == "held" and f.heldJackpot > 0) {
+      let pool = getGameBackedTicketPoolValue(f.gameId);
+      paid := if (f.heldJackpot > pool) { pool } else { f.heldJackpot };
+      if (paid > 0) {
+        tickets.put(f.player, getTicketBalance(f.player) + paid);
+        setGameBackedTicketPoolValue(f.gameId, pool - paid);
+        clampBackedPoolToRaw(f.gameId);
+      };
+    };
+    let newStatus = if (approve) { "approved" } else { "rejected" };
+    flaggedScoreEntries := Array.map<FlaggedScore, FlaggedScore>(flaggedScoreEntries, func(x) { if (x.id == id) { { x with status = newStatus } } else { x } });
+    #ok(if (paid > 0) { "Approved: paid " # Nat.toText(paid) # " held jackpot Tickets" } else { "Marked " # newStatus })
+  };
+
   public shared(msg) func submitGameScore(
     gameId : Text,
     score : Nat,
@@ -2490,6 +2548,17 @@ persistent actor ArcadeBackend {
     let totalPlays = getTotalPlays(caller);
     accountPlayCount.put(caller, totalPlays + 1);
 
+    // CHECK 3b: score plausibility (per-game limits set by admin; 0 = off). The run is timed by the backend from payment.
+    let (acMaxRate, acMaxScore, acHoldAbove) = antiCheatOf(gameId);
+    let acElapsedMs : Nat = Int.abs(now - session.openedAt) / 1_000_000;
+    let acReason : Text = if (acMaxScore > 0 and score > acMaxScore) { "above max score" }
+      else if (acMaxRate > 0 and score * 1000 > acMaxRate * (acElapsedMs + 1000)) { "too fast for the run's length" }
+      else { "" };
+    if (acReason != "") {
+      recordFlag(caller, gameId, score, acElapsedMs, acReason, 0);
+      return #ok({ tickets = 0; baseTickets = 0; jackpotTickets = 0; newRecord = false; jackpotTierLabels = []; jackpotUncappedTickets = 0; jackpotCapped = false; jackpotPoolRemaining = getGameBackedTicketPoolValue(gameId); tokenBalance = getTokenBalance(caller); ticketBalance = getTicketBalance(caller) });
+    };
+
     // CHECK 4: Calculate tickets from the admin-calibrated per-game payout table.
     // Missing or disabled config is explicit calibration-off mode and pays 0.
     var ticketPayout : Nat = switch (gamePayoutConfigs.get(gameId)) {
@@ -2535,7 +2604,11 @@ persistent actor ArcadeBackend {
         };
       };
     };
-    let jackpotTickets : Nat = jackpotCalculation.tickets;
+    var jackpotTickets : Nat = jackpotCalculation.tickets;
+    if (acHoldAbove > 0 and jackpotTickets > acHoldAbove) {
+      recordFlag(caller, gameId, score, acElapsedMs, "large jackpot held for review", jackpotTickets);
+      jackpotTickets := 0;
+    };
     let totalTicketPayout : Nat = baseTickets + jackpotTickets;
 
     // Award base + jackpot tickets atomically and decrement only the backed pool.

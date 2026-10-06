@@ -2110,6 +2110,7 @@ window.addEventListener('message', (e) => {
 <div style='font-size:.6rem;color:#5a3d20;margin-bottom:6px'>Admin boosts are free and work exactly like creator boosts: 7 days per boost (stacking), live Showroom games only, and they count toward the Spotlight slot limit.</div>
 <div id='boostList' style='font-size:.75rem;color:#5a3d20'>No boosted games</div>
 </div>
+<div style='background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.18);border-radius:12px;padding:14px;margin-bottom:16px'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap'><div style='font-size:.8rem;font-weight:700;color:#ffd700'>Anti-cheat review</div><button class='btn' onclick='openFlaggedScores()' style='font-size:.72rem;padding:5px 12px;border-color:#ffd700;color:#ffd700'>Flagged Scores</button></div><div style='font-size:.68rem;color:#9aa4b2;margin-top:6px'>Impossible scores (paid 0) and large jackpots held for your approval.</div></div>
 <div id='adminBanSection' style='background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:12px;padding:14px;margin-bottom:16px'>
 <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'>
 <div style='font-size:.85rem;font-weight:700;color:#dc2626'>Ban Management</div>
@@ -3507,6 +3508,47 @@ function showBannedPlayersPopup(){
 }
 window.showBannedPlayersPopup=showBannedPlayersPopup;
 
+async function openFlaggedScores(){
+  let list=[];
+  try{ list=await (await getBackendActor(true)).adminGetFlaggedScores(); }
+  catch(e){ return arcadeAlert('Flagged Scores',escHtml(safeUserErrorMessage(e,'flagged scores'))); }
+  document.querySelectorAll('#m-flagged').forEach(e=>e.remove());
+  const games=getSubmissions()||[];
+  const rows=!list.length?`<div style='font-size:.8rem;color:#9aa4b2;padding:12px 0'>No flagged scores.</div>`:list.map(f=>{
+    const g=games.find(x=>x.id===f.gameId); const gname=g?(g.name||f.gameId):f.gameId;
+    const held=Number(f.heldJackpot)>0; const open=(f.status==='held'||f.status==='flagged');
+    const when=new Date(Number(f.at)/1e6).toLocaleString();
+    const actions=open
+      ?`<button class='btn' data-resolve='${Number(f.id)}' data-approve='1' style='font-size:.68rem;padding:3px 9px;border-color:#22c55e;color:#22c55e'>${held?'Approve &amp; pay':'Mark reviewed'}</button><button class='btn' data-resolve='${Number(f.id)}' data-approve='0' style='font-size:.68rem;padding:3px 9px;border-color:#ef4444;color:#ef4444'>${held?'Reject':'Confirm cheat'}</button>`
+      :`<span style='font-size:.68rem;color:#9aa4b2'>${escHtml(f.status)}</span>`;
+    return `<div style='padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);text-align:left'>
+      <div style='font-size:.82rem;color:#e0e6f0;font-weight:600'>${escHtml(gname)} &middot; score ${Number(f.score).toLocaleString()}</div>
+      <div style='font-size:.68rem;color:#9aa4b2;margin-top:2px'>${escHtml(f.reason)} &middot; run ${(Number(f.elapsedMs)/1000).toFixed(1)}s${held?' &middot; held jackpot '+Number(f.heldJackpot)+' Tickets':''} &middot; ${escHtml(when)}</div>
+      <div style='font-size:.66rem;color:#8ab4d8;font-family:monospace;word-break:break-all;user-select:all;margin-top:2px'>${escHtml(f.player.toText())}</div>
+      <div style='display:flex;gap:6px;margin-top:6px;flex-wrap:wrap'>${actions}</div></div>`;
+  }).join('');
+  const o=document.createElement('div'); o.id='m-flagged';
+  o.innerHTML=`<div data-backdrop style='position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(255,215,0,.45);border-radius:12px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:18px 20px'>
+      <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:6px'>
+        <div style='font-size:1rem;font-weight:700;color:#ffd700'>Flagged Scores${list.length?' ('+list.length+')':''}</div>
+        <button data-close style='background:none;border:none;color:#9aa4b2;font-size:1.1rem;cursor:pointer;padding:2px 6px'>&#10005;</button>
+      </div>
+      <div style='overflow-y:auto'>${rows}</div>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector('[data-close]').addEventListener('click',()=>o.remove());
+  o.querySelector('[data-backdrop]').addEventListener('click',e=>{ if(e.target===e.currentTarget) o.remove(); });
+  o.querySelectorAll('[data-resolve]').forEach(b=>b.addEventListener('click',()=>resolveFlaggedScore(Number(b.getAttribute('data-resolve')),b.getAttribute('data-approve')==='1')));
+}
+async function resolveFlaggedScore(id,approve){
+  try{
+    const r=await (await getBackendActor(true)).adminResolveFlaggedScore(BigInt(id),!!approve);
+    await arcadeAlert('Flagged Scores',escHtml(r.err!==undefined?r.err:r.ok));
+  }catch(e){ await arcadeAlert('Flagged Scores',escHtml(safeUserErrorMessage(e,'resolve flag'))); }
+  openFlaggedScores();
+}
+window.openFlaggedScores=openFlaggedScores;
 async function showBanUserModal(){
   const principal=prompt('Enter principal to ban:'); if(!principal) return;
   const reason=prompt('Ban reason (shown to the player):'); if(!reason) return;
@@ -4687,6 +4729,12 @@ window.addEventListener('message',async(event)=>{
   const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges'};
   const msgType=typeMap[event.data.type]||event.data.type;
   const gameId=event.data.gameId||_currentGamePlaying;
+  // Scores are only accepted from the game's frame (or a frame inside it), not typed into the arcade page's console.
+  if(msgType==='arcade-latest-score'){
+    const _gf=document.getElementById('gameIframe'); const _cw=_gf&&_gf.contentWindow;
+    let _ok=false; try{ _ok=!!_cw&&!!event.source&&event.source!==window&&(event.source===_cw||event.source.parent===_cw); }catch(_){ _ok=false; }
+    if(!_ok) return;
+  }
 
   if(msgType==='arcade-input-debug'){
     const iframe=document.getElementById('gameIframe');
@@ -6552,7 +6600,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminSetGameAntiCheat:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getGameAntiCheat:IDL.Func([IDL.Text],[IDL.Nat,IDL.Nat,IDL.Nat],['query']),adminGetFlaggedScores:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Nat,player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,elapsedMs:IDL.Nat,reason:IDL.Text,heldJackpot:IDL.Nat,status:IDL.Text,at:IDL.Int}))],['query']),adminResolveFlaggedScore:IDL.Func([IDL.Nat,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -7135,6 +7183,14 @@ function renderPayoutConfigAdmin(gameId,cfg){
       <label style='font-size:.68rem;color:#d8fbe4;display:flex;align-items:center;gap:5px'><input id='payoutEnabled_${domId}' type='checkbox' ${enabled?'checked':''}/> Enabled</label>
     </div>
     <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px'>${inputs}</div>
+    <div style='margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,215,0,.2)'>
+      <div style='font-size:.62rem;color:#ffe08a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px'>Anti-cheat (0 = off)</div>
+      <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px'>
+        <label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>Max score per second<input id='acRate_${domId}' type='number' min='0' step='1' value='0' style='padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem'/></label>
+        <label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>Max score<input id='acMax_${domId}' type='number' min='0' step='1' value='0' style='padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem'/></label>
+        <label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>Hold jackpots above (Tickets)<input id='acHold_${domId}' type='number' min='0' step='1' value='0' style='padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem'/></label>
+      </div>
+    </div>
     <div style='display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap'>
       <button class='btn' onclick='saveGamePayoutConfig("${gameId}")' style='font-size:.68rem;padding:5px 9px;border-color:#ffd700;color:#ffd700'>Save Payout Ladder</button>
       <span id='payoutConfigStatus_${domId}' style='font-size:.68rem;color:#9fb0d6'></span>
@@ -7148,6 +7204,8 @@ async function hydratePayoutConfigAdmin(gameId){
   if(!mount) return;
   const cfg=await loadPayoutConfig(gameId);
   mount.innerHTML=renderPayoutConfigAdmin(gameId,cfg);
+  try{ const ac=await (await getBackendActor(true)).getGameAntiCheat(gameId); const v=Array.isArray(ac)?ac:[0,0,0];
+    [['acRate_',0],['acMax_',1],['acHold_',2]].forEach(([p,i])=>{ const el=document.getElementById(p+domId); if(el) el.value=String(Number(v[i]||0)); }); }catch(_){}
 }
 
 async function saveGamePayoutConfig(gameId){
@@ -7169,6 +7227,11 @@ async function saveGamePayoutConfig(gameId){
     const res=await be.setGamePayoutConfig(gameId,enabled,thresholds.map(BigInt));
     if(res.err){if(status)status.innerHTML='<span style="color:#ef4444">'+escHtml(safeUserErrorMessage(res.err,'payout config'))+'</span>';return;}
     if(status) status.innerHTML='<span style="color:#22c55e">Saved 8-level payout ladder.</span>';
+    try{
+      const num=id=>{ const n=Math.floor(Number(document.getElementById(id+domId)?.value)||0); return BigInt(Math.max(0,n)); };
+      const ar=await be.adminSetGameAntiCheat(gameId,num('acRate_'),num('acMax_'),num('acHold_'));
+      if(status) status.innerHTML+=ar.err?' <span style="color:#ef4444">Anti-cheat not saved.</span>':' <span style="color:#22c55e">Anti-cheat saved.</span>';
+    }catch(_){ if(status) status.innerHTML+=' <span style="color:#ef4444">Anti-cheat not saved.</span>'; }
     const ladder=document.getElementById('payoutLadder_'+domId);
     if(ladder) ladder.innerHTML=renderPayoutLadder(gameId,normalizeGamePayoutConfig(res.ok),{admin:true});
   }catch(e){
@@ -15550,9 +15613,9 @@ function renderProposalCard(p){
   const authorName=profile?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'...');
 
   const isOfficial=p.official;
-  const cardBorder=isOfficial?'2px solid rgba(160,80,255,.5)':'2px solid rgba(239,68,68,.5)';
-  const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'box-shadow:0 0 18px rgba(239,68,68,.2),0 0 36px rgba(239,68,68,.08)';
-  const hoverBorder=isOfficial?'rgba(180,100,255,.7)':'rgba(255,90,90,.7)';
+  const cardBorder=isOfficial?'2px solid rgba(160,80,255,.5)':'2px solid rgba(255,90,90,.85)';
+  const cardShadow=isOfficial?'box-shadow:0 0 18px rgba(160,80,255,.2),0 0 36px rgba(160,80,255,.08)':'box-shadow:0 0 18px rgba(255,70,70,.35),0 0 36px rgba(255,70,70,.14)';
+  const hoverBorder=isOfficial?'rgba(180,100,255,.7)':'rgba(255,130,130,1)';
 
   return `<div data-proposal-id='${p.id}' onclick='if(!event.target.closest("button,img,span[onclick]"))openProposalPopup("${p.id}")' style='cursor:pointer;background:rgba(0,10,25,.7);border:${cardBorder};border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s;${cardShadow}' ${hoverBorder?`onmouseenter="this.style.borderColor='${hoverBorder}'" onmouseleave="this.style.borderColor='${isOfficial?'rgba(160,80,255,.5)':(status==='active'?'rgba(239,68,68,.2)':'rgba(255,255,255,.04)')}'"`:''}>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
