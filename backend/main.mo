@@ -8710,6 +8710,34 @@ persistent actor ArcadeBackend {
     let r = if (Text.size(reason) > 200) { "vetoed" } else { "vetoed:" # reason };
     closeProposalWithStatus(proposalId, r)
   };
+  // Admin: permanently delete a proposal (and its votes + meta). A deleted binding proposal can never execute.
+  // No fee refund (the fee already went to the DAO treasury). Already-executed effects are not undone.
+  public shared(msg) func adminDeleteProposal(proposalId : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    let before = proposalEntries.size();
+    proposalEntries := Array.filter<Proposal>(proposalEntries, func(p) { p.id != proposalId });
+    if (proposalEntries.size() == before) return #err("Proposal not found");
+    proposalMetaEntries := Array.filter<(Text, ProposalMeta)>(proposalMetaEntries, func(e) { e.0 != proposalId });
+    importantProposalIds := Array.filter<Text>(importantProposalIds, func(x) { x != proposalId });
+    #ok("Proposal deleted")
+  };
+  // Admin-flagged "important" proposals, shown to everyone in the Past Proposals popup.
+  stable var importantProposalIds : [Text] = [];
+  public shared(msg) func adminSetProposalImportant(proposalId : Text, on : Bool) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    let rest = Array.filter<Text>(importantProposalIds, func(x) { x != proposalId });
+    if (on) {
+      var exists = false;
+      for (pr in proposalEntries.vals()) { if (pr.id == proposalId) { exists := true } };
+      if (not exists) return #err("Proposal not found");
+      importantProposalIds := Array.append<Text>(rest, [proposalId]);
+      #ok("Marked important")
+    } else {
+      importantProposalIds := rest;
+      #ok("Unmarked")
+    }
+  };
+  public query func getImportantProposalIds() : async [Text] { importantProposalIds };
   public shared(msg) func closeProposal(proposalId : Text) : async Result.Result<Text, Text> {
     assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");

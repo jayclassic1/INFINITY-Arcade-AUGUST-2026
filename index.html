@@ -6600,7 +6600,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminSetGameAntiCheat:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getGameAntiCheat:IDL.Func([IDL.Text],[IDL.Nat,IDL.Nat,IDL.Nat],['query']),adminGetFlaggedScores:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Nat,player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,elapsedMs:IDL.Nat,reason:IDL.Text,heldJackpot:IDL.Nat,status:IDL.Text,at:IDL.Int}))],['query']),adminResolveFlaggedScore:IDL.Func([IDL.Nat,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminSetGameAntiCheat:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getGameAntiCheat:IDL.Func([IDL.Text],[IDL.Nat,IDL.Nat,IDL.Nat],['query']),adminGetFlaggedScores:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Nat,player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,elapsedMs:IDL.Nat,reason:IDL.Text,heldJackpot:IDL.Nat,status:IDL.Text,at:IDL.Int}))],['query']),adminResolveFlaggedScore:IDL.Func([IDL.Nat,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminDeleteProposal:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetProposalImportant:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getImportantProposalIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -14839,13 +14839,20 @@ function _propAuthor(p){
   return prof?.name||_proposalAuthorNames[p.author]||(String(p.author||'').slice(0,8)+'…');
 }
 function renderMultiChoiceCard(p){
+  const h=_renderMultiChoiceCardBase(p);
+  if(!isAdmin()) return h;
+  const i=h.lastIndexOf('</div>'); if(i<0) return h;
+  const row=`<div style='display:flex;justify-content:flex-end;align-items:center;margin-top:8px'>${_proposalStarBtn(p.id)}<button onclick='event.stopPropagation();adminDeleteProposalById("${p.id}")' title='Delete proposal (admin)' style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);color:#fca5a5;font-weight:700;letter-spacing:.5px;cursor:pointer;margin-left:6px'>DELETE</button></div>`;
+  return h.slice(0,i)+row+h.slice(i);
+}
+function _renderMultiChoiceCardBase(p){
   const active=Date.now()<p.endsAt&&!p.closed;
   const totals=p.choiceTotals||[]; const sum=totals.reduce((a,b)=>a+b,0);
   let lead=-1,best=-1; totals.forEach((t,i)=>{ if(t>best){best=t;lead=i;} });
   const myV=(p.votes||[]).find(v=>v.voter===S.principalText);
   const myIdx=myV&&/^c\d$/.test(myV.vote)?Number(myV.vote.slice(1)):-1;
-  const border=p.official?'2px solid rgba(160,80,255,.5)':'1px solid rgba(239,68,68,.2)';
-  const shadow=p.official?'box-shadow:0 0 18px rgba(160,80,255,.2);':'';
+  const border=p.official?'2px solid rgba(160,80,255,.5)':'2px solid rgba(255,90,90,.85)';
+  const shadow=p.official?'box-shadow:0 0 18px rgba(160,80,255,.2);':'box-shadow:0 0 18px rgba(255,70,70,.35),0 0 36px rgba(255,70,70,.14);';
   return `<div data-proposal-id='${p.id}' onclick='if(!event.target.closest("button,img,span[onclick]"))openProposalPopup("${p.id}")' style='cursor:pointer;background:rgba(0,10,25,.7);border:${border};border-radius:12px;padding:14px;margin-bottom:8px;${shadow}'>
     <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
       ${p.official?`<span style='font-size:.55rem;padding:2px 8px;border-radius:4px;color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.4)'>DEV TEAM</span>`:''}
@@ -15165,6 +15172,7 @@ async function renderDaoPage(){
   // Fetch proposals from chain
   await fetchProposalsFromChain();
   await prefetchProposalAuthorNames();
+  await loadImportantProposals();
 
   // Render proposals in left panel
   const proposalPanel=document.getElementById('daoProposalPanel');
@@ -15180,7 +15188,7 @@ async function renderDaoPage(){
     const arcadeFailed=failed.filter(p=>p.official);
     const communityFailed=failed.filter(p=>!p.official);
 
-    let html=`<div style='display:flex;align-items:center;gap:12px;margin-bottom:12px'>
+    let html=`<div style='display:flex;align-items:center;gap:12px;margin-bottom:12px'><button onclick='openPastProposals()' style='order:99;margin-left:auto;font-size:.7rem;padding:6px 14px;border-radius:8px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.45);color:#e9d5ff;font-weight:800;letter-spacing:1px;cursor:pointer'>Past Proposals</button>
       <div style='font-size:.85rem;font-weight:800;color:#c084fc;letter-spacing:2px;text-shadow:0 0 12px rgba(160,80,255,.4)'>PROPOSALS</div>
       <div style='display:flex;gap:8px;align-items:center'>
         <div style='background:rgba(160,80,255,.1);border:1px solid rgba(160,80,255,.2);border-radius:6px;padding:3px 10px;font-size:.65rem;color:#c084fc;font-weight:700'>VP ${getUserVotingPower()} / Level ${getUserVpLevel()}${isAdmin()?' · Admin':''}</div>
@@ -15622,6 +15630,8 @@ function renderProposalCard(p){
       ${isOfficial?`<span style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,rgba(160,80,255,.15),rgba(100,50,200,.15));color:#c084fc;font-weight:800;letter-spacing:1px;border:1px solid rgba(160,80,255,.3)'>DEV TEAM</span>`:''}
       <span style='font-size:.6rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700;letter-spacing:.5px'>${escHtml(proposalTypeName(p))}</span>
       <span style='font-size:.6rem;color:${statusColor};font-weight:700;margin-left:auto'>${statusLabel}</span>
+      ${isAdmin()?_proposalStarBtn(p.id):''}
+      ${isAdmin()?`<button onclick='event.stopPropagation();adminDeleteProposalById("${p.id}")' title='Delete proposal (admin)' style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);color:#fca5a5;font-weight:700;letter-spacing:.5px;cursor:pointer;margin-left:6px'>DELETE</button>`:''}
     </div>
     <div style='font-weight:800;font-size:.95rem;color:#e0e6f0;margin-bottom:4px;cursor:pointer'>${escHtml(p.title)}</div>
     <div style='font-size:.7rem;color:#3d6090;margin-bottom:10px'><span onclick="viewPublicProfile('${p.author}')" style="cursor:pointer;color:#5a8ab8" onmouseenter="this.style.color='var(--cyan)'" onmouseleave="this.style.color='#5a8ab8'">${escHtml(authorName)}</span> · ${getTimeAgo(new Date(p.createdAt))}</div>
@@ -15945,6 +15955,70 @@ function viewProposal(proposalId){
   container.innerHTML=html;
 }
 
+window._importantProposalIds=window._importantProposalIds||new Set();
+async function loadImportantProposals(){
+  try{ const ids=await (await getBackendActor(false)).getImportantProposalIds(); window._importantProposalIds=new Set((ids||[]).map(String)); }catch(_){}
+}
+function _isImportantProposal(id){ return !!(window._importantProposalIds&&window._importantProposalIds.has(id)); }
+function _proposalStarBtn(id){
+  const on=_isImportantProposal(id);
+  return `<button onclick='event.stopPropagation();adminToggleImportant("${id}")' title='${on?'Remove from Past Proposals':'Mark important (shows in Past Proposals)'}' style='font-size:.7rem;line-height:1;padding:1px 6px;border-radius:4px;background:${on?'rgba(255,215,0,.12)':'transparent'};border:1px solid ${on?'rgba(255,215,0,.5)':'rgba(255,255,255,.18)'};color:${on?'#ffd700':'#9aa4b2'};cursor:pointer;margin-left:6px'>${on?'&#9733;':'&#9734;'}</button>`;
+}
+async function adminToggleImportant(id){
+  if(!isAdmin()||!id) return;
+  const on=!_isImportantProposal(id);
+  try{
+    const r=await (await getBackendActor(true)).adminSetProposalImportant(id,on);
+    if(r.err){ await arcadeAlert('Past Proposals',escHtml(safeUserErrorMessage(r.err,'mark proposal'))); return; }
+  }catch(e){ await arcadeAlert('Past Proposals',escHtml(safeUserErrorMessage(e,'mark proposal'))); return; }
+  if(on) window._importantProposalIds.add(id); else window._importantProposalIds.delete(id);
+  const pv=document.getElementById('daoProposalsView');
+  if(pv&&pv.style.display!=='none'){ try{ await renderDaoPage(); }catch(_){} } else { try{ await renderDaoMain(); }catch(_){} }
+}
+async function openPastProposals(){
+  await loadImportantProposals();
+  const all=getProposals()||[];
+  const list=all.filter(p=>_isImportantProposal(p.id)).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  document.querySelectorAll('#m-pastprops').forEach(e=>e.remove());
+  const statusText=p=>{ const st=getProposalStatus(p); return st==='active'?'Voting':st==='passed'?'Passed':st==='failed'?'Failed':'Ended'; };
+  const rows=!list.length?`<div style='font-size:.8rem;color:#9aa4b2;padding:12px 0'>No past proposals yet.</div>`:list.map(p=>`
+    <div data-open='${escHtml(p.id)}' style='cursor:pointer;padding:10px 12px;margin-bottom:8px;border-radius:10px;background:rgba(0,10,25,.7);border:1px solid ${p.official?'rgba(160,80,255,.5)':'rgba(255,90,90,.6)'};text-align:left'>
+      <div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>
+        <span style='font-size:.55rem;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;font-weight:700;letter-spacing:.5px'>${escHtml(typeof proposalTypeName==='function'?proposalTypeName(p):(p.category||''))}</span>
+        <span style='font-size:.6rem;color:#9aa4b2;margin-left:auto'>${escHtml(statusText(p))}</span>
+      </div>
+      <div style='font-weight:800;font-size:.9rem;color:#e0e6f0;margin-top:4px'>${escHtml(p.title||'')}</div>
+    </div>`).join('');
+  const o=document.createElement('div'); o.id='m-pastprops';
+  o.innerHTML=`<div data-backdrop style='position:fixed;inset:0;z-index:240;background:rgba(3,2,10,.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(192,132,252,.45);border-radius:12px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:18px 20px'>
+      <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px'>
+        <div style='font-size:1rem;font-weight:800;color:#c084fc;letter-spacing:1px'>Past Proposals${list.length?' ('+list.length+')':''}</div>
+        <button data-close style='background:none;border:none;color:#9aa4b2;font-size:1.1rem;cursor:pointer;padding:2px 6px'>&#10005;</button>
+      </div>
+      <div style='overflow-y:auto'>${rows}</div>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector('[data-close]').addEventListener('click',()=>o.remove());
+  o.querySelector('[data-backdrop]').addEventListener('click',e=>{ if(e.target===e.currentTarget) o.remove(); });
+  o.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>{ try{ openProposalPopup(el.getAttribute('data-open')); }catch(_){} }));
+}
+window.openPastProposals=openPastProposals; window.adminToggleImportant=adminToggleImportant;
+async function adminDeleteProposalById(proposalId){
+  if(!isAdmin()||!proposalId) return;
+  if(!await arcadeConfirm('Delete proposal','Permanently delete this proposal and all its votes? This cannot be undone.')) return;
+  try{
+    const r=await (await getBackendActor(true)).adminDeleteProposal(proposalId);
+    if(r.err){ await arcadeAlert('Delete proposal',escHtml(safeUserErrorMessage(r.err,'delete proposal'))); return; }
+  }catch(e){ await arcadeAlert('Delete proposal',escHtml(safeUserErrorMessage(e,'delete proposal'))); return; }
+  try{ const pp=document.getElementById('proposalPopup'); if(pp&&window._popupProposalId===proposalId) pp.style.display='none'; }catch(_){}
+  await fetchProposalsFromChain();
+  // Redraw whichever view is showing: the Proposals page (renderDaoPage) or the other DAO view (renderDaoMain).
+  const pv=document.getElementById('daoProposalsView');
+  if(pv&&pv.style.display!=='none'){ try{ await renderDaoPage(); }catch(_){} }
+  else { try{ await renderDaoMain(); }catch(_){} }
+}
+window.adminDeleteProposalById=adminDeleteProposalById;
 async function deleteProposal(proposalId){
   if(!isAdmin()) return;
   if(!await arcadeConfirm('Close Proposal','This will close voting on this proposal immediately. Continue?')) return;
