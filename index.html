@@ -4726,7 +4726,7 @@ window.addEventListener('message',async(event)=>{
   if(!event.data||!event.data.type) return;
   // Normalize message types - accept both dev-friendly names and internal names
   const scoreTypeMap={'SCORE':'arcade-latest-score','GAME_OVER':'arcade-latest-score','LATEST_SCORE':'arcade-latest-score','ARCADE_SET_LATEST_SCORE':'arcade-latest-score'};
-  const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges'};
+  const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges','GET_PERKS':'arcade-get-perks'};
   const msgType=typeMap[event.data.type]||event.data.type;
   const gameId=event.data.gameId||_currentGamePlaying;
   // Scores are only accepted from the game's frame (or a frame inside it), not typed into the arcade page's console.
@@ -4901,6 +4901,18 @@ window.addEventListener('message',async(event)=>{
   }
 
   // GET_PLAYER_STATS - returns GXP level, DVP level, raw XP/DVP, and percentiles
+  // NFT + XP perks for games: tags from Official NFTs held (not listed) plus GXP/DXP/MXP. Answers only the game's frame.
+  if(msgType==='arcade-get-perks'){
+    const _gf=document.getElementById('gameIframe'); const _cw=_gf&&_gf.contentWindow;
+    let _ok=false; try{ _ok=!!_cw&&!!event.source&&event.source!==window&&(event.source===_cw||event.source.parent===_cw); }catch(_){ _ok=false; }
+    if(!_ok) return;
+    const src=event.source; const empty={type:'arcade-perks',tags:[],gxp:0,dxp:0,mxp:0};
+    if(!S.connected||!S.identity){ src.postMessage(empty,'*'); return; }
+    getBackendActor(true).then(b=>b.getMyGamePerks()).then(r=>{
+      src.postMessage({type:'arcade-perks',tags:(r.tags||[]).map(String),gxp:Number(r.gxp||0),dxp:Number(r.dxp||0),mxp:Number(r.mxp||0)},'*');
+    }).catch(()=>src.postMessage(empty,'*'));
+    return;
+  }
   if(msgType==='arcade-get-player-stats'){
     if(!S.principal){event.source?.postMessage({type:'arcade-player-stats',error:'not-logged-in'},'*');return;}
     try{
@@ -6489,7 +6501,7 @@ function backendIdl({IDL}){
     adminSetDaoFavourite:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminAddNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveNftGrail:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    setMyAvatarNft:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAvatarNft:IDL.Func([],[IDL.Opt(IDL.Text)],['query']),setMyPfpNft:IDL.Func([IDL.Opt(IDL.Nat)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),clearCheckpoint:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyOpenSession:IDL.Func([IDL.Text],[IDL.Opt(IDL.Int)],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    setMyAvatarNft:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAvatarNft:IDL.Func([],[IDL.Opt(IDL.Text)],['query']),setMyPfpNft:IDL.Func([IDL.Opt(IDL.Nat)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCosmetics:IDL.Func([IDL.Vec(IDL.Principal)],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Record({border:IDL.Text,neon:IDL.Text,title:IDL.Text})))],['query']),getMyPerks:IDL.Func([],[IDL.Record({vp:IDL.Nat,access:IDL.Vec(IDL.Text),wallSlots:IDL.Nat,forumThreads:IDL.Nat,proposals:IDL.Nat,gxpAmp:IDL.Nat,mxpAmp:IDL.Nat,dxpAmp:IDL.Nat,tokenLottery:IDL.Nat,ticketLottery:IDL.Nat})],['query']),adminSetCollectionPerkTags:IDL.Func([IDL.Text,IDL.Vec(IDL.Text)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenPerkTags:IDL.Func([IDL.Nat,IDL.Vec(IDL.Text)],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetCollectionPerkTags:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Text),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Text)))})],['query']),getMyGamePerks:IDL.Func([],[IDL.Record({tags:IDL.Vec(IDL.Text),gxp:IDL.Nat,dxp:IDL.Nat,mxp:IDL.Nat})],['query']),adminSetCollectionAbilities:IDL.Func([IDL.Text,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetTokenAbilities:IDL.Func([IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSyncOfficialOwners:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetPlayerAbilities:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))],['query']),adminGetCollectionAbilitySetup:IDL.Func([IDL.Text],[IDL.Record({collection:IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text)),tokens:IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Vec(IDL.Tuple(IDL.Text,IDL.Text))))})],['query']),saveCheckpoint:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getCheckpoint:IDL.Func([IDL.Principal,IDL.Text],[IDL.Opt(IDL.Text)],['query']),clearCheckpoint:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyOpenSession:IDL.Func([IDL.Text],[IDL.Opt(IDL.Int)],['query']),adminAssignAbility:IDL.Func([IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminGetCollectionTokenAbilities:IDL.Func([IDL.Text],[IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],['query']),
     adminBatchAssignAbilities:IDL.Func([IDL.Vec(IDL.Tuple(IDL.Nat,IDL.Text))],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     adminRemoveAbility:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
@@ -13129,7 +13141,7 @@ async function openCollectionManager(colId){
         <button onclick='colMgrSelectAll()' style='background:rgba(0,170,255,.1);border:1px solid var(--cyan);color:var(--cyan);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Select All</button>
         <button onclick='colMgrDeselectAll()' style='background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Deselect</button>
         <button onclick='colMgrAssignSelected("${colId}")' style='background:rgba(168,85,247,.15);border:1px solid #a855f7;color:#a855f7;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Set Ability for Selected</button>
-        <button onclick='openAbilityEditor("collection",window._colMgrColId)' style='background:rgba(34,211,238,.1);border:1px solid #22d3ee;color:#22d3ee;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Collection-wide</button>
+        <button onclick='openAbilityEditor("collection",window._colMgrColId)' style='background:rgba(34,211,238,.1);border:1px solid #22d3ee;color:#22d3ee;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Collection-wide</button><button onclick='openPerkTagEditor(window._colMgrColId)' style='background:rgba(34,197,94,.1);border:1px solid #22c55e;color:#22c55e;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700;margin-left:6px'>Perk Tags</button>
         <button onclick='openDisabledAbilities()' style='background:rgba(255,165,0,.1);border:1px solid #f97316;color:#f97316;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.6rem;font-weight:700'>Toggle Abilities</button>
         <button onclick='this.closest("[data-col-mgr]").remove()' style='background:none;border:1px solid #555;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:.65rem'>Close</button>
       </div>
@@ -13228,6 +13240,47 @@ function abilityTextLabel(raw){
   }
   return out.length?'\u26A1 '+escHtml(out.join(' \u00B7 ')):'No ability';
 }
+function perkSlugOf(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,32); }
+async function openPerkTagEditor(colId){
+  if(!colId){ arcadeAlert('Perk Tags','Open a collection in the collection manager first.'); return; }
+  let setup={collection:[],tokens:[]}, cols=[];
+  try{ const be=await getBackendActor(true); [setup,cols]=await Promise.all([be.adminGetCollectionPerkTags(colId),be.getOfficialCollections()]); }
+  catch(e){ arcadeAlert('Perk Tags','Could not load perk tags: '+escHtml(safeUserErrorMessage(e,'perk tags'))); return; }
+  const current=String(setup.collection[0]||'');
+  const legacy=current&&!cols.some(c=>perkSlugOf(c.name)===current);
+  const goldCount=setup.tokens.filter(([t,l])=>(l||[]).includes('gold')).length;
+  const opts=`<option value='' ${!current?'selected':''}>None</option>`
+    +(legacy?`<option value='${escHtml(current)}' selected>${escHtml(current)} (old tag - re-save to update)</option>`:'')
+    +cols.map(c=>{ const sl=perkSlugOf(c.name); return `<option value='${escHtml(sl)}' ${sl===current?'selected':''}>${escHtml(c.name)} (${escHtml(sl)})</option>`; }).join('');
+  document.querySelectorAll('[data-perk-editor]').forEach(e=>e.remove());
+  const o=document.createElement('div'); o.setAttribute('data-perk-editor','');
+  o.innerHTML=`<div data-backdrop style='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(34,197,94,.45);border-radius:12px;max-width:560px;width:100%;padding:20px'>
+      <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'>
+        <div style='font-size:1rem;font-weight:800;color:#22c55e;letter-spacing:1px'>GAME PERK TAGS</div>
+        <button data-close style='background:none;border:none;color:#9aa4b2;font-size:1.1rem;cursor:pointer'>&#10005;</button>
+      </div>
+      <div style='font-size:.72rem;color:#9aa4b2;margin-bottom:14px'>Holders of this collection get the chosen Official collection's perk tag in games (not secret). Listed (escrowed) NFTs don't count.</div>
+      <div style='font-size:.75rem;color:#e0e6f0;font-weight:700;margin-bottom:4px'>Collection perk</div>
+      <select data-col-perk style='width:100%;box-sizing:border-box;padding:8px 10px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:6px;font-size:.8rem'>${opts}</select>
+      <button class='btn' data-save-col style='margin-top:8px;font-size:.72rem;padding:5px 12px;border-color:#22c55e;color:#22c55e'>Save collection perk</button>
+      <div style='height:1px;background:rgba(255,255,255,.08);margin:16px 0'></div>
+      <div style='font-size:.72rem;color:#9aa4b2'><b style='color:#ffd700'>Gold NFTs in this collection: ${goldCount}</b>. Gold holders also get the perk tag + <code>-gold</code>. Set Gold status in each NFT's &#9889; ability menu.</div>
+      <div data-status style='font-size:.72rem;margin-top:10px;color:#9aa4b2'></div>
+    </div></div>`;
+  document.body.appendChild(o);
+  const st=o.querySelector('[data-status]');
+  o.querySelector('[data-close]').addEventListener('click',()=>o.remove());
+  o.querySelector('[data-backdrop]').addEventListener('click',e=>{ if(e.target===e.currentTarget) o.remove(); });
+  o.querySelector('[data-save-col]').addEventListener('click',async()=>{
+    const v=o.querySelector('[data-col-perk]').value;
+    st.style.color='#ffd700'; st.textContent='Saving...';
+    try{ const r=await (await getBackendActor(true)).adminSetCollectionPerkTags(colId,v?[v]:[]);
+      if(r.err!==undefined){ st.style.color='#ef4444'; st.textContent=r.err; } else { st.style.color='#22c55e'; st.textContent=r.ok; } }
+    catch(e){ st.style.color='#ef4444'; st.textContent=safeUserErrorMessage(e,'perk tags'); }
+  });
+}
+window.openPerkTagEditor=openPerkTagEditor;
 async function openAbilityEditor(target,colId){
   const isCol=target==='collection';
   const tokens=isCol?[]:(Array.isArray(target)?target:[target]).map(Number).filter(n=>!isNaN(n));
@@ -13266,6 +13319,12 @@ async function openAbilityEditor(target,colId){
         <span style='font-size:.72rem;font-weight:700;color:#e8eaf6'>${escHtml(a.label)}</span></label>${extra}</div>`;
     }
     h+=`</div></div>`;
+  }
+  if(!isCol){
+    let _gold=false;
+    if(tokens.length===1){ try{ const ps=await (await getBackendActor(true)).adminGetCollectionPerkTags(colId); const e=ps.tokens.find(([t])=>Number(t)===tokens[0]); _gold=!!(e&&(e[1]||[]).includes('gold')); }catch(_){} }
+    h+=`<div style='margin-bottom:14px'><div style='font-size:.68rem;font-weight:800;color:#ffd700;letter-spacing:2px;margin-bottom:6px'>GAME PERKS</div>
+      <label style='display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.3);border-radius:8px;cursor:pointer'><input type='checkbox' data-ab-gold ${_gold?'checked':''} style='accent-color:#ffd700;width:15px;height:15px'/><span style='font-size:.72rem;font-weight:700;color:#ffe08a'>Gold status</span><span style='font-size:.65rem;color:#9aa4b2'>adds the collection perk tag + "-gold" (not secret: games can read it)</span></label></div>`;
   }
   const tgt=isCol?'"collection"':JSON.stringify(tokens);
   const cid=JSON.stringify(colId);
@@ -13309,6 +13368,14 @@ async function saveAbilityEditor(target,colId,clear){
         const r=await be.adminSetTokenAbilities(BigInt(t),list);
         if(r.err!==undefined) throw new Error('Token '+t+': '+r.err);
         n++; st.textContent='Saving... '+n+'/'+target.length;
+      }
+    }
+    if(!isCol){
+      const g=box.querySelector('[data-ab-gold]');
+      if(g){
+        const on=g.checked&&!clear;
+        const apply=clear||mode==='replace'||target.length===1||on;
+        if(apply){ for(const t of target){ const r=await be.adminSetTokenPerkTags(BigInt(t),on?['gold']:[]); if(r.err!==undefined) throw new Error('Token '+t+': '+r.err); } }
       }
     }
     st.textContent='\u2705 Saved'; st.style.color='#39ff14';

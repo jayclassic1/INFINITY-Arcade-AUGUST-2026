@@ -3631,6 +3631,110 @@ persistent actor ArcadeBackend {
     null
   };
 
+  // === NFT game perk tags (not secret). Games read them, plus GXP/DXP/MXP, via getMyGamePerks. ===
+  stable var collectionPerkTagEntries : [(Text, [Text])] = [];
+  stable var tokenPerkTagEntries : [(Nat, [Text])] = [];
+  func cleanPerkTags(list : [Text]) : Result.Result<[Text], Text> {
+    if (list.size() > 10) return #err("At most 10 tags");
+    let b = Buffer.Buffer<Text>(list.size());
+    for (raw in list.vals()) {
+      let t = Text.trim(raw, #char ' ');
+      if (t != "") {
+        if (Text.size(t) > 32) return #err("Tag too long (max 32 characters): " # t);
+        for (c in t.chars()) {
+          if (not ((c >= 'a' and c <= 'z') or (c >= '0' and c <= '9') or c == '-')) return #err("Tags may only use a-z, 0-9 and dashes: " # t);
+        };
+        var dup = false;
+        for (x in b.vals()) { if (x == t) { dup := true } };
+        if (not dup) { b.add(t) };
+      };
+    };
+    #ok(Buffer.toArray(b))
+  };
+  // Official collection name -> perk tag: lowercase letters/numbers, other runs become one dash, max 32 chars.
+  func perkSlug(name : Text) : Text {
+    var out = "";
+    var dash = false;
+    for (c in Text.toLowercase(name).chars()) {
+      if ((c >= 'a' and c <= 'z') or (c >= '0' and c <= '9')) {
+        if (dash and out != "") { out #= "-" };
+        out #= Text.fromChar(c);
+        dash := false;
+      } else { dash := true };
+    };
+    if (Text.size(out) <= 32) return out;
+    var r = "";
+    var n : Nat = 0;
+    for (c in out.chars()) { if (n < 32) { r #= Text.fromChar(c) }; n += 1 };
+    r
+  };
+  func collectionPerkTagsOf(colId : Text) : [Text] {
+    for ((k, v) in collectionPerkTagEntries.vals()) { if (k == colId) return v };
+    []
+  };
+  func tokenPerkTagsOf(t : Nat) : [Text] {
+    for ((k, v) in tokenPerkTagEntries.vals()) { if (k == t) return v };
+    []
+  };
+  public shared(msg) func adminSetCollectionPerkTags(collectionId : Text, tags : [Text]) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    let clean = switch (cleanPerkTags(tags)) { case (#ok(l)) { l }; case (#err(e)) { return #err(e) } };
+    switch (officialCollections.get(collectionId)) {
+      case null { #err("Collection not found") };
+      case (?c) {
+        for (tg in clean.vals()) {
+          var known = false;
+          for (oc in officialCollections.vals()) { if (perkSlug(oc.name) == tg) { known := true } };
+          if (not known) return #err("Perk tags must be an Official collection's tag: " # tg);
+        };
+        let rest = Array.filter<(Text, [Text])>(collectionPerkTagEntries, func(e) { e.0 != c.id });
+        collectionPerkTagEntries := if (clean.size() == 0) { rest } else { Array.append<(Text, [Text])>(rest, [(c.id, clean)]) };
+        #ok("Collection perk tags saved (" # Nat.toText(clean.size()) # ")")
+      };
+    }
+  };
+  public shared(msg) func adminSetTokenPerkTags(tokenId : Nat, tags : [Text]) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    if (not tokenBelongsToOfficialCollection(tokenId)) return #err("Official collection token not found");
+    let clean = switch (cleanPerkTags(tags)) { case (#ok(l)) { l }; case (#err(e)) { return #err(e) } };
+    for (tg in clean.vals()) { if (tg != "gold") return #err("Only Gold status can be set per NFT") };
+    let rest = Array.filter<(Nat, [Text])>(tokenPerkTagEntries, func(e) { e.0 != tokenId });
+    tokenPerkTagEntries := if (clean.size() == 0) { rest } else { Array.append<(Nat, [Text])>(rest, [(tokenId, clean)]) };
+    #ok("NFT perk tags saved (" # Nat.toText(clean.size()) # ")")
+  };
+  public shared query(msg) func adminGetCollectionPerkTags(collectionId : Text) : async { collection : [Text]; tokens : [(Nat, [Text])] } {
+    if (not isAdmin(msg.caller)) return { collection = []; tokens = [] };
+    let toks = Buffer.Buffer<(Nat, [Text])>(8);
+    for ((t, tags) in tokenPerkTagEntries.vals()) {
+      switch (collectionOfOfficialToken(t)) { case (?c) { if (c.id == collectionId) { toks.add((t, tags)) } }; case null {} };
+    };
+    { collection = collectionPerkTagsOf(collectionId); tokens = Buffer.toArray(toks) }
+  };
+  // Asked by the signed-in player (via the arcade). Tags come from Official NFTs they hold that are not listed in escrow.
+  public shared query(msg) func getMyGamePerks() : async { tags : [Text]; gxp : Nat; dxp : Nat; mxp : Nat } {
+    let p = msg.caller;
+    if (Principal.isAnonymous(p) or isBannedNow(p)) return { tags = []; gxp = 0; dxp = 0; mxp = 0 };
+    hydrateRuntimeStateIfNeeded();
+    let out = Buffer.Buffer<Text>(8);
+    func addTag(t : Text) { for (x in out.vals()) { if (x == t) return }; out.add(t) };
+    for ((t, o) in officialNftOwnerEntries.vals()) {
+      if (Principal.equal(o, p) and not tokenHeldInArcadeEscrow(t)) {
+        switch (collectionOfOfficialToken(t)) { case (?c) { for (x in collectionPerkTagsOf(c.id).vals()) { addTag(x) } }; case null {} };
+        for (x in tokenPerkTagsOf(t).vals()) {
+          if (x == "gold") {
+            switch (collectionOfOfficialToken(t)) { case (?c) { for (y in collectionPerkTagsOf(c.id).vals()) { addTag(y # "-gold") } }; case null {} };
+          } else { addTag(x) };
+        };
+      };
+    };
+    let g : Nat = switch (gxp.get(p)) { case (?v) { v }; case null { 0 } };
+    let d : Nat = switch (dxp.get(p)) { case (?v) { v }; case null { 0 } };
+    let m : Nat = switch (mxp.get(p)) { case (?v) { v }; case null { 0 } };
+    { tags = Buffer.toArray(out); gxp = g; dxp = d; mxp = m }
+  };
+
   public shared(msg) func adminSetCollectionAbilities(collectionId : Text, list : [(Text, Text)]) : async Result.Result<Text, Text> {
     assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (not isAdmin(msg.caller)) return #err("Admin only");
