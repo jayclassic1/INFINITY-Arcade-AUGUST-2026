@@ -6593,6 +6593,165 @@ persistent actor ArcadeBackend {
 
   /// Claims the caller's Token-tip earnings pool only — deliberately separate from claimRoyalties,
   /// per Jay's request for a distinct claim button on the creator earnings page.
+  // ============================================
+  // === AUTO-PAYOUT: earnings paid every 14 days to a creator-chosen address (48h delay on changes) ===
+  type PayoutDest = { kind : Text; owner : ?Principal; subaccount : ?Blob; accountHex : Text };
+  type AutoPayoutCfg = { dest : ?PayoutDest; pending : ?PayoutDest; pendingAt : Int; enabled : Bool; lastPayoutAt : Int; lastAmount : Nat; lastResult : Text; failures : Nat };
+  type AutoPayoutView = { destLabel : Text; pendingLabel : Text; pendingEffectiveAt : Int; enabled : Bool; nextPayoutAt : Int; lastPayoutAt : Int; lastAmount : Nat; lastResult : Text; failures : Nat };
+  stable var autoPayoutEntries : [(Principal, AutoPayoutCfg)] = [];
+  transient let AUTO_PAYOUT_INTERVAL_NS : Int = 1_209_600_000_000_000; // 14 days
+  transient let AUTO_PAYOUT_DELAY_NS : Int = 172_800_000_000_000; // 48 hours
+  transient let AUTO_PAYOUT_MAX_PER_TICK : Nat = 20;
+  transient let AUTO_PAYOUT_MAX_FAILURES : Nat = 3;
+  transient var autoPayoutBusySince : Int = 0;
+  transient let LEGACY_ICP_LEDGER : actor { transfer : shared {
+    to : Blob; fee : { e8s : Nat64 }; memo : Nat64;
+    from_subaccount : ?Blob; created_at_time : ?{ timestamp_nanos : Nat64 };
+    amount : { e8s : Nat64 }
+  } -> async { #Ok : Nat64; #Err : {
+    #BadFee : { expected_fee : { e8s : Nat64 } };
+    #InsufficientFunds : { balance : { e8s : Nat64 } };
+    #TxTooOld : { allowed_window_nanos : Nat64 };
+    #TxCreatedInFuture; #TxDuplicate : { duplicate_of : Nat64 }
+  }} } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
+  func emptyAutoPayout() : AutoPayoutCfg { { dest = null; pending = null; pendingAt = 0; enabled = false; lastPayoutAt = 0; lastAmount = 0; lastResult = ""; failures = 0 } };
+  func autoPayoutOf(p : Principal) : AutoPayoutCfg {
+    for ((k, v) in autoPayoutEntries.vals()) { if (Principal.equal(k, p)) return v };
+    emptyAutoPayout()
+  };
+  func putAutoPayout(p : Principal, c : AutoPayoutCfg) {
+    let rest = Array.filter<(Principal, AutoPayoutCfg)>(autoPayoutEntries, func(e) { not Principal.equal(e.0, p) });
+    autoPayoutEntries := Array.append<(Principal, AutoPayoutCfg)>(rest, [(p, c)]);
+  };
+  func payoutDestLabel(d : ?PayoutDest) : Text {
+    switch (d) {
+      case null { "" };
+      case (?x) {
+        if (x.kind == "account") { "Account ID " # x.accountHex } else {
+          let o = switch (x.owner) { case (?op) { Principal.toText(op) }; case null { "?" } };
+          switch (x.subaccount) { case (?sb) { o # " (subaccount " # blobToHex(sb) # ")" }; case null { o } }
+        }
+      };
+    }
+  };
+  func autoPayoutViewOf(c : AutoPayoutCfg) : AutoPayoutView {
+    let base = if (c.lastPayoutAt > 0) { c.lastPayoutAt } else { Time.now() };
+    { destLabel = payoutDestLabel(c.dest); pendingLabel = payoutDestLabel(c.pending);
+      pendingEffectiveAt = if (c.pending == null) { 0 } else { c.pendingAt + AUTO_PAYOUT_DELAY_NS };
+      enabled = c.enabled; nextPayoutAt = if (c.enabled) { base + AUTO_PAYOUT_INTERVAL_NS } else { 0 };
+      lastPayoutAt = c.lastPayoutAt; lastAmount = c.lastAmount; lastResult = c.lastResult; failures = c.failures }
+  };
+  public shared(msg) func requestAutoPayoutDestination(kind : Text, owner : ?Principal, subaccountHex : Text, accountHex : Text) : async Result.Result<Text, Text> {
+    let caller = msg.caller;
+    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
+    let dest : PayoutDest = if (kind == "principal") {
+      let o = switch (owner) { case (?x) { x }; case null { return #err("Enter a principal") } };
+      if (Principal.isAnonymous(o)) return #err("Invalid principal");
+      let sub : ?Blob = if (subaccountHex == "") { null } else {
+        switch (hexToBlob(subaccountHex)) { case (?b) { if (b.size() != 32) return #err("Subaccount must be 32 bytes (64 hex characters)"); ?b }; case null { return #err("Invalid subaccount") } }
+      };
+      { kind = "principal"; owner = ?o; subaccount = sub; accountHex = "" }
+    } else if (kind == "account") {
+      switch (hexToBlob(accountHex)) { case (?b) { if (b.size() != 32) return #err("Account ID must be 64 hex characters") }; case null { return #err("Invalid account ID") } };
+      { kind = "account"; owner = null; subaccount = null; accountHex = accountHex }
+    } else { return #err("Unknown destination type") };
+    let c = autoPayoutOf(caller);
+    putAutoPayout(caller, { c with pending = ?dest; pendingAt = Time.now() });
+    #ok("New payout address saved. It becomes active in 48 hours unless you cancel it.")
+  };
+  public shared(msg) func cancelAutoPayoutChange() : async Result.Result<Text, Text> {
+    let c = autoPayoutOf(msg.caller);
+    if (c.pending == null) return #err("No pending change");
+    putAutoPayout(msg.caller, { c with pending = null; pendingAt = 0 });
+    #ok("Pending address change cancelled")
+  };
+  public shared(msg) func setAutoPayoutEnabled(on : Bool) : async Result.Result<Text, Text> {
+    if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
+    let c = autoPayoutOf(msg.caller);
+    if (on and c.dest == null) return #err("Set a payout address first. It becomes active 48 hours after you save it.");
+    putAutoPayout(msg.caller, { c with enabled = on; failures = if (on) { 0 } else { c.failures }; lastPayoutAt = if (on and c.lastPayoutAt == 0) { Time.now() } else { c.lastPayoutAt } });
+    #ok(if (on) { "Auto-payout on" } else { "Auto-payout off" })
+  };
+  public shared query(msg) func getMyAutoPayout() : async AutoPayoutView { autoPayoutViewOf(autoPayoutOf(msg.caller)) };
+  public shared query(msg) func adminGetAutoPayouts() : async [(Principal, AutoPayoutView)] {
+    if (not isAdmin(msg.caller)) return [];
+    Array.map<(Principal, AutoPayoutCfg), (Principal, AutoPayoutView)>(autoPayoutEntries, func(e) { (e.0, autoPayoutViewOf(e.1)) })
+  };
+  // Pays one creator: all four balances in one transfer, zeroed first and restored on failure (same pattern as manual claims).
+  func payOutCreator(p : Principal, dest : PayoutDest) : async () {
+    let g = getGameCreatorEarningsBalance(p);
+    let sl = getNftSellerEarningsBalance(p);
+    let rf = getRefundBalance(p);
+    let tp = getTipEarningsBalance(p);
+    let total = g + sl + rf + tp;
+    let now = Time.now();
+    if (total < ROYALTY_CLAIM_MIN_E8S) {
+      let c0 = autoPayoutOf(p);
+      putAutoPayout(p, { c0 with lastPayoutAt = now; lastAmount = 0; lastResult = "Nothing to pay (below the 0.0002 ICP minimum)" });
+      return;
+    };
+    royalties.put(p, 0); nftSellerEarningsE8s.put(p, 0); refundsE8s.put(p, 0); tipEarnings.put(p, 0);
+    let amount : Nat = total - ICP_LEDGER_FEE_E8S;
+    var ok = false;
+    var errText = "Transfer rejected";
+    try {
+      if (dest.kind == "account") {
+        switch (hexToBlob(dest.accountHex)) {
+          case (?to) {
+            let r = await LEGACY_ICP_LEDGER.transfer({ to = to; fee = { e8s = 10_000 : Nat64 }; memo = 0 : Nat64; from_subaccount = null; created_at_time = null; amount = { e8s = Nat64.fromNat(amount) } });
+            switch (r) { case (#Ok(_)) { ok := true }; case (#Err(_)) { errText := "Ledger rejected the transfer (check the account ID)" } };
+          };
+          case null { errText := "Invalid account ID" };
+        };
+      } else {
+        switch (dest.owner) {
+          case (?o) {
+            let r = await ICP_LEDGER.icrc1_transfer({ to = { owner = o; subaccount = dest.subaccount }; fee = ?ICP_LEDGER_FEE_E8S; memo = null; from_subaccount = null; created_at_time = null; amount = amount });
+            switch (r) { case (#Ok(_)) { ok := true }; case (#Err(_)) { errText := "Ledger rejected the transfer" } };
+          };
+          case null { errText := "Missing principal" };
+        };
+      };
+    } catch (e) { errText := "Transfer error: " # Error.message(e) };
+    let c = autoPayoutOf(p);
+    if (ok) {
+      putAutoPayout(p, { c with lastPayoutAt = now; lastAmount = amount; lastResult = "Paid"; failures = 0 });
+    } else {
+      restoreGameCreatorEarningsBalance(p, g); restoreNftSellerEarningsBalance(p, sl); restoreRefundBalance(p, rf); restoreTipEarningsBalance(p, tp);
+      let f = c.failures + 1;
+      let off = f >= AUTO_PAYOUT_MAX_FAILURES;
+      putAutoPayout(p, { c with failures = f; enabled = (c.enabled and not off); lastResult = "Failed: " # errText # (if (off) { " - auto-payout turned off after 3 failures" } else { " - will retry" }) });
+    };
+  };
+  func autoPayoutTick() : async () {
+    if (autoPayoutEntries.size() == 0) return; // nobody uses auto-payout: almost free
+    let now = Time.now();
+    if (autoPayoutBusySince > 0 and now - autoPayoutBusySince < 1_800_000_000_000) return; // self-healing lock (30 min)
+    // One pass: activate address changes older than 48h and collect payouts that are due (bounded).
+    var changed = false;
+    let next = Buffer.Buffer<(Principal, AutoPayoutCfg)>(autoPayoutEntries.size());
+    let due = Buffer.Buffer<(Principal, PayoutDest)>(8);
+    for ((p, c0) in autoPayoutEntries.vals()) {
+      var c = c0;
+      switch (c.pending) {
+        case (?d) { if (now >= c.pendingAt + AUTO_PAYOUT_DELAY_NS) { c := { c with dest = ?d; pending = null; pendingAt = 0; failures = 0 }; changed := true } };
+        case null {};
+      };
+      if (due.size() < AUTO_PAYOUT_MAX_PER_TICK and c.enabled and now >= c.lastPayoutAt + AUTO_PAYOUT_INTERVAL_NS) {
+        switch (c.dest) { case (?d) { due.add((p, d)) }; case null {} };
+      };
+      next.add((p, c));
+    };
+    if (changed) { autoPayoutEntries := Buffer.toArray(next) }; // rewrite at most once
+    if (due.size() == 0) return; // most hourly checks end here, before any state loading
+    autoPayoutBusySince := now;
+    hydrateRuntimeStateIfNeeded();
+    for ((p, d) in due.vals()) {
+      try { await payOutCreator(p, d) } catch (_) {};
+    };
+    autoPayoutBusySince := 0;
+  };
+
   public shared(msg) func claimTipEarnings() : async Result.Result<Nat, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
@@ -8994,4 +9153,5 @@ persistent actor ArcadeBackend {
   // Lottery timer: placed LAST so every function it uses is already defined when it starts.
   // Re-armed automatically on every install/upgrade (transient fields re-initialise in a persistent actor).
   transient let _lotteryTimerId : Timer.TimerId = Timer.recurringTimer<system>(#seconds 600, lotteryTick);
+  transient let _autoPayoutTimerId : Timer.TimerId = Timer.recurringTimer<system>(#seconds 3600, autoPayoutTick); // after everything it uses (ledger, hex helpers)
 };

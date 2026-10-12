@@ -1472,6 +1472,9 @@ window.addEventListener('message', (e) => {
 </div>
 </div>
 
+<!-- Auto-payout -->
+<div id='autoPayoutPanel' style='background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:12px;padding:16px;margin-bottom:14px'><div style='font-size:.72rem;color:#9aa4b2'>Loading auto-payout...</div></div>
+
 <!-- Claim safety info -->
 <div style='background:rgba(0,170,255,.05);border:1px solid rgba(0,170,255,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:.78rem;color:#5a8aaa;line-height:1.7'>
 <b style='color:#9bdcff'>Claiming is manual:</b> creator ICP and NFT seller ICP use the same safe manual claim action; claimed ICP (minus the 0.0001 ICP ledger fee) lands in your Principal Account at the top of this page. Creator and seller buckets stay separate in accounting, then combine only at claim time. NFT seller ICP is credited when a listed NFT is redeemed at 1 ICP = 1,000 Tickets; the buyer's Tickets are burned on successful redemption. Arcade Tokens are credits only. Tickets are prize/perk points only and cannot be exchanged for ICP by players.
@@ -3318,7 +3321,46 @@ async function restoreProfileFromChain(cp){
     try{ if(typeof _profileTarget!=='undefined'&&_profileTarget===me) renderProfileView(); }catch(_){}
   }catch(e){ console.warn('Profile restore failed:',e); }
 }
+// Login notice: a pending payout address change can't go unnoticed.
+async function checkPendingPayoutChange(){
+  try{
+    if(!S.connected||!S.principalText) return;
+    const v=await (await getBackendActor(true)).getMyAutoPayout();
+    if(!v||!v.pendingLabel) return;
+    const key='ap_notice_'+S.principalText+'_'+String(v.pendingEffectiveAt);
+    try{ if(sessionStorage.getItem(key)) return; sessionStorage.setItem(key,'1'); }catch(_){}
+    const when=new Date(Number(v.pendingEffectiveAt)/1e6).toLocaleString();
+    document.querySelectorAll('#m-ap-notice').forEach(e=>e.remove());
+    const o=document.createElement('div'); o.id='m-ap-notice';
+    o.innerHTML=`<div style='position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px'>
+      <div style='background:#0d0f14;border:1px solid rgba(255,215,0,.5);border-radius:12px;max-width:440px;width:100%;padding:22px;text-align:center'>
+        <div style='font-size:1.05rem;font-weight:800;color:#ffd700'>Your payout address is changing</div>
+        <div style='font-size:.78rem;color:#cbd5e1;margin-top:10px;line-height:1.6'>From <b>${escHtml(when)}</b>, your auto-payouts will be sent to:</div>
+        <div style='font-size:.75rem;color:#e0e6f0;font-family:monospace;word-break:break-all;background:rgba(0,0,0,.4);border-radius:8px;padding:10px;margin:10px 0'>${escHtml(v.pendingLabel)}</div>
+        <div style='font-size:.72rem;color:#9aa4b2;margin-bottom:16px'>If you didn't make this change, cancel it now.</div>
+        <div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap'>
+          <button class='btn' data-ap-no style='border-color:#ef4444;color:#ef4444'>Not me, cancel it</button>
+          <button class='btn' data-ap-yes style='border-color:#22c55e;color:#22c55e'>Yes, that was me</button>
+        </div>
+        <div data-ap-msg style='font-size:.72rem;margin-top:10px;color:#9aa4b2'></div>
+      </div></div>`;
+    document.body.appendChild(o);
+    const msg=o.querySelector('[data-ap-msg]');
+    o.querySelector('[data-ap-yes]').addEventListener('click',()=>o.remove());
+    o.querySelector('[data-ap-no]').addEventListener('click',async()=>{
+      msg.style.color='#ffd700'; msg.textContent='Cancelling...';
+      try{
+        const r=await (await getBackendActor(true)).cancelAutoPayoutChange();
+        if(r.err!==undefined){ msg.style.color='#ef4444'; msg.textContent=r.err; return; }
+        msg.style.color='#22c55e'; msg.textContent='Cancelled. Your payout address was not changed.';
+        setTimeout(()=>o.remove(),1800);
+        try{ renderAutoPayoutPanel(); }catch(_){}
+      }catch(e){ msg.style.color='#ef4444'; msg.textContent=safeUserErrorMessage(e,'auto-payout'); }
+    });
+  }catch(e){ console.warn('Payout change check failed:',e); }
+}
 async function ensureNameChosen(){
+  checkPendingPayoutChange();
   try{
     const be=await getBackendActor(false);
     const opt=await be.getPlayerProfile(S.principal);
@@ -6559,7 +6601,7 @@ function backendIdl({IDL}){
     claimRoyalties:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     tipCreatorWithTokens:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
     getTipEarningsBalanceOf:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
-    claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
+    requestAutoPayoutDestination:IDL.Func([IDL.Text,IDL.Opt(IDL.Principal),IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),cancelAutoPayoutChange:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),setAutoPayoutEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAutoPayout:IDL.Func([],[IDL.Record({destLabel:IDL.Text,pendingLabel:IDL.Text,pendingEffectiveAt:IDL.Int,enabled:IDL.Bool,nextPayoutAt:IDL.Int,lastPayoutAt:IDL.Int,lastAmount:IDL.Nat,lastResult:IDL.Text,failures:IDL.Nat})],['query']),claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     getCreatorIcpTipTotal:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     // v2 revenue
     getTotalRevenue:IDL.Func([],[IDL.Nat],['query']),
@@ -9973,8 +10015,67 @@ async function renderRoyaltiesDash(){
     const tipEl=document.getElementById('tipEarningsBalance'); if(tipEl) tipEl.textContent = 'Unavailable';
   }
   showRoyaltyTab(_royaltyTab);
+  renderAutoPayoutPanel();
 }
 
+function _apCrc32(bytes){ let c,crc=0xFFFFFFFF; for(let n=0;n<bytes.length;n++){ c=(crc^bytes[n])&0xFF; for(let k=0;k<8;k++) c=c&1?(c>>>1)^0xEDB88320:c>>>1; crc=(crc>>>8)^c; } return (crc^0xFFFFFFFF)>>>0; }
+function _apValidAccountId(hex){
+  if(!/^[0-9a-fA-F]{64}$/.test(hex)) return false;
+  const b=hex.match(/../g).map(h=>parseInt(h,16));
+  const want=((b[0]<<24)|(b[1]<<16)|(b[2]<<8)|b[3])>>>0;
+  return _apCrc32(b.slice(4))===want;
+}
+async function renderAutoPayoutPanel(){
+  const el=document.getElementById('autoPayoutPanel'); if(!el||!S.connected) return;
+  let v=null;
+  try{ v=await (await getBackendActor(true)).getMyAutoPayout(); }catch(e){ el.innerHTML="<div style='font-size:.72rem;color:#9aa4b2'>Auto-payout is unavailable right now.</div>"; return; }
+  const d=ns=>Number(ns)>0?new Date(Number(ns)/1e6).toLocaleString():'-';
+  const IN="width:100%;box-sizing:border-box;padding:8px 10px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:6px;font-size:.78rem";
+  el.innerHTML=`<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px'>
+      <div style='font-size:.72rem;letter-spacing:2px;color:#22c55e;font-weight:800'>AUTO-PAYOUT</div>
+      <label style='display:flex;align-items:center;gap:6px;font-size:.75rem;color:#e0e6f0;cursor:pointer'><input type='checkbox' data-ap-toggle ${v.enabled?'checked':''} style='accent-color:#22c55e;width:15px;height:15px'/> ${v.enabled?'On':'Off'}</label>
+    </div>
+    <div style='font-size:.72rem;color:#9aa4b2;line-height:1.6;margin-bottom:10px'>Every 14 days, all your claimable creator, NFT seller, refund and tip earnings are sent to your payout address in one transfer (minus the 0.0001 ICP ledger fee). New addresses become active 48 hours after you save them. Manual claiming still works anytime.</div>
+    <div style='font-size:.75rem;color:#e0e6f0;margin-bottom:4px'><b>Payout address:</b> <span style='font-family:monospace;word-break:break-all'>${v.destLabel?escHtml(v.destLabel):'<span style="color:#9aa4b2">none yet</span>'}</span></div>
+    ${v.pendingLabel?`<div style='font-size:.72rem;color:#ffd700;margin-bottom:4px'>Pending change to <span style='font-family:monospace;word-break:break-all'>${escHtml(v.pendingLabel)}</span>, active from ${escHtml(d(v.pendingEffectiveAt))} <button class='btn' data-ap-cancel style='font-size:.65rem;padding:2px 8px;margin-left:6px;border-color:#ef4444;color:#ef4444'>Cancel</button></div>`:''}
+    ${v.enabled?`<div style='font-size:.72rem;color:#9aa4b2;margin-bottom:4px'>Next payout: ${escHtml(d(v.nextPayoutAt))}</div>`:''}
+    ${v.lastResult?`<div style='font-size:.72rem;color:${v.lastResult.startsWith('Failed')?'#ef4444':'#9aa4b2'};margin-bottom:4px'>Last: ${escHtml(v.lastResult)}${Number(v.lastAmount)>0?' ('+(Number(v.lastAmount)/1e8).toFixed(4)+' ICP)':''} &middot; ${escHtml(d(v.lastPayoutAt))}</div>`:''}
+    <div style='height:1px;background:rgba(255,255,255,.08);margin:10px 0'></div>
+    <div style='font-size:.72rem;color:#e0e6f0;font-weight:700;margin-bottom:4px'>Set a new payout address</div>
+    <input data-ap-addr placeholder='Principal (wallet, canister, DAO) or 64-character account ID (exchanges)' style='${IN}'/>
+    <input data-ap-sub placeholder='Subaccount (optional, 64 hex characters, principals only)' style='${IN};margin-top:6px'/>
+    <button class='btn' data-ap-save style='margin-top:8px;font-size:.72rem;padding:5px 12px;border-color:#22c55e;color:#22c55e'>Save address (active in 48 hours)</button>
+    <div data-ap-status style='font-size:.72rem;margin-top:8px;color:#9aa4b2'></div>`;
+  const st=el.querySelector('[data-ap-status]');
+  const say=(t,c)=>{ st.style.color=c; st.textContent=t; };
+  el.querySelector('[data-ap-save]').addEventListener('click',async()=>{
+    const addr=el.querySelector('[data-ap-addr]').value.trim(); const sub=el.querySelector('[data-ap-sub]').value.trim().toLowerCase();
+    if(!addr) return say('Enter an address.','#ef4444');
+    let kind,owner=[],acct='';
+    if(/^[0-9a-fA-F]{64}$/.test(addr)){
+      if(!_apValidAccountId(addr)) return say('That account ID has a typo (its checksum does not match).','#ef4444');
+      if(sub) return say('Subaccounts are only for principals.','#ef4444');
+      kind='account'; acct=addr.toLowerCase();
+    }else{
+      try{ owner=[Principal.fromText(addr)]; }catch(_){ return say('That is not a valid principal or account ID.','#ef4444'); }
+      if(sub&&!/^[0-9a-f]{64}$/.test(sub)) return say('Subaccount must be 64 hex characters.','#ef4444');
+      kind='principal';
+    }
+    if(!await arcadeConfirm('Payout address','Send future payouts to this address? It becomes active in 48 hours, and you can cancel it until then.')) return;
+    say('Saving...','#ffd700');
+    try{ const r=await (await getBackendActor(true)).requestAutoPayoutDestination(kind,owner,kind==='principal'?sub:'',acct);
+      if(r.err!==undefined) return say(r.err,'#ef4444'); say(r.ok,'#22c55e'); setTimeout(renderAutoPayoutPanel,800); }
+    catch(e){ say(safeUserErrorMessage(e,'auto-payout'),'#ef4444'); }
+  });
+  const cb=el.querySelector('[data-ap-cancel]');
+  if(cb) cb.addEventListener('click',async()=>{ try{ const r=await (await getBackendActor(true)).cancelAutoPayoutChange(); if(r.err!==undefined) return say(r.err,'#ef4444'); renderAutoPayoutPanel(); }catch(e){ say(safeUserErrorMessage(e,'auto-payout'),'#ef4444'); } });
+  el.querySelector('[data-ap-toggle]').addEventListener('change',async(ev)=>{
+    const on=ev.target.checked;
+    try{ const r=await (await getBackendActor(true)).setAutoPayoutEnabled(on); if(r.err!==undefined){ ev.target.checked=!on; return say(r.err,'#ef4444'); } renderAutoPayoutPanel(); }
+    catch(e){ ev.target.checked=!on; say(safeUserErrorMessage(e,'auto-payout'),'#ef4444'); }
+  });
+}
+window.renderAutoPayoutPanel=renderAutoPayoutPanel;
 async function claimTipEarningsUi(){
   if(!S.connected) return showConnect();
   const ok = await arcadeConfirm('Claim Tip Earnings','Claim the ICP backing Tokens you\'ve received as tips on The Back? This is separate from your creator/seller royalty claim.');
