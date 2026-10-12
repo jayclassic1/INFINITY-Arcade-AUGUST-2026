@@ -6601,7 +6601,7 @@ function backendIdl({IDL}){
     claimRoyalties:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     tipCreatorWithTokens:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
     getTipEarningsBalanceOf:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
-    requestAutoPayoutDestination:IDL.Func([IDL.Text,IDL.Opt(IDL.Principal),IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),cancelAutoPayoutChange:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),setAutoPayoutEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAutoPayout:IDL.Func([],[IDL.Record({destLabel:IDL.Text,pendingLabel:IDL.Text,pendingEffectiveAt:IDL.Int,enabled:IDL.Bool,nextPayoutAt:IDL.Int,lastPayoutAt:IDL.Int,lastAmount:IDL.Nat,lastResult:IDL.Text,failures:IDL.Nat})],['query']),claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
+    requestAutoPayoutDestination:IDL.Func([IDL.Text,IDL.Opt(IDL.Principal),IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),cancelAutoPayoutChange:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),setAutoPayoutEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAutoPayout:IDL.Func([],[IDL.Record({destLabel:IDL.Text,pendingLabel:IDL.Text,pendingEffectiveAt:IDL.Int,enabled:IDL.Bool,nextPayoutAt:IDL.Int,lastPayoutAt:IDL.Int,lastAmount:IDL.Nat,lastResult:IDL.Text,failures:IDL.Nat})],['query']),adminTestAutoPayoutNow:IDL.Func([IDL.Principal],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     getCreatorIcpTipTotal:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     // v2 revenue
     getTotalRevenue:IDL.Func([],[IDL.Nat],['query']),

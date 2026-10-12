@@ -6723,6 +6723,18 @@ persistent actor ArcadeBackend {
       putAutoPayout(p, { c with failures = f; enabled = (c.enabled and not off); lastResult = "Failed: " # errText # (if (off) { " - auto-payout turned off after 3 failures" } else { " - will retry" }) });
     };
   };
+  // TESTING ONLY (remove before mainnet): activate a pending payout address now and pay this player immediately.
+  public shared(msg) func adminTestAutoPayoutNow(p : Principal) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    var c = autoPayoutOf(p);
+    switch (c.pending) { case (?d) { c := { c with dest = ?d; pending = null; pendingAt = 0; failures = 0 } }; case null {} };
+    putAutoPayout(p, c);
+    let d = switch (c.dest) { case (?x) { x }; case null { return #err("No payout address set for this player") } };
+    await payOutCreator(p, d);
+    let after = autoPayoutOf(p);
+    #ok(after.lastResult # " | amount " # Nat.toText(after.lastAmount) # " e8s")
+  };
   func autoPayoutTick() : async () {
     if (autoPayoutEntries.size() == 0) return; // nobody uses auto-payout: almost free
     let now = Time.now();
