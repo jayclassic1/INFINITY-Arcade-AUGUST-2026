@@ -2159,24 +2159,28 @@ window.addEventListener('message', (e) => {
 </div><!-- end .app -->
 
 <div class='wallet-modal' id='walletModal' onclick='walletBackdrop(event)'><div class='wallet-panel'><div class='wallet-head'><h2 style='margin:0'>Wallet</h2><div style='display:flex;gap:8px'><button class='btn' id='walletScanBtn' onclick='scanWalletBtn()' style='font-size:.8rem;padding:5px 12px;border-color:var(--cyan);color:var(--cyan)'>Scan</button><button class='btn' onclick='closeWalletPanel()'>Close</button></div></div>
+<!-- Creator buttons (top) -->
+<style>#walletCreatorBtns>div>.wallet-sec{height:100%;box-sizing:border-box;display:flex}#walletCreatorBtns>div>.wallet-sec>button{flex:1;letter-spacing:.5px!important}</style>
+<div id='walletCreatorBtns' style='display:flex;gap:8px;align-items:stretch'>
+<div id='walletDevDashSection' style='display:none;flex:1'><div class='wallet-sec' style='border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04)'><button onclick='closeWalletPanel();showView("devdash")' style='width:100%;padding:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:#22c55e;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(34,197,94,.2)"' onmouseleave='this.style.background="rgba(34,197,94,.1)"'>Developer Dashboard</button></div></div>
+<div id='walletRoyaltiesSection' style='display:none;flex:1'><div class='wallet-sec' style='border-color:rgba(244,114,182,.25);background:rgba(244,114,182,.04)'><button onclick='closeWalletPanel();showView("royalties")' style='width:100%;padding:10px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);border-radius:8px;color:#f472b6;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(244,114,182,.2)"' onmouseleave='this.style.background="rgba(244,114,182,.1)"'>Creator Earnings</button></div></div>
+</div>
 <!-- Balances row: ICP | Tokens | Tickets -->
 <div class='wallet-sec'><div style='display:flex;gap:8px;justify-content:space-between'>
 <div style='flex:1.5;text-align:center;background:rgba(0,102,255,.08);border:1px solid #0066ff44;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>ICP Balance</div><div id='walletBalance' style='font-size:1.1rem;font-weight:800;color:#00aaff'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tokens</div><div id='walletTokens' style='font-size:1.1rem;font-weight:800;color:var(--gold)'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(139,92,246,.08);border:1px solid #8b5cf644;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tickets</div><div id='walletTickets' style='font-size:1.1rem;font-weight:800;color:#c084fc'>-</div></div>
 </div></div>
-<!-- Deposit ICP -->
-<div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(0,102,255,.12),rgba(139,92,246,.08));border:1px solid #0066ff88;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0066ff,#8b5cf6,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><span style='font-size:1.4rem'>∞</span><span style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:1px'>DEPOSIT ICP</span><span style='font-size:.65rem;color:#5a7a9a;font-style:italic'>(Wallet Address)</span></div><div id='walletDeposit' class='mono' style='font-size:.72rem;color:#c4d3ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Connect wallet to generate</div><button class='btn' id='copyDepositBtn' onclick='copyDepositAddress()' disabled style='margin-top:8px;width:100%;border-color:#0066ff;color:#00aaff;font-size:.8rem;padding:6px'>📋 Copy Address</button></div></div>
-<!-- Withdraw ICP (right under deposit) -->
+<!-- Send ICP -->
 <div class='wallet-sec'><div style='font-weight:700;margin-bottom:6px;color:var(--pink)'>Send ICP</div><div class='controls' style='justify-content:flex-start;gap:6px'><div style='display:flex;gap:6px;width:100%'><input class='wallet-input' id='withdrawAmount' type='number' min='0' step='0.0001' placeholder='Amount (ICP)' style='flex:1'/><button onclick='fillMaxWithdraw()' style='padding:6px 12px;background:rgba(255,68,170,.15);border:1px solid var(--pink);color:var(--pink);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:700;white-space:nowrap;transition:all .2s' onmouseenter='this.style.background="rgba(255,68,170,.3)"' onmouseleave='this.style.background="rgba(255,68,170,.15)"'>MAX</button></div><input class='wallet-input' id='withdrawAddress' type='text' placeholder='Receiving Address'/></div><div class='tiny' style='margin-top:4px;color:var(--muted)'>0.0001 ICP network fee applies</div><div id='withdrawRes' style='margin-top:6px;font-size:.8rem'></div><button class='btn' style='margin-top:6px;border-color:var(--cyan);color:var(--cyan)' onclick='withdrawIcp()'>Send</button></div>
 <!-- Send Tokens -->
 <div class='wallet-sec' id='sendTokensSection'><div style='font-weight:700;margin-bottom:4px;color:var(--gold)'>Send Tokens</div><div style='font-size:.7rem;color:#8aa0c8;margin-bottom:8px'>To gift Tokens, send them to another player’s Principal ID.</div></div>
+<!-- Deposit ICP -->
+<div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(0,102,255,.12),rgba(139,92,246,.08));border:1px solid #0066ff88;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0066ff,#8b5cf6,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><span style='font-size:1.4rem'>∞</span><span style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:1px'>DEPOSIT ICP</span><span style='font-size:.65rem;color:#5a7a9a;font-style:italic'>(Wallet Address)</span></div><div id='walletDeposit' class='mono' style='font-size:.72rem;color:#c4d3ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Connect wallet to generate</div><button class='btn' id='copyDepositBtn' onclick='copyDepositAddress()' disabled style='margin-top:8px;width:100%;border-color:#0066ff;color:#00aaff;font-size:.8rem;padding:6px'>📋 Copy Address</button></div></div>
 <!-- Deposit NFTs -->
 <div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(255,68,170,.08));border:1px solid #8b5cf688;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,#ff44aa,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:0;flex-wrap:wrap'><span style='font-size:1.4rem'>🔗</span><span style='font-weight:800;font-size:.85rem;color:#c084fc;letter-spacing:1px'>DEPOSIT NFTS</span><span style='font-size:.65rem;color:var(--muted);background:rgba(139,92,246,.1);padding:2px 6px;border-radius:4px;border:1px solid #8b5cf644;white-space:nowrap'>Principal ID</span></div><div style='margin-top:1px;margin-bottom:8px;line-height:1.2'><span style='font-size:.65rem;color:var(--red)'>(Don't Send ICP to this address)</span></div><div id='walletPrincipal' class='mono' style='font-size:.72rem;color:#d8c9ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Not connected</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px'><button class='btn' onclick='copyPrincipal()' style='width:100%;border-color:#8b5cf6;color:#c084fc;font-size:.8rem;padding:6px'>📋 Copy Principal</button><button class='btn' onclick='openSupportedCollectionsModal()' style='width:100%;border-color:#22d3ee;color:#22d3ee;font-size:.8rem;padding:6px'>Supported Collections</button></div></div></div>
-<!-- My NFTs (under Deposit NFTs) -->
-<div class='wallet-sec'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div style='font-weight:700;color:var(--gold)'>My NFTs</div><button class='btn' onclick='loadWalletNfts()' style='font-size:.7rem;padding:3px 10px;border-color:var(--gold);color:var(--gold)'>🔄 Scan</button></div><div id='walletNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px'><div style='color:var(--muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px'>Click Scan to check your NFTs</div></div></div>
-<div id='walletDevDashSection' style='display:none'><div class='wallet-sec' style='border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04)'><button onclick='closeWalletPanel();showView("devdash")' style='width:100%;padding:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:#22c55e;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(34,197,94,.2)"' onmouseleave='this.style.background="rgba(34,197,94,.1)"'>Developer Dashboard</button></div></div>
-<div id='walletRoyaltiesSection' style='display:none'><div class='wallet-sec' style='border-color:rgba(244,114,182,.25);background:rgba(244,114,182,.04)'><button onclick='closeWalletPanel();showView("royalties")' style='width:100%;padding:10px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);border-radius:8px;color:#f472b6;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(244,114,182,.2)"' onmouseleave='this.style.background="rgba(244,114,182,.1)"'>Creator Earnings</button></div></div>
+<!-- My NFTs -->
+<div class='wallet-sec'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div style='font-weight:700;color:var(--gold)'>My NFTs</div><div style='display:flex;gap:6px'><button class='btn' onclick="closeWalletPanel();showView('prizes');showTab('collection')" style='font-size:.7rem;padding:3px 10px;border-color:#00aaff;color:#00aaff'>My Collection</button><button class='btn' onclick='loadWalletNfts()' style='font-size:.7rem;padding:3px 10px;border-color:var(--gold);color:var(--gold)'>🔄 Scan</button></div></div><div id='walletNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px'><div style='color:var(--muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px'>Click Scan to check your NFTs</div></div></div>
 </div></div><div class='wallet-modal' id='profileModal' onclick='if(event.target===this)closeProfileModal()'><div class='wallet-panel' style='max-width:420px'><div class='wallet-head'><h2 style='margin:0'>👤 Set Up Your Profile</h2></div><div class='wallet-sec' style='text-align:center'><p style='color:var(--muted);margin-top:0'>Welcome to Infinity Arcade! Set your player name and avatar.</p><div id='profileAvatarPreview' style='width:100px;height:100px;border-radius:12px;background:rgba(13,17,23,.75);backdrop-filter:blur(8px);margin:0 auto 14px;display:grid;place-items:center;font-size:2.5rem;border:2px solid var(--gold);overflow:hidden'></div><div class='label'>Profile Picture</div><div style='color:var(--muted);font-size:.75rem;margin-bottom:6px'>Only NFTs in your arcade wallet can be used as profile pictures</div><div id='avatarPicker' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin:8px 0;max-height:200px;overflow-y:auto'></div><div id='avatarLoading' style='display:none;color:var(--cyan);font-size:.8rem;text-align:center;padding:12px'>⏳ Loading your NFTs...</div><div id='avatarEmpty' style='display:none;color:var(--muted);font-size:.8rem;text-align:center;padding:12px'>No NFTs found. Deposit NFTs into your arcade wallet to use them as profile pictures.</div><div class='label' style='margin-top:12px'>Player Name</div><input class='wallet-input' id='profileNameInput' placeholder='Enter your arcade name' maxlength='20' style='text-align:center;font-size:1.1rem' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/><button class='btn green' style='width:100%;margin-top:14px;font-size:1rem' onclick='saveProfile()'>🕹️ Enter the Arcade</button><div class='tiny' style='margin-top:8px;color:var(--muted)'>You can change this later in your wallet panel.</div></div></div></div>
 
 
@@ -4144,11 +4148,19 @@ async function disconnectWallet(){
   update();
 }
 
-const _stNames={};
+const _stNames={}, _stAvatars={};
 async function _stName(p){
   const k=p.toText(); if(_stNames[k]!==undefined) return _stNames[k];
-  try{ const r=await (await getBackendActor(false)).getPlayerProfile(p); _stNames[k]=(r&&r.length&&r[0].name)?String(r[0].name):''; }catch(_){ _stNames[k]=''; }
+  try{ const r=await (await getBackendActor(false)).getPlayerProfile(p); _stNames[k]=(r&&r.length&&r[0].name)?String(r[0].name):''; _stAvatars[k]=(r&&r.length&&r[0].avatarUrl)?String(r[0].avatarUrl):''; }catch(_){ _stNames[k]=''; _stAvatars[k]=''; }
   return _stNames[k];
+}
+function _stAvatarHtml(pid,name){
+  const url=String(_stAvatars[pid]||'');
+  const ok=/^(https?:\/\/|data:image\/)/i.test(url);
+  const inner=ok
+    ?`<img src="${url.replace(/"/g,'%22')}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:6px;display:block" onerror="this.style.display='none'">`
+    :`<div style="width:72px;height:72px;border-radius:6px;display:grid;place-items:center;background:rgba(139,92,246,.18);color:#e9d5ff;font-size:1.8rem;font-weight:800">${escHtml((name||'?').charAt(0).toUpperCase())}</div>`;
+  return `<div style="display:flex;justify-content:center;margin:2px 0 12px"><span class="pp-avatar" data-pp-principal="${escHtml(pid)}" style="display:inline-block;line-height:0;border-radius:6px">${inner}</span></div>`;
 }
 async function loadSendTokensPanel(){
   const el=document.getElementById('sendTokensSection'); if(!el||!S.connected) return;
@@ -4176,7 +4188,7 @@ async function loadSendTokensPanel(){
     if(amt>left) return say("That's over your daily limit. You can send "+left.toLocaleString()+" more Tokens today.",'#ef4444');
     const nm=await _stName(to);
     if(!nm) return say('No player found with that Principal ID. Check it and try again.','#ef4444');
-    if(!await arcadeConfirm('Send Tokens','Send <b>'+amt+' Tokens</b> to <b>'+escHtml(nm)+'</b>?<br><span style="font-size:.75em;word-break:break-all">'+escHtml(toText)+'</span><br><br>Sent Tokens can\'t be returned.')) return;
+    if(!await arcadeConfirm('Send Tokens',_stAvatarHtml(toText,nm)+'Send <b>'+amt+' Tokens</b> to <b>'+escHtml(nm)+'</b>?<br><span style="font-size:.75em;word-break:break-all">'+escHtml(toText)+'</span><br><br>Sent Tokens can\'t be returned.')) return;
     btn.disabled=true; say('Sending...','#ffd700');
     try{
       const r=await (await getBackendActor(true)).sendTokens(to,BigInt(amt));
@@ -4617,15 +4629,16 @@ function getShowroomTreasuryAccountId(){
   return principalToAccountHexWithSubaccount(ARCADE_CANISTER_ID,laneSubaccountBytes('showroom-treasury'));
 }
 
+function _walletMoreNfts(n){ return n>6?`<div style='grid-column:1/-1;text-align:center;font-size:.7rem;color:var(--muted);padding:4px'>+${n-6} more in My Collection</div>`:''; }
 async function loadWalletNfts(forceRefresh=false){
   const grid=qs('walletNftGrid');
   if(!grid||!S.connected) return;
   if(!forceRefresh&&_ownedWalletNftsCache.principal===S.principalText&&_ownedWalletNftsCache.items.length){
     const cachedNfts=_ownedWalletNftsCache.items;
-    grid.innerHTML=cachedNfts.map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
+    grid.innerHTML=cachedNfts.slice(0,6).map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
       ${buildNftImageTag(n.imageUrl,[],`width:100%;height:90px;object-fit:contain;background:#0a0a1a`)}
       <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${n.collection} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
-    </div>`).join('');
+    </div>`).join('')+_walletMoreNfts(cachedNfts.length);
     queueMicrotask(()=>loadWalletNfts(true));
     return;
   }
@@ -4636,10 +4649,10 @@ async function loadWalletNfts(forceRefresh=false){
       grid.innerHTML='<div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px">No NFTs found in known collections</div>';
       return;
     }
-    grid.innerHTML=allNfts.map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
+    grid.innerHTML=allNfts.slice(0,6).map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
       ${buildNftImageTag(n.imageUrl,[],`width:100%;height:90px;object-fit:contain;background:#0a0a1a`)}
       <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${n.collection} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
-    </div>`).join('');
+    </div>`).join('')+_walletMoreNfts(allNfts.length);
   }catch(e){
     console.error('Wallet NFT scan failed:',e);
     grid.innerHTML='<div style="color:var(--red);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px">'+escHtml(safeUserErrorMessage(e,'NFT scan'))+'</div>';
