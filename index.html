@@ -2169,6 +2169,8 @@ window.addEventListener('message', (e) => {
 <div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(0,102,255,.12),rgba(139,92,246,.08));border:1px solid #0066ff88;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0066ff,#8b5cf6,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><span style='font-size:1.4rem'>∞</span><span style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:1px'>DEPOSIT ICP</span><span style='font-size:.65rem;color:#5a7a9a;font-style:italic'>(Wallet Address)</span></div><div id='walletDeposit' class='mono' style='font-size:.72rem;color:#c4d3ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Connect wallet to generate</div><button class='btn' id='copyDepositBtn' onclick='copyDepositAddress()' disabled style='margin-top:8px;width:100%;border-color:#0066ff;color:#00aaff;font-size:.8rem;padding:6px'>📋 Copy Address</button></div></div>
 <!-- Withdraw ICP (right under deposit) -->
 <div class='wallet-sec'><div style='font-weight:700;margin-bottom:6px;color:var(--pink)'>Send ICP</div><div class='controls' style='justify-content:flex-start;gap:6px'><div style='display:flex;gap:6px;width:100%'><input class='wallet-input' id='withdrawAmount' type='number' min='0' step='0.0001' placeholder='Amount (ICP)' style='flex:1'/><button onclick='fillMaxWithdraw()' style='padding:6px 12px;background:rgba(255,68,170,.15);border:1px solid var(--pink);color:var(--pink);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:700;white-space:nowrap;transition:all .2s' onmouseenter='this.style.background="rgba(255,68,170,.3)"' onmouseleave='this.style.background="rgba(255,68,170,.15)"'>MAX</button></div><input class='wallet-input' id='withdrawAddress' type='text' placeholder='Receiving Address'/></div><div class='tiny' style='margin-top:4px;color:var(--muted)'>0.0001 ICP network fee applies</div><div id='withdrawRes' style='margin-top:6px;font-size:.8rem'></div><button class='btn' style='margin-top:6px;border-color:var(--cyan);color:var(--cyan)' onclick='withdrawIcp()'>Send</button></div>
+<!-- Send Tokens -->
+<div class='wallet-sec' id='sendTokensSection'><div style='font-weight:700;margin-bottom:4px;color:var(--gold)'>Send Tokens</div><div style='font-size:.7rem;color:#8aa0c8;margin-bottom:8px'>To gift Tokens, send them to another player’s Principal ID.</div></div>
 <!-- Deposit NFTs -->
 <div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(255,68,170,.08));border:1px solid #8b5cf688;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,#ff44aa,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:0;flex-wrap:wrap'><span style='font-size:1.4rem'>🔗</span><span style='font-weight:800;font-size:.85rem;color:#c084fc;letter-spacing:1px'>DEPOSIT NFTS</span><span style='font-size:.65rem;color:var(--muted);background:rgba(139,92,246,.1);padding:2px 6px;border-radius:4px;border:1px solid #8b5cf644;white-space:nowrap'>Principal ID</span></div><div style='margin-top:1px;margin-bottom:8px;line-height:1.2'><span style='font-size:.65rem;color:var(--red)'>(Don't Send ICP to this address)</span></div><div id='walletPrincipal' class='mono' style='font-size:.72rem;color:#d8c9ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Not connected</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px'><button class='btn' onclick='copyPrincipal()' style='width:100%;border-color:#8b5cf6;color:#c084fc;font-size:.8rem;padding:6px'>📋 Copy Principal</button><button class='btn' onclick='openSupportedCollectionsModal()' style='width:100%;border-color:#22d3ee;color:#22d3ee;font-size:.8rem;padding:6px'>Supported Collections</button></div></div></div>
 <!-- My NFTs (under Deposit NFTs) -->
@@ -4142,10 +4144,83 @@ async function disconnectWallet(){
   update();
 }
 
+const _stNames={};
+async function _stName(p){
+  const k=p.toText(); if(_stNames[k]!==undefined) return _stNames[k];
+  try{ const r=await (await getBackendActor(false)).getPlayerProfile(p); _stNames[k]=(r&&r.length&&r[0].name)?String(r[0].name):''; }catch(_){ _stNames[k]=''; }
+  return _stNames[k];
+}
+async function loadSendTokensPanel(){
+  const el=document.getElementById('sendTokensSection'); if(!el||!S.connected) return;
+  const me=S.principalText||'';
+  const IN="width:100%;box-sizing:border-box";
+  el.innerHTML=`<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px'>
+      <div style='font-weight:700;color:var(--gold)'>Send Tokens</div>
+      <button class='btn' data-st-hist style='font-size:.68rem;padding:3px 10px;border-color:var(--gold);color:var(--gold)'>History</button>
+    </div>
+    <div style='font-size:.7rem;color:#8aa0c8;margin-bottom:8px'>To gift Tokens, send them to another player’s Principal ID.</div>
+    <input class='wallet-input' data-st-to placeholder="Player's Principal ID" style='${IN};margin-bottom:6px'/>
+    <div style='display:flex;gap:6px'><input class='wallet-input' data-st-amt type='number' min='1' step='1' placeholder='Tokens' style='flex:1'/><button class='btn' data-st-send style='border-color:var(--gold);color:var(--gold);white-space:nowrap'>Send</button></div>
+    <div data-st-msg style='font-size:.72rem;margin-top:6px;min-height:1em'></div>`;
+  const msg=el.querySelector('[data-st-msg]'); const say=(t,c)=>{ msg.style.color=c; msg.textContent=t; };
+  el.querySelector('[data-st-hist]').addEventListener('click',()=>openTokenHistory());
+  el.querySelector('[data-st-send]').addEventListener('click',async(ev)=>{
+    const btn=ev.currentTarget; if(btn.disabled) return;
+    const toText=el.querySelector('[data-st-to]').value.trim(); const amt=Math.floor(Number(el.querySelector('[data-st-amt]').value));
+    let to; try{ to=Principal.fromText(toText); }catch(_){ return say("That isn't a valid Principal ID.",'#ef4444'); }
+    if(toText===me) return say("You can't send Tokens to yourself.",'#ef4444');
+    if(!Number.isFinite(amt)||amt<1) return say('Enter a whole number of Tokens.','#ef4444');
+    let left=Infinity, limit=1000;
+    try{ const info=await (await getBackendActor(true)).getMyTokenTransfers(); limit=Number(info.dailyLimit||1000); left=Math.max(0,limit-Number(info.sentLast24h||0)); }catch(_){}
+    if(left<=0) return say("You've sent your limit for the day ("+limit.toLocaleString()+" Tokens). Try again tomorrow.",'#ef4444');
+    if(amt>left) return say("That's over your daily limit. You can send "+left.toLocaleString()+" more Tokens today.",'#ef4444');
+    const nm=await _stName(to);
+    if(!nm) return say('No player found with that Principal ID. Check it and try again.','#ef4444');
+    if(!await arcadeConfirm('Send Tokens','Send <b>'+amt+' Tokens</b> to <b>'+escHtml(nm)+'</b>?<br><span style="font-size:.75em;word-break:break-all">'+escHtml(toText)+'</span><br><br>Sent Tokens can\'t be returned.')) return;
+    btn.disabled=true; say('Sending...','#ffd700');
+    try{
+      const r=await (await getBackendActor(true)).sendTokens(to,BigInt(amt));
+      if(r.err!==undefined){ say(/daily send limit/i.test(r.err)?"You've sent your limit for the day. Try again tomorrow.":r.err,'#ef4444'); btn.disabled=false; return; }
+      try{ await refreshWalletBalance(); }catch(_){}
+      el.querySelector('[data-st-to]').value=''; el.querySelector('[data-st-amt]').value='';
+      btn.disabled=false; say('Sent '+amt+' Tokens to '+nm+'.','#22c55e');
+    }catch(e){ say(safeUserErrorMessage(e,'send tokens'),'#ef4444'); btn.disabled=false; }
+  });
+}
+async function openTokenHistory(){
+  document.querySelectorAll('#m-token-history').forEach(e=>e.remove());
+  const o=document.createElement('div'); o.id='m-token-history';
+  o.innerHTML=`<div data-backdrop style='position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px'>
+    <div style='background:#0d0f14;border:1px solid rgba(255,215,0,.45);border-radius:12px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:18px 20px'>
+      <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
+        <div style='font-size:1rem;font-weight:700;color:#ffd700'>Token History</div>
+        <button data-close style='background:none;border:none;color:#9aa4b2;font-size:1.1rem;cursor:pointer;padding:2px 6px'>&#10005;</button>
+      </div>
+      <div data-rows style='overflow-y:auto;font-size:.78rem;color:#9aa4b2'>Loading...</div>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector('[data-close]').addEventListener('click',()=>o.remove());
+  o.querySelector('[data-backdrop]').addEventListener('click',e=>{ if(e.target===e.currentTarget) o.remove(); });
+  const box=o.querySelector('[data-rows]'); const me=S.principalText||'';
+  let hist=[];
+  try{ hist=(await (await getBackendActor(true)).getMyTokenTransfers()).history||[]; }
+  catch(e){ box.textContent='Token history is unavailable right now.'; return; }
+  if(!hist.length){ box.textContent='No Token gifts sent or received yet.'; return; }
+  const rows=await Promise.all(hist.map(async([f,t,a,at])=>{
+    const out=f.toText()===me, other=out?t:f, nm=await _stName(other);
+    const who=nm?escHtml(nm):escHtml(other.toText().slice(0,10)+'...');
+    return `<div style='display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)'>
+      <div><div style='color:${out?'#fca5a5':'#86efac'};font-weight:600'>${out?'Sent to':'Received from'} ${who}</div><div style='font-size:.68rem;color:#6b7a90'>${escHtml(new Date(Number(at)/1e6).toLocaleString())}</div></div>
+      <div style='color:#e0e6f0;font-weight:700;white-space:nowrap'>${out?'-':'+'}${Number(a).toLocaleString()} Tokens</div></div>`;
+  }));
+  box.innerHTML=rows.join('');
+}
+window.loadSendTokensPanel=loadSendTokensPanel; window.openTokenHistory=openTokenHistory;
 function openWalletPanel(){
   if(!S.connected) return showConnect();
   qs('walletModal')?.classList.add('show');
   refreshWalletBalance();
+  try{ loadSendTokensPanel(); }catch(_){}
   loadWalletNfts();
   // Show dev dashboard link only if user has submitted games or is admin
   const devSection=document.getElementById('walletDevDashSection');
@@ -4768,7 +4843,7 @@ window.addEventListener('message',async(event)=>{
   if(!event.data||!event.data.type) return;
   // Normalize message types - accept both dev-friendly names and internal names
   const scoreTypeMap={'SCORE':'arcade-latest-score','GAME_OVER':'arcade-latest-score','LATEST_SCORE':'arcade-latest-score','ARCADE_SET_LATEST_SCORE':'arcade-latest-score'};
-  const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges','GET_PERKS':'arcade-get-perks'};
+  const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges','GET_PERKS':'arcade-get-perks','GET_CONTROLLERS':'arcade-get-controllers'};
   const msgType=typeMap[event.data.type]||event.data.type;
   const gameId=event.data.gameId||_currentGamePlaying;
   // Scores are only accepted from the game's frame (or a frame inside it), not typed into the arcade page's console.
@@ -4937,6 +5012,7 @@ window.addEventListener('message',async(event)=>{
   }
 
   // Game requests controller/input config
+  if(msgType==='arcade-get-controllers'){ event.source?.postMessage({type:'arcade-controllers',controllers:_arcadeControllerList()},'*'); return; }
   if(msgType==='arcade-get-input-config'){
     const cfg=JSON.parse(localStorage.getItem('arcade_input_config')||'{}');
     event.source?.postMessage({type:'arcade-input-config',config:cfg},'*');
@@ -4983,11 +5059,34 @@ window.addEventListener('message',async(event)=>{
 
 // === GAMEPAD / CONTROLLER SUPPORT ===
 const _gamepads={};
+// Controller status: tell the game frame which controllers are connected, and show a short notice.
+function _arcadeControllerList(){
+  const pads=navigator.getGamepads?Array.from(navigator.getGamepads()):[];
+  return pads.filter(p=>p&&p.connected).map(p=>({player:'p'+(p.index+1),name:String(p.id||'Controller').slice(0,80),connected:true}));
+}
+function _arcadePostControllers(){
+  try{ const f=document.getElementById('gameIframe'); if(f&&f.contentWindow) f.contentWindow.postMessage({type:'arcade-controllers',controllers:_arcadeControllerList()},'*'); }catch(_){}
+}
+function _arcadeControllerToast(text){
+  try{
+    document.querySelectorAll('#arcadeControllerToast').forEach(e=>e.remove());
+    const t=document.createElement('div'); t.id='arcadeControllerToast'; t.textContent=text;
+    t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:100000;background:rgba(10,14,26,.92);border:1px solid rgba(0,170,255,.5);color:#e0e6f0;font-size:.8rem;font-weight:700;padding:8px 16px;border-radius:999px;pointer-events:none';
+    document.body.appendChild(t); setTimeout(()=>{ try{t.remove();}catch(_){} },2600);
+  }catch(_){}
+}
+function _arcadeControllerEvent(e,on){
+  const p='P'+((e&&e.gamepad?e.gamepad.index:0)+1);
+  _arcadeControllerToast(on?('\uD83C\uDFAE Controller connected ('+p+')'):('Controller disconnected ('+p+')'));
+  _arcadePostControllers();
+}
 window.addEventListener('gamepadconnected',(e)=>{
+  setTimeout(()=>_arcadeControllerEvent(e,true),0);
   _gamepads[e.gamepad.index]=e.gamepad;
   console.log('[Arcade] Controller connected:',e.gamepad.id);
 });
 window.addEventListener('gamepaddisconnected',(e)=>{
+  setTimeout(()=>_arcadeControllerEvent(e,false),0);
   delete _gamepads[e.gamepad.index];
   console.log('[Arcade] Controller disconnected:',e.gamepad.id);
 });
@@ -6599,7 +6698,7 @@ function backendIdl({IDL}){
     getNftSellerEarnings:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getClaimableEarningsBreakdown:IDL.Func([IDL.Principal],[IDL.Record({gameCreatorEarningsE8s:IDL.Nat,nftSellerEarningsE8s:IDL.Nat,refundE8s:IDL.Nat,totalClaimableE8s:IDL.Nat})],['query']),
     claimRoyalties:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    tipCreatorWithTokens:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
+    sendTokens:IDL.Func([IDL.Principal,IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),getMyTokenTransfers:IDL.Func([],[IDL.Record({sentLast24h:IDL.Nat,dailyLimit:IDL.Nat,history:IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Principal,IDL.Nat,IDL.Int))})],['query']),adminGetTokenTransfers:IDL.Func([IDL.Nat],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Principal,IDL.Nat,IDL.Int))],['query']),tipCreatorWithTokens:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
     getTipEarningsBalanceOf:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     requestAutoPayoutDestination:IDL.Func([IDL.Text,IDL.Opt(IDL.Principal),IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),cancelAutoPayoutChange:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),setAutoPayoutEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAutoPayout:IDL.Func([],[IDL.Record({destLabel:IDL.Text,pendingLabel:IDL.Text,pendingEffectiveAt:IDL.Int,enabled:IDL.Bool,nextPayoutAt:IDL.Int,lastPayoutAt:IDL.Int,lastAmount:IDL.Nat,lastResult:IDL.Text,failures:IDL.Nat})],['query']),adminTestAutoPayoutNow:IDL.Func([IDL.Principal],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     getCreatorIcpTipTotal:IDL.Func([IDL.Principal],[IDL.Nat],['query']),

@@ -6565,6 +6565,67 @@ persistent actor ArcadeBackend {
   // never routed through canister custody, so there is nothing to claim for that path.
   let TOKEN_TIP_E8S_PER_TOKEN : Nat = 1_000_000; // 100 Tokens = 1 ICP, same rate as convertDepositToTokens
 
+  // === SEND TOKENS: players gift Tokens to each other (free, max 1,000 sent per rolling 24h). Tickets never move. ===
+  stable var tokenTransferLog : [(Principal, Principal, Nat, Int)] = []; // (from, to, amount, at), newest last
+  transient let TOKEN_SEND_DAILY_LIMIT : Nat = 1_000;
+  transient let TOKEN_TRANSFER_LOG_MAX : Nat = 10_000;
+  func tokensSentLast24h(p : Principal, now : Int) : Nat {
+    var n : Nat = 0;
+    for ((f, _, a, at) in tokenTransferLog.vals()) {
+      if (Principal.equal(f, p) and now - at < 86_400_000_000_000) { n += a };
+    };
+    n
+  };
+  public shared(msg) func sendTokens(to : Principal, amount : Nat) : async Result.Result<Nat, Text> {
+    let caller = msg.caller;
+    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
+    if (isBannedNow(caller)) return #err("Your account is suspended");
+    hydrateRuntimeStateIfNeeded();
+    if (amount == 0) return #err("Enter how many Tokens to send");
+    if (Principal.isAnonymous(to) or Principal.equal(to, caller)) return #err("Choose another player to send to");
+    if (isBannedNow(to)) return #err("That player can't receive Tokens right now");
+    switch (getPlayerProfileOpt(to)) {
+      case null { return #err("No player found with that ID. Check it and try again.") };
+      case (?pr) { if (Text.size(pr.name) == 0) return #err("No player found with that ID. Check it and try again.") };
+    };
+    let now = Time.now();
+    let sent = tokensSentLast24h(caller, now);
+    if (sent + amount > TOKEN_SEND_DAILY_LIMIT) {
+      let left : Nat = if (sent >= TOKEN_SEND_DAILY_LIMIT) { 0 } else { TOKEN_SEND_DAILY_LIMIT - sent };
+      return #err("Daily send limit is " # Nat.toText(TOKEN_SEND_DAILY_LIMIT) # " Tokens. You can send " # Nat.toText(left) # " more in the next 24 hours.");
+    };
+    let bal = getTokenBalance(caller);
+    if (bal < amount) return #err("Not enough Tokens. You have " # Nat.toText(bal));
+    // No await anywhere in this function, so the debit and credit happen together.
+    tokens.put(caller, bal - amount);
+    tokens.put(to, getTokenBalance(to) + amount);
+    var log = tokenTransferLog;
+    if (log.size() >= TOKEN_TRANSFER_LOG_MAX) {
+      let drop : Nat = log.size() + 1 - TOKEN_TRANSFER_LOG_MAX;
+      let old = log;
+      log := Array.tabulate<(Principal, Principal, Nat, Int)>(old.size() - drop, func(i) { old[i + drop] });
+    };
+    tokenTransferLog := Array.append<(Principal, Principal, Nat, Int)>(log, [(caller, to, amount, now)]);
+    #ok(bal - amount)
+  };
+  public shared query(msg) func getMyTokenTransfers() : async { sentLast24h : Nat; dailyLimit : Nat; history : [(Principal, Principal, Nat, Int)] } {
+    let p = msg.caller;
+    let out = Buffer.Buffer<(Principal, Principal, Nat, Int)>(20);
+    var i = tokenTransferLog.size();
+    while (i > 0 and out.size() < 20) {
+      i -= 1;
+      let e = tokenTransferLog[i];
+      if (Principal.equal(e.0, p) or Principal.equal(e.1, p)) { out.add(e) };
+    };
+    { sentLast24h = tokensSentLast24h(p, Time.now()); dailyLimit = TOKEN_SEND_DAILY_LIMIT; history = Buffer.toArray(out) }
+  };
+  public shared query(msg) func adminGetTokenTransfers(limit : Nat) : async [(Principal, Principal, Nat, Int)] {
+    if (not isAdmin(msg.caller)) return [];
+    let n = tokenTransferLog.size();
+    let k = if (limit < n) { limit } else { n };
+    Array.tabulate<(Principal, Principal, Nat, Int)>(k, func(i) { tokenTransferLog[n - 1 - i] }) // newest first
+  };
+
   public shared(msg) func tipCreatorWithTokens(gameId : Text, tokenAmount : Nat) : async Result.Result<Text, Text> {
     assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     let caller = msg.caller;
