@@ -1750,6 +1750,7 @@ persistent actor ArcadeBackend {
     hydrateRuntimeStateIfNeeded();
     if (amount == 0) return #err("Amount must be greater than zero");
     if (isBlankText(gameId)) return #err("Game ID is required");
+    if (amount != 1) return #err("Every game costs 1 Token per play. Refresh the page and try again.");
     switch (getOpenPaidGameSession(caller, gameId)) {
       case (?_) {
         // Ticket games: one paid play = one run, so paying again starts a new run and forfeits an
@@ -1995,7 +1996,8 @@ persistent actor ArcadeBackend {
     now - (now % 86_400_000_000_000);
   };
 
-  func getPlaysInLastHour(player : Principal) : Nat {
+  func getPlaysInLastHour(player : Principal) : Nat { recentPlaysOf(player, Time.now()).size() };
+  func legacyPlaysInLastHour(player : Principal) : Nat {
     let cutoff = Time.now() - 3_600_000_000_000; // 1 hour ago
     var count : Nat = 0;
     if (runtimeStateHydrated) {
@@ -2497,6 +2499,142 @@ persistent actor ArcadeBackend {
     #ok(if (paid > 0) { "Approved: paid " # Nat.toText(paid) # " held jackpot Tickets" } else { "Marked " # newStatus })
   };
 
+  transient let SHA_K : [Nat32] = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  // SHA-256 of a Text (UTF-8), returned as 64 lowercase hex chars. Small inputs only (run proofs).
+  func sha256Hex(t : Text) : Text {
+    let msg = Blob.toArray(Text.encodeUtf8(t));
+    let ml = msg.size();
+    let total = ((ml + 9 + 63) / 64) * 64;
+    let buf = Array.tabulate<Nat8>(total, func(i) {
+      if (i < ml) msg[i]
+      else if (i == ml) 0x80
+      else if (i + 8 >= total) {
+        let bits : Nat = ml * 8;
+        let shift : Nat = Int.abs(total - 1 - i) * 8;
+        Nat8.fromNat((bits / (2 ** shift)) % 256)
+      } else 0
+    });
+    var h0 : Nat32 = 0x6a09e667; var h1 : Nat32 = 0xbb67ae85; var h2 : Nat32 = 0x3c6ef372; var h3 : Nat32 = 0xa54ff53a;
+    var h4 : Nat32 = 0x510e527f; var h5 : Nat32 = 0x9b05688c; var h6 : Nat32 = 0x1f83d9ab; var h7 : Nat32 = 0x5be0cd19;
+    let w = Array.init<Nat32>(64, 0);
+    var off = 0;
+    while (off < total) {
+      var i = 0;
+      while (i < 16) {
+        let b = off + i * 4;
+        w[i] := (Nat32.fromNat(Nat8.toNat(buf[b])) << 24) | (Nat32.fromNat(Nat8.toNat(buf[b + 1])) << 16) | (Nat32.fromNat(Nat8.toNat(buf[b + 2])) << 8) | Nat32.fromNat(Nat8.toNat(buf[b + 3]));
+        i += 1;
+      };
+      while (i < 64) {
+        let s0 = (w[i - 15] <>> 7) ^ (w[i - 15] <>> 18) ^ (w[i - 15] >> 3);
+        let s1 = (w[i - 2] <>> 17) ^ (w[i - 2] <>> 19) ^ (w[i - 2] >> 10);
+        w[i] := w[i - 16] +% s0 +% w[i - 7] +% s1;
+        i += 1;
+      };
+      var a = h0; var b = h1; var c = h2; var d = h3; var e = h4; var f = h5; var g = h6; var h = h7;
+      i := 0;
+      while (i < 64) {
+        let S1 = (e <>> 6) ^ (e <>> 11) ^ (e <>> 25);
+        let ch = (e & f) ^ ((^ e) & g);
+        let t1 = h +% S1 +% ch +% SHA_K[i] +% w[i];
+        let S0 = (a <>> 2) ^ (a <>> 13) ^ (a <>> 22);
+        let maj = (a & b) ^ (a & c) ^ (b & c);
+        let t2 = S0 +% maj;
+        h := g; g := f; f := e; e := d +% t1; d := c; c := b; b := a; a := t1 +% t2;
+        i += 1;
+      };
+      h0 := h0 +% a; h1 := h1 +% b; h2 := h2 +% c; h3 := h3 +% d; h4 := h4 +% e; h5 := h5 +% f; h6 := h6 +% g; h7 := h7 +% h;
+      off += 64;
+    };
+    let hexd = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+    var out = "";
+    for (word in [h0, h1, h2, h3, h4, h5, h6, h7].vals()) {
+      var k = 0;
+      while (k < 8) {
+        let nib = Nat32.toNat((word >> Nat32.fromNat(28 - k * 4)) & 0xf);
+        out #= Text.fromChar(hexd[nib]);
+        k += 1;
+      };
+    };
+    out
+  };
+
+  // === Run check (anti-bot): a game with a run key must prove each score with
+  // sha256(key ":" runCode ":" score). The run code is the paid session's openedAt, so an
+  // old proof can never be replayed in a new run. Games without a key work exactly as before.
+  stable var gameRunKeyEntries : [(Text, Text)] = [];
+  func runKeyOf(gameId : Text) : ?Text {
+    for ((g, k) in gameRunKeyEntries.vals()) { if (g == gameId) return ?k };
+    null
+  };
+  public shared(msg) func adminSetGameRunKey(gameId : Text, key : Text) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    hydrateRuntimeStateIfNeeded();
+    if (gameSubmissions.get(gameId) == null) return #err("Game not found: " # gameId);
+    let k = Text.trim(key, #char ' ');
+    if (k != "" and (Text.size(k) < 16 or Text.size(k) > 128)) return #err("Run key must be 16 to 128 characters");
+    if (Text.contains(k, #char ':')) return #err("Run key cannot contain ':'");
+    let kept = Array.filter<(Text, Text)>(gameRunKeyEntries, func((g, _)) { g != gameId });
+    gameRunKeyEntries := if (k == "") kept else Array.append<(Text, Text)>(kept, [(gameId, k)]);
+    #ok(if (k == "") "Run check off" else "Run check on")
+  };
+  public query(msg) func adminGetGameRunKey(gameId : Text) : async ?Text {
+    if (not isAdmin(msg.caller)) return null;
+    runKeyOf(gameId)
+  };
+  public query func gameHasRunCheck(gameId : Text) : async Bool {
+    switch (runKeyOf(gameId)) { case (?_) true; case null false }
+  };
+  // The caller's run code for their open paid session of this game (null when no run is open).
+  public query(msg) func getMyRunNonce(gameId : Text) : async ?Text {
+    switch (paidGameSessions.get(paidGameSessionKey(msg.caller, gameId))) {
+      case (?session) { if (session.open and Time.now() - session.openedAt < SESSION_MAX_NS) ?Int.toText(session.openedAt) else null };
+      case null null;
+    }
+  };
+
+  // Jackpots are for DAO members (any Voting Power). Badges are checked first (indexed, cheap);
+  // the NFT-ability scan only runs for a non-badge holder, and only when a jackpot was actually hit.
+  func isJackpotEligible(p : Principal) : Bool {
+    if (isAdmin(p)) return true;
+    for (badge in getBadgesForOwner(p).vals()) {
+      if (Text.startsWith(badge.badgeType, #text "vp-badge-") or badge.badgeType == "dev-contributor" or badge.badgeType == "artist-contributor") return true;
+    };
+    abilityCountOf(p, "vp-plus") > 0
+  };
+
+  // Per-player play times for the last hour (at most MAX_PLAYS_PER_HOUR each). The cooldown and the
+  // hourly limit read only the caller's own short list instead of scanning every player's plays, and
+  // the global play log no longer grows forever (it was also copied whole before every upgrade).
+  transient var recentPlayTimes = HashMap.HashMap<Principal, [Int]>(64, Principal.equal, Principal.hash);
+  func recentPlaysOf(player : Principal, now : Int) : [Int] {
+    switch (recentPlayTimes.get(player)) {
+      case null { [] };
+      case (?ts) { Array.filter<Int>(ts, func(t) { t >= now - 3_600_000_000_000 }) };
+    }
+  };
+  func notePlay(player : Principal, now : Int) {
+    let kept = recentPlaysOf(player, now);
+    let all = Array.append<Int>(kept, [now]);
+    let keep : Nat = if (all.size() > MAX_PLAYS_PER_HOUR) { all.size() - MAX_PLAYS_PER_HOUR } else 0;
+    recentPlayTimes.put(player, Array.tabulate<Int>(all.size() - keep, func(i) { all[i + keep] }));
+  };
+  func playedSince(player : Principal, cutoff : Int) : Bool {
+    switch (recentPlayTimes.get(player)) {
+      case null { false };
+      case (?ts) { ts.size() > 0 and ts[ts.size() - 1] >= cutoff };
+    }
+  };
+  transient let GAME_RESULT_LOG_MAX : Nat = 500;
+
   public shared(msg) func submitGameScore(
     gameId : Text,
     score : Nat,
@@ -2525,12 +2663,18 @@ persistent actor ArcadeBackend {
     if (tokenCost != session.tokenCost) {
       return #err("Token cost does not match active session");
     };
+    switch (runKeyOf(gameId)) {
+      case (?runKey) {
+        let expected = sha256Hex(runKey # ":" # Int.toText(session.openedAt) # ":" # Nat.toText(score));
+        if (Text.trim(inputHash, #char ' ') != expected) return #err("Run check failed: this score did not come from the game");
+      };
+      case null {};
+    };
 
     let now = Time.now();
 
     // CHECK 1: Cooldown (30 seconds between plays)
-    let lastPlay = getLastPlayTime(caller);
-    if (lastPlay > 0 and (now - lastPlay) < COOLDOWN_NS) {
+    if (playedSince(caller, now - COOLDOWN_NS + 1)) {
       return #err("Cooldown: wait 30 seconds between plays");
     };
 
@@ -2544,7 +2688,7 @@ persistent actor ArcadeBackend {
     closePaidGameSession(caller, gameId);
 
     // Log the play
-    playLog.add((caller, now));
+    notePlay(caller, now);
     let totalPlays = getTotalPlays(caller);
     accountPlayCount.put(caller, totalPlays + 1);
 
@@ -2605,6 +2749,8 @@ persistent actor ArcadeBackend {
       };
     };
     var jackpotTickets : Nat = jackpotCalculation.tickets;
+    var jackpotLabelsOut : [Text] = jackpotCalculation.tierLabels;
+    if (jackpotTickets > 0 and not isJackpotEligible(caller)) { jackpotTickets := 0; jackpotLabelsOut := ["dao_members_only"] };
     if (acHoldAbove > 0 and jackpotTickets > acHoldAbove) {
       recordFlag(caller, gameId, score, acElapsedMs, "large jackpot held for review", jackpotTickets);
       jackpotTickets := 0;
@@ -2644,16 +2790,17 @@ persistent actor ArcadeBackend {
     };
 
     // Log game result
-    let resultLog = Buffer.fromArray<GameResult>(gameResultLog);
-    resultLog.add({ gameId = gameId; score = score; ticketsEarned = totalTicketPayout; inputHash = inputHash; durationMs = durationMs });
-    gameResultLog := Buffer.toArray(resultLog);
+    let resultEntry : GameResult = { gameId = gameId; score = score; ticketsEarned = totalTicketPayout; inputHash = inputHash; durationMs = durationMs };
+    let resultOld = gameResultLog;
+    let resultSkip : Nat = if (resultOld.size() >= GAME_RESULT_LOG_MAX) { resultOld.size() + 1 - GAME_RESULT_LOG_MAX } else 0;
+    gameResultLog := Array.tabulate<GameResult>(resultOld.size() - resultSkip + 1, func(i) { if (i + resultSkip < resultOld.size()) resultOld[i + resultSkip] else resultEntry });
 
     #ok({
       tickets = totalTicketPayout;
       baseTickets = baseTickets;
       jackpotTickets = jackpotTickets;
       newRecord = newRecord;
-      jackpotTierLabels = jackpotCalculation.tierLabels;
+      jackpotTierLabels = jackpotLabelsOut;
       jackpotUncappedTickets = jackpotCalculation.uncappedTickets;
       jackpotCapped = jackpotCalculation.capped;
       jackpotPoolRemaining = getGameBackedTicketPoolValue(gameId);
@@ -5931,7 +6078,8 @@ persistent actor ArcadeBackend {
       case null return #err("Game not found");
       case (?_) {};
     };
-    gamePricing.put(gameId, (tokenCost, purchasePrice));
+    ignore tokenCost;
+    gamePricing.put(gameId, (1, purchasePrice));
     #ok(())
   };
 
@@ -5958,8 +6106,7 @@ persistent actor ArcadeBackend {
       };
       case null { return #err("Set monetization before the purchase price") };
     };
-    let tokenCost = switch (gamePricing.get(gameId)) { case (?(tc, _)) { if (tc == 0) 1 else tc }; case null { 1 } };
-    gamePricing.put(gameId, (tokenCost, purchasePrice));
+    gamePricing.put(gameId, (1, purchasePrice));
     #ok(())
   };
 
@@ -5967,7 +6114,8 @@ persistent actor ArcadeBackend {
     switch (gamePricing.get(gameId)) {
       case null { { tokenCost = null; purchasePrice = null } };
       case (?(tc, pp)) {
-        { tokenCost = if (tc == 0) null else ?tc; purchasePrice = if (pp == 0) null else ?pp }
+        ignore tc;
+        { tokenCost = ?1; purchasePrice = if (pp == 0) null else ?pp }
       };
     };
   };
@@ -5983,7 +6131,7 @@ persistent actor ArcadeBackend {
   };
 
   public query func getAllGamePricing() : async [(Text, (Nat, Nat))] {
-    Iter.toArray(gamePricing.entries())
+    Array.map<(Text, (Nat, Nat)), (Text, (Nat, Nat))>(Iter.toArray(gamePricing.entries()), func((g, (_, pp))) { (g, (1, pp)) })
   };
 
   /// Admin: reject a queued submission instead of publishing it. Notifies the submitter with the

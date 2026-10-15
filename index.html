@@ -514,7 +514,7 @@ new MutationObserver(mutations=>{
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>GAME NAME</div><input class='wallet-input' id='backSubName' placeholder='My Awesome Game' style='font-size:.9rem'/></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>DEVELOPER NAME</div><input class='wallet-input' id='backSubDev' placeholder='Your profile name' style='font-size:.9rem;opacity:.85;cursor:not-allowed' readonly disabled/></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>GAME ZIP FILE</div><div style='display:grid;gap:8px'><label style='padding:10px 14px;background:rgba(0,170,255,.08);border:1px solid rgba(0,170,255,.25);border-radius:10px;color:#9dd6ff;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Choose Zip File<input type='file' id='backSubZipFile' accept='.zip' style='display:none' onchange='handleSubmissionZipSelect(this,"back")'/></label><div id='backSubZipInfo' style='font-size:.72rem;color:#8aa6d8'></div><div style='font-size:.68rem;color:#5a7a9a;line-height:1.5'>Must contain index.html at the root (or one folder deep). Max 10MB total, 2MB per file.</div></div></div>
-<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>THUMBNAIL IMAGE</div><div style='display:grid;gap:8px'><label style='padding:10px 14px;background:rgba(204,68,255,.08);border:1px solid rgba(204,68,255,.25);border-radius:10px;color:#d8b4fe;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Upload from Computer<input type='file' id='backSubThumbFile' accept='image/*' style='display:none' onchange='handleSubmissionThumbUpload(this,"backSubThumb")'/></label><input type='hidden' id='backSubThumb'/><div id='backSubThumbPreview' style='display:none;padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center'></div></div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>THUMBNAIL IMAGE</div><div style='display:grid;gap:8px'><div style='display:flex;gap:8px;align-items:stretch;flex-wrap:wrap'><label style='flex:1 1 160px;display:flex;align-items:center;justify-content:center;padding:10px 14px;background:rgba(204,68,255,.08);border:1px solid rgba(204,68,255,.25);border-radius:10px;color:#d8b4fe;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Upload from Computer<input type='file' id='backSubThumbFile' accept='image/*' style='display:none' onchange='handleSubmissionThumbUpload(this,"backSubThumb")'/></label><div class='thumb-size-hint' style='flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px dashed rgba(204,68,255,.35);font-size:.66rem;line-height:1.45;color:#b8c2d8;text-align:left'><b style='color:#fff;font-size:.74rem;letter-spacing:.5px'>680 × 600 px</b><span>JPG, PNG or WebP · max 2MB</span><span style='opacity:.75'>Keep the subject centred</span></div></div><input type='hidden' id='backSubThumb'/><div id='backSubThumbPreview' style='display:none;padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center'></div></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:4px'>DESCRIPTION</div><textarea class='wallet-input' id='backSubDesc' rows='3' placeholder='What is your game about?' style='font-size:.85rem;font-family:inherit;resize:vertical'></textarea></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:6px'>GAME CATEGORY</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='ai-made' style='margin-right:6px'/>AI Made</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='independent' checked style='margin-right:6px'/>Independent</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='backSubGameCategory' value='studio' style='margin-right:6px'/>Studio</label></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#7d6aa8;margin-bottom:6px'>GAME DETAILS (OPTIONAL)</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardOnly'/>Keyboard Only</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubKeyboardMouse'/>Keyboard and Mouse</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubControllerReady'/>Controller Ready</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubMadeWithAi'/>Made with AI</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.78rem;display:flex;align-items:center;gap:8px'><input type='checkbox' id='backSubLocalMp'/>Local Multiplayer</label></div></div>
@@ -541,7 +541,7 @@ new MutationObserver(mutations=>{
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>GAME NAME</div><input class='wallet-input' id='showSubName' placeholder='My On-Chain Game' style='font-size:.9rem'/></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>DEVELOPER NAME</div><input class='wallet-input' id='showSubDev' placeholder='Your profile name' style='font-size:.9rem;opacity:.85;cursor:not-allowed' readonly disabled/></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>GAME ZIP FILE</div><div style='display:grid;gap:8px'><label style='padding:10px 14px;background:rgba(0,170,255,.08);border:1px solid rgba(0,170,255,.25);border-radius:10px;color:#9dd6ff;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Choose Zip File<input type='file' id='showSubZipFile' accept='.zip' style='display:none' onchange='handleSubmissionZipSelect(this,"showroom")'/></label><div id='showSubZipInfo' style='font-size:.72rem;color:#8aa6d8'></div><div style='font-size:.68rem;color:#6f87b2;line-height:1.5'>Must contain index.html at the root (or one folder deep). Max 10MB total, 2MB per file. Reviewed by admin before going live.</div></div></div>
-<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>THUMBNAIL IMAGE</div><div style='display:grid;gap:8px'><label style='padding:10px 14px;background:rgba(0,170,255,.08);border:1px solid rgba(0,170,255,.25);border-radius:10px;color:#8fdcff;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Upload from Computer<input type='file' id='showSubThumbFile' accept='image/*' style='display:none' onchange='handleSubmissionThumbUpload(this,"showSubThumb")'/></label><input type='hidden' id='showSubThumb'/><div id='showSubThumbPreview' style='display:none;padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center'></div></div></div>
+<div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>THUMBNAIL IMAGE</div><div style='display:grid;gap:8px'><div style='display:flex;gap:8px;align-items:stretch;flex-wrap:wrap'><label style='flex:1 1 160px;display:flex;align-items:center;justify-content:center;padding:10px 14px;background:rgba(0,170,255,.08);border:1px solid rgba(0,170,255,.25);border-radius:10px;color:#8fdcff;font-size:.8rem;font-weight:700;cursor:pointer;text-align:center'>Upload from Computer<input type='file' id='showSubThumbFile' accept='image/*' style='display:none' onchange='handleSubmissionThumbUpload(this,"showSubThumb")'/></label><div class='thumb-size-hint' style='flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px dashed rgba(0,170,255,.35);font-size:.66rem;line-height:1.45;color:#b8c2d8;text-align:left'><b style='color:#fff;font-size:.74rem;letter-spacing:.5px'>680 × 600 px</b><span>JPG, PNG or WebP · max 2MB</span><span style='opacity:.75'>Keep the subject centred</span></div></div><input type='hidden' id='showSubThumb'/><div id='showSubThumbPreview' style='display:none;padding:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center'></div></div></div>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:4px'>DESCRIPTION</div><textarea class='wallet-input' id='showSubDesc' rows='3' placeholder='Describe the game, core loop, and why it belongs in Showroom.' style='font-size:.85rem;font-family:inherit;resize:vertical'></textarea></div>
 <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
 <div><div class='label' style='font-size:.7rem;letter-spacing:1px;color:#5a7baa;margin-bottom:6px'>PLATFORM</div><div style='display:grid;gap:6px'><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='desktop' checked style='margin-right:6px'/>Desktop</label><label style='cursor:pointer;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.8rem'><input type='radio' name='showSubCompat' value='mobile' style='margin-right:6px'/>Mobile</label></div></div>
@@ -1017,7 +1017,7 @@ window.addEventListener('message', (e) => {
 </section>
 
 <!-- ====== FORUM ====== -->
-<section class='view' id='view-forum' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(forums-bg.jpg?v=2) center center/cover no-repeat fixed'>
+<section class='view' id='view-forum' style='padding:0;position:relative;height:100vh;max-height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(forums-bg.jpg?v=2) center center/cover no-repeat'><style>/*forum-scroll-fix*/</style>
 <div style='max-width:960px;margin:0 auto;padding:80px 24px 20px;display:flex;flex-direction:column;align-items:center;min-height:100vh'>
 
 <style>
@@ -1113,7 +1113,7 @@ window.addEventListener('message', (e) => {
 </section>
 
 <!-- DAO Boardroom -->
-<section class='view' id='view-dao' style='padding:0;min-height:100vh;position:relative;overflow-y:auto;overflow-x:hidden;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(boardroom.jpg) center center/cover no-repeat fixed'>
+<section class='view' id='view-dao' style='padding:0;position:relative;height:100vh;max-height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:linear-gradient(rgba(3,5,15,.82),rgba(3,5,15,.82)),url(boardroom.jpg) center center/cover no-repeat'>
 <div style='position:relative;z-index:1;max-width:960px;margin:0 auto;padding:20px 20px 20px'>
 
 <style>
@@ -2158,29 +2158,23 @@ window.addEventListener('message', (e) => {
 </div></section>
 </div><!-- end .app -->
 
-<div class='wallet-modal' id='walletModal' onclick='walletBackdrop(event)'><div class='wallet-panel'><div class='wallet-head'><h2 style='margin:0'>Wallet</h2><div style='display:flex;gap:8px'><button class='btn' id='walletScanBtn' onclick='scanWalletBtn()' style='font-size:.8rem;padding:5px 12px;border-color:var(--cyan);color:var(--cyan)'>Scan</button><button class='btn' onclick='closeWalletPanel()'>Close</button></div></div>
-<!-- Creator buttons (top) -->
-<style>#walletCreatorBtns>div>.wallet-sec{height:100%;box-sizing:border-box;display:flex}#walletCreatorBtns>div>.wallet-sec>button{flex:1;letter-spacing:.5px!important}</style>
-<div id='walletCreatorBtns' style='display:flex;gap:8px;align-items:stretch'>
-<div id='walletDevDashSection' style='display:none;flex:1'><div class='wallet-sec' style='border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04)'><button onclick='closeWalletPanel();showView("devdash")' style='width:100%;padding:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:#22c55e;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(34,197,94,.2)"' onmouseleave='this.style.background="rgba(34,197,94,.1)"'>Developer Dashboard</button></div></div>
-<div id='walletRoyaltiesSection' style='display:none;flex:1'><div class='wallet-sec' style='border-color:rgba(244,114,182,.25);background:rgba(244,114,182,.04)'><button onclick='closeWalletPanel();showView("royalties")' style='width:100%;padding:10px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);border-radius:8px;color:#f472b6;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:1px;transition:all .2s' onmouseenter='this.style.background="rgba(244,114,182,.2)"' onmouseleave='this.style.background="rgba(244,114,182,.1)"'>Creator Earnings</button></div></div>
-</div>
+<div class='wallet-modal' id='walletModal' onclick='walletBackdrop(event)'><div class='wallet-panel'><div class='wallet-head'><h2 style='margin:0'>Wallet</h2><style>/*wallet-title-center*/#walletModal .wallet-head>h2{flex:1;text-align:center}#walletModal #walletCreatorBtns{flex:0 0 auto!important}@media(max-width:420px){#walletModal #walletCreatorBtns{flex:0 0 100%!important}}</style><style>/*wallet-header-btns*/#walletCreatorBtns>div{height:100%}#walletModal .wallet-head{flex-wrap:wrap;row-gap:8px}@media(max-width:420px){#walletCreatorBtns{order:3;flex-basis:100%;justify-content:flex-start!important;margin:0!important;height:30px}}</style><div id='walletCreatorBtns' style='display:flex;gap:6px;flex:1;justify-content:flex-end;align-self:stretch;margin:0 8px'><div id='walletDevDashSection' style='display:none'><button onclick='closeWalletPanel();showView("devdash")' style='font-size:.58rem;font-weight:800;line-height:1.1;letter-spacing:.3px;padding:3px 8px;border-radius:8px;cursor:pointer;height:100%;max-width:92px;white-space:normal;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.45);color:#22c55e'>Developer Dashboard</button></div><div id='walletRoyaltiesSection' style='display:none'><button onclick='closeWalletPanel();showView("royalties")' style='font-size:.58rem;font-weight:800;line-height:1.1;letter-spacing:.3px;padding:3px 8px;border-radius:8px;cursor:pointer;height:100%;max-width:92px;white-space:normal;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.45);color:#f472b6'>Creator Earnings</button></div></div><div style='display:flex;gap:8px'><button class='btn' onclick='closeWalletPanel()'>Close</button></div></div>
 <!-- Balances row: ICP | Tokens | Tickets -->
 <div class='wallet-sec'><div style='display:flex;gap:8px;justify-content:space-between'>
 <div style='flex:1.5;text-align:center;background:rgba(0,102,255,.08);border:1px solid #0066ff44;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>ICP Balance</div><div id='walletBalance' style='font-size:1.1rem;font-weight:800;color:#00aaff'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tokens</div><div id='walletTokens' style='font-size:1.1rem;font-weight:800;color:var(--gold)'>-</div></div>
 <div style='flex:1;text-align:center;background:rgba(139,92,246,.08);border:1px solid #8b5cf644;border-radius:10px;padding:10px 6px'><div style='font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px'>Tickets</div><div id='walletTickets' style='font-size:1.1rem;font-weight:800;color:#c084fc'>-</div></div>
 </div></div>
+<!-- Deposit ICP -->
+<div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(0,102,255,.12),rgba(139,92,246,.08));border:1px solid #0066ff88;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0066ff,#8b5cf6,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><span style='font-size:1.4rem'>∞</span><span style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:1px'>DEPOSIT ICP</span><span style='font-size:.65rem;color:#5a7a9a;font-style:italic'>(Wallet Address)</span></div><div id='walletDeposit' class='mono' style='font-size:.72rem;color:#c4d3ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Connect wallet to generate</div><button class='btn' id='copyDepositBtn' onclick='copyDepositAddress()' disabled style='margin-top:8px;width:100%;border-color:#0066ff;color:#00aaff;font-size:.8rem;padding:6px'>📋 Copy Address</button></div></div>
 <!-- Send ICP -->
 <div class='wallet-sec'><div style='font-weight:700;margin-bottom:6px;color:var(--pink)'>Send ICP</div><div class='controls' style='justify-content:flex-start;gap:6px'><div style='display:flex;gap:6px;width:100%'><input class='wallet-input' id='withdrawAmount' type='number' min='0' step='0.0001' placeholder='Amount (ICP)' style='flex:1'/><button onclick='fillMaxWithdraw()' style='padding:6px 12px;background:rgba(255,68,170,.15);border:1px solid var(--pink);color:var(--pink);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:700;white-space:nowrap;transition:all .2s' onmouseenter='this.style.background="rgba(255,68,170,.3)"' onmouseleave='this.style.background="rgba(255,68,170,.15)"'>MAX</button></div><input class='wallet-input' id='withdrawAddress' type='text' placeholder='Receiving Address'/></div><div class='tiny' style='margin-top:4px;color:var(--muted)'>0.0001 ICP network fee applies</div><div id='withdrawRes' style='margin-top:6px;font-size:.8rem'></div><button class='btn' style='margin-top:6px;border-color:var(--cyan);color:var(--cyan)' onclick='withdrawIcp()'>Send</button></div>
 <!-- Send Tokens -->
 <div class='wallet-sec' id='sendTokensSection'><div style='font-weight:700;margin-bottom:4px;color:var(--gold)'>Send Tokens</div><div style='font-size:.7rem;color:#8aa0c8;margin-bottom:8px'>To gift Tokens, send them to another player’s Principal ID.</div></div>
-<!-- Deposit ICP -->
-<div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(0,102,255,.12),rgba(139,92,246,.08));border:1px solid #0066ff88;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0066ff,#8b5cf6,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><span style='font-size:1.4rem'>∞</span><span style='font-weight:800;font-size:.85rem;color:#00aaff;letter-spacing:1px'>DEPOSIT ICP</span><span style='font-size:.65rem;color:#5a7a9a;font-style:italic'>(Wallet Address)</span></div><div id='walletDeposit' class='mono' style='font-size:.72rem;color:#c4d3ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Connect wallet to generate</div><button class='btn' id='copyDepositBtn' onclick='copyDepositAddress()' disabled style='margin-top:8px;width:100%;border-color:#0066ff;color:#00aaff;font-size:.8rem;padding:6px'>📋 Copy Address</button></div></div>
 <!-- Deposit NFTs -->
 <div class='wallet-sec'><div style='background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(255,68,170,.08));border:1px solid #8b5cf688;border-radius:12px;padding:14px;position:relative;overflow:hidden'><div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,#ff44aa,transparent)'></div><div style='display:flex;align-items:center;gap:8px;margin-bottom:0;flex-wrap:wrap'><span style='font-size:1.4rem'>🔗</span><span style='font-weight:800;font-size:.85rem;color:#c084fc;letter-spacing:1px'>DEPOSIT NFTS</span><span style='font-size:.65rem;color:var(--muted);background:rgba(139,92,246,.1);padding:2px 6px;border-radius:4px;border:1px solid #8b5cf644;white-space:nowrap'>Principal ID</span></div><div style='margin-top:1px;margin-bottom:8px;line-height:1.2'><span style='font-size:.65rem;color:var(--red)'>(Don't Send ICP to this address)</span></div><div id='walletPrincipal' class='mono' style='font-size:.72rem;color:#d8c9ff;word-break:break-all;background:rgba(0,0,0,.3);padding:8px 10px;border-radius:6px;border:1px solid #1a2548'>Not connected</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px'><button class='btn' onclick='copyPrincipal()' style='width:100%;border-color:#8b5cf6;color:#c084fc;font-size:.8rem;padding:6px'>📋 Copy Principal</button><button class='btn' onclick='openSupportedCollectionsModal()' style='width:100%;border-color:#22d3ee;color:#22d3ee;font-size:.8rem;padding:6px'>Supported Collections</button></div></div></div>
 <!-- My NFTs -->
-<div class='wallet-sec'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div style='font-weight:700;color:var(--gold)'>My NFTs</div><div style='display:flex;gap:6px'><button class='btn' onclick="closeWalletPanel();showView('prizes');showTab('collection')" style='font-size:.7rem;padding:3px 10px;border-color:#00aaff;color:#00aaff'>My Collection</button><button class='btn' onclick='loadWalletNfts()' style='font-size:.7rem;padding:3px 10px;border-color:var(--gold);color:var(--gold)'>🔄 Scan</button></div></div><div id='walletNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px'><div style='color:var(--muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px'>Click Scan to check your NFTs</div></div></div>
+<div class='wallet-sec'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'><div style='font-weight:700;color:var(--gold)'>My NFTs</div><div style='display:flex;gap:6px'><button class='btn' onclick='loadWalletNfts()' style='font-size:.7rem;padding:3px 10px;border-color:var(--gold);color:var(--gold)'>🔄 Scan</button><button class='btn' onclick="closeWalletPanel();showView('prizes');showTab('collection')" style='font-size:.7rem;padding:3px 10px;border-color:#00aaff;color:#00aaff'>My Collection</button></div></div><div id='walletNftGrid' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px'><div style='color:var(--muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:12px'>Click Scan to check your NFTs</div></div></div>
 </div></div><div class='wallet-modal' id='profileModal' onclick='if(event.target===this)closeProfileModal()'><div class='wallet-panel' style='max-width:420px'><div class='wallet-head'><h2 style='margin:0'>👤 Set Up Your Profile</h2></div><div class='wallet-sec' style='text-align:center'><p style='color:var(--muted);margin-top:0'>Welcome to Infinity Arcade! Set your player name and avatar.</p><div id='profileAvatarPreview' style='width:100px;height:100px;border-radius:12px;background:rgba(13,17,23,.75);backdrop-filter:blur(8px);margin:0 auto 14px;display:grid;place-items:center;font-size:2.5rem;border:2px solid var(--gold);overflow:hidden'></div><div class='label'>Profile Picture</div><div style='color:var(--muted);font-size:.75rem;margin-bottom:6px'>Only NFTs in your arcade wallet can be used as profile pictures</div><div id='avatarPicker' style='display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin:8px 0;max-height:200px;overflow-y:auto'></div><div id='avatarLoading' style='display:none;color:var(--cyan);font-size:.8rem;text-align:center;padding:12px'>⏳ Loading your NFTs...</div><div id='avatarEmpty' style='display:none;color:var(--muted);font-size:.8rem;text-align:center;padding:12px'>No NFTs found. Deposit NFTs into your arcade wallet to use them as profile pictures.</div><div class='label' style='margin-top:12px'>Player Name</div><input class='wallet-input' id='profileNameInput' placeholder='Enter your arcade name' maxlength='20' style='text-align:center;font-size:1.1rem' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/><button class='btn green' style='width:100%;margin-top:14px;font-size:1rem' onclick='saveProfile()'>🕹️ Enter the Arcade</button><div class='tiny' style='margin-top:8px;color:var(--muted)'>You can change this later in your wallet panel.</div></div></div></div>
 
 
@@ -4843,6 +4837,7 @@ function flushPendingArcadeKeyEvents(){
   }
 }
 function postOrQueueArcadeKeyToGame(iframe,msg){
+  if(msg&&(msg.source==='keymap'||msg.source==='native-fallback')&&msg.player==='p1'){ const ks=arcadeKbSlot(); if(ks==='off') return; if(ks!=='p1') msg={...msg,player:ks}; }
   if(!arcadeGameInputReady&&msg&&msg.player==='p1'&&msg.action==='a'){
     arcadePendingKeyEvents.push({...msg,source:msg.source||'queued-before-ready'});
     if(arcadePendingKeyEvents.length>6) arcadePendingKeyEvents=arcadePendingKeyEvents.slice(-6);
@@ -4859,6 +4854,17 @@ window.addEventListener('message',async(event)=>{
   const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges','GET_PERKS':'arcade-get-perks','GET_CONTROLLERS':'arcade-get-controllers'};
   const msgType=typeMap[event.data.type]||event.data.type;
   const gameId=event.data.gameId||_currentGamePlaying;
+  // Run check: a game asks for this run's code and proves its final score with
+  // sha256(runKey + ':' + runCode + ':' + score). Only the game's own frame gets an answer.
+  if(msgType==='arcade-get-run'||msgType==='GET_RUN'){
+    const _rf=document.getElementById('gameIframe'); const _rw=_rf&&_rf.contentWindow;
+    let _rok=false; try{ _rok=!!_rw&&!!event.source&&(event.source===_rw||event.source.parent===_rw); }catch(_){ _rok=false; }
+    const _rg=_currentGamePlaying;
+    if(!_rok||!_rg||!S.connected){ try{ event.source?.postMessage({type:'arcade-run',runCode:null},'*'); }catch(_){} return; }
+    let _code=null; try{ const _be=await getBackendActor(true); const _n=await _be.getMyRunNonce(_rg); _code=(Array.isArray(_n)&&_n.length)?String(_n[0]):null; }catch(_){ _code=null; }
+    try{ event.source.postMessage({type:'arcade-run',runCode:_code},'*'); }catch(_){}
+    return;
+  }
   // Scores are only accepted from the game's frame (or a frame inside it), not typed into the arcade page's console.
   if(msgType==='arcade-latest-score'){
     const _gf=document.getElementById('gameIframe'); const _cw=_gf&&_gf.contentWindow;
@@ -4917,6 +4923,7 @@ window.addEventListener('message',async(event)=>{
     // Ticket games: the first score of a paid run is final; the run stays locked until a new token starts the next one.
     if(_isTicketRun&&_arcadeSessionState.gameId===gameId&&_arcadeSessionState.runOver) return;
     const score=setArcadeLatestScore(gameId,event.data.score);
+    _arcadeSessionState.runProof=(typeof event.data.proof==='string')?event.data.proof.trim().toLowerCase().slice(0,128):'';
     if(_isTicketRun){ _arcadeSessionState.runOver=true; showRunOverOverlay(gameId,score); }
   }
 
@@ -5072,10 +5079,57 @@ window.addEventListener('message',async(event)=>{
 
 // === GAMEPAD / CONTROLLER SUPPORT ===
 const _gamepads={};
+// Player slots. Default: connected controllers are numbered in order (first = P1), not by the
+// browser's internal slot. Players can pin a controller to P1-P4 or switch it Off (saved per browser).
+function _arcadeSlotCfg(){ try{ const c=JSON.parse(localStorage.getItem('arcade_pad_slots')||'{}'); return (c&&typeof c==='object')?c:{}; }catch(_){ return {}; } }
+function _arcadeSaveSlotCfg(c){ try{ localStorage.setItem('arcade_pad_slots',JSON.stringify(c||{})); }catch(_){} }
+let _arcadeSlotCache={t:0,map:{}};
+function arcadePadSlots(force){
+  const now=Date.now(); if(!force && now-_arcadeSlotCache.t<150) return _arcadeSlotCache.map;
+  let pads=[]; try{ pads=navigator.getGamepads?Array.from(navigator.getGamepads()).filter(p=>p&&p.connected):[]; }catch(_){}
+  pads.sort((a,b)=>a.index-b.index);
+  const cfg=_arcadeSlotCfg(), out={}, used=new Set();
+  pads.forEach(p=>{ const c=cfg[p.index]; if(!c||c.id!==String(p.id||'')) return;
+    if(c.slot==='off'){ out[p.index]='off'; }
+    else if(/^p[1-4]$/.test(c.slot)&&!used.has(c.slot)){ out[p.index]=c.slot; used.add(c.slot); } });
+  let n=1; pads.forEach(p=>{ if(out[p.index]) return; while(used.has('p'+n)) n++; out[p.index]='p'+n; used.add('p'+n); });
+  _arcadeSlotCache={t:now,map:out}; return out;
+}
+function arcadePadPlayer(pad){ if(!pad) return null; let m=arcadePadSlots(); if(!(pad.index in m)) m=arcadePadSlots(true); const v=m[pad.index]; return v==='off'?null:(v||('p'+(pad.index+1))); }
+function arcadeSetPadSlot(index,slot){
+  let pads=[]; try{ pads=Array.from(navigator.getGamepads()).filter(p=>p&&p.connected); }catch(_){}
+  const cur=arcadePadSlots(true), cfg={};
+  if(/^p[1-4]$/.test(slot)){ const other=pads.find(p=>p.index!==index&&cur[p.index]===slot); if(other) cur[other.index]=cur[index]||'off'; }
+  cur[index]=slot;
+  pads.forEach(p=>{ cfg[p.index]={slot:cur[p.index]||'off',id:String(p.id||'')}; });
+  _arcadeSaveSlotCfg(cfg); _arcadeSlotCache.t=0; arcadeResetPadState();
+}
+function arcadeKbSlot(){ try{ const v=localStorage.getItem('arcade_kb_slot'); return /^(p[1-4]|off)$/.test(v||'')?v:'p1'; }catch(_){ return 'p1'; } }
+function arcadeSetKbSlot(v){ try{ localStorage.setItem('arcade_kb_slot',/^(p[1-4]|off)$/.test(v)?v:'p1'); }catch(_){} }
+window.arcadePadPlayer=(p)=>arcadePadPlayer(p);
+window.arcadePadSlots=(f)=>arcadePadSlots(f);
+window.arcadeSetPadSlot=(i,sl)=>arcadeSetPadSlot(i,sl);
+window.arcadeAutoPadSlots=()=>arcadeAutoPadSlots();
+window.arcadeResetPadState=()=>arcadeResetPadState();
+window.arcadeKbSlot=()=>arcadeKbSlot();
+window.arcadeSetKbSlot=(v)=>arcadeSetKbSlot(v);
+window.getPadMap=window.getPadMap||(()=>getPadMap());
+window.savePadMap=window.savePadMap||((m)=>savePadMap(m));
+function arcadeAutoPadSlots(){ _arcadeSaveSlotCfg({}); _arcadeSlotCache.t=0; arcadeResetPadState(); }
+function arcadeResetPadState(){
+  try{ const f=document.getElementById('gameIframe');
+    if(f&&f.contentWindow&&typeof _padPrevState!=='undefined'){
+      for(const pl of Object.keys(_padPrevState)){ for(const a of Object.keys(_padPrevState[pl]||{})){ if(_padPrevState[pl][a]) f.contentWindow.postMessage({type:'arcade-key',player:pl,action:a,state:'up'},'*'); } }
+    }
+    if(typeof _padPrevState!=='undefined') Object.keys(_padPrevState).forEach(k=>delete _padPrevState[k]);
+  }catch(_){}
+  try{ if(window.chResetRelay) window.chResetRelay(); }catch(_){}
+  try{ _arcadePostControllers(); }catch(_){}
+}
 // Controller status: tell the game frame which controllers are connected, and show a short notice.
 function _arcadeControllerList(){
   const pads=navigator.getGamepads?Array.from(navigator.getGamepads()):[];
-  return pads.filter(p=>p&&p.connected).map(p=>({player:'p'+(p.index+1),name:String(p.id||'Controller').slice(0,80),connected:true}));
+  return pads.filter(p=>p&&p.connected&&arcadePadPlayer(p)).map(p=>({player:arcadePadPlayer(p),name:String(p.id||'Controller').slice(0,80),connected:true}));
 }
 function _arcadePostControllers(){
   try{ const f=document.getElementById('gameIframe'); if(f&&f.contentWindow) f.contentWindow.postMessage({type:'arcade-controllers',controllers:_arcadeControllerList()},'*'); }catch(_){}
@@ -5085,14 +5139,26 @@ function _arcadeControllerToast(text){
     document.querySelectorAll('#arcadeControllerToast').forEach(e=>e.remove());
     const t=document.createElement('div'); t.id='arcadeControllerToast'; t.textContent=text;
     t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:100000;background:rgba(10,14,26,.92);border:1px solid rgba(0,170,255,.5);color:#e0e6f0;font-size:.8rem;font-weight:700;padding:8px 16px;border-radius:999px;pointer-events:none';
-    document.body.appendChild(t); setTimeout(()=>{ try{t.remove();}catch(_){} },2600);
+    const fsEl=document.fullscreenElement||document.webkitFullscreenElement; const host=(fsEl&&fsEl.tagName!=='IFRAME')?fsEl:document.body;
+    host.appendChild(t); setTimeout(()=>{ try{t.remove();}catch(_){} },2600);
   }catch(_){}
 }
+const _arcadePadSeen=new Set();
 function _arcadeControllerEvent(e,on){
-  const p='P'+((e&&e.gamepad?e.gamepad.index:0)+1);
-  _arcadeControllerToast(on?('\uD83C\uDFAE Controller connected ('+p+')'):('Controller disconnected ('+p+')'));
+  const idx=(e&&e.gamepad?e.gamepad.index:0); if(on){ if(_arcadePadSeen.has(idx)) return; _arcadePadSeen.add(idx); } else { if(!_arcadePadSeen.has(idx)) return; _arcadePadSeen.delete(idx); }
+  let _pl=null; try{ const g=navigator.getGamepads&&navigator.getGamepads()[idx]; if(g) _pl=arcadePadPlayer(g); }catch(_){}
+  const p=on&&_pl?_pl.toUpperCase():(on?'off':'P'+(idx+1));
+  _arcadeControllerToast(on?(p==='off'?'\uD83C\uDFAE Controller connected (switched off in Players)':('\uD83C\uDFAE Controller connected ('+p+')')):'Controller disconnected');
   _arcadePostControllers();
 }
+// Some browsers only send gamepadconnected to the focused frame (the game), so also poll here.
+setInterval(()=>{
+  if(document.hidden||!navigator.getGamepads) return;
+  let pads; try{ pads=Array.from(navigator.getGamepads()); }catch(_){ return; }
+  const now=new Set(); pads.forEach(p=>{ if(p&&p.connected) now.add(p.index); });
+  now.forEach(i=>{ if(!_arcadePadSeen.has(i)) _arcadeControllerEvent({gamepad:{index:i}},true); });
+  Array.from(_arcadePadSeen).forEach(i=>{ if(!now.has(i)) _arcadeControllerEvent({gamepad:{index:i}},false); });
+},500);
 window.addEventListener('gamepadconnected',(e)=>{
   setTimeout(()=>_arcadeControllerEvent(e,true),0);
   _gamepads[e.gamepad.index]=e.gamepad;
@@ -5117,7 +5183,7 @@ function startGamepadForwarding(){
     const DEADZONE=0.4;
     for(const pad of pads){
       if(!pad) continue;
-      const player='p'+(pad.index+1);
+      const player=arcadePadPlayer(pad); if(!player) continue;
       if(!_padPrevState[player]) _padPrevState[player]={};
       const cur={};
       // Map buttons
@@ -5173,7 +5239,8 @@ function getKeyMap(){
   return normalized;
 }
 function saveKeyMap(km){localStorage.setItem('arcade_keymap',JSON.stringify(km));}
-function getPadMap(){return JSON.parse(localStorage.getItem('arcade_padmap')||JSON.stringify(DEFAULT_PAD_MAP));}
+try{ localStorage.removeItem('arcade_padmap'); }catch(_){}
+function getPadMap(){return {...DEFAULT_PAD_MAP};}
 function savePadMap(pm){localStorage.setItem('arcade_padmap',JSON.stringify(pm));}
 
 function keyCodeLabel(code){
@@ -5194,15 +5261,15 @@ function openInputConfig(){
   let html=`<div style='max-width:700px;width:95%;max-height:90vh;overflow-y:auto;background:linear-gradient(165deg,#0a0e1a,#111830,#0a1020);border:2px solid rgba(0,170,255,.25);border-radius:16px;padding:24px;box-shadow:0 0 60px rgba(0,100,255,.1);scrollbar-width:thin;scrollbar-color:rgba(0,170,255,.3) transparent'>
     <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'>
       <div>
-        <div style='font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:3px'>CONTROLLER CONFIG</div>
-        <div style='font-size:.7rem;color:#3d6090;margin-top:2px'>12-button standard - universal across all games</div>
+        <div style='font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:3px'>KEYBOARD CONTROLS</div>
+        <div style='font-size:.7rem;color:#3d6090;margin-top:2px'>Choose which keys press each arcade button, for Player 1 and Player 2</div>
       </div>
       <button onclick='this.closest("#inputConfigModal").remove()' style='background:none;border:none;color:#3d6090;font-size:1.4rem;cursor:pointer;padding:4px 8px'>&#10005;</button>
     </div>
 
     <div style='display:flex;gap:4px;margin-bottom:16px'>
       <button id='cfgTabKb' onclick='showCfgTab("kb")' style='flex:1;padding:8px;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer;border:1px solid rgba(0,170,255,.4);background:rgba(0,170,255,.15);color:#00aaff;letter-spacing:1px'>KEYBOARD</button>
-      <button id='cfgTabPad' onclick='showCfgTab("pad")' style='flex:1;padding:8px;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);color:#3d6090;letter-spacing:1px'>CONTROLLER</button>
+      <button id='cfgTabPad' hidden onclick='showCfgTab("pad")' style='flex:1;padding:8px;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);color:#3d6090;letter-spacing:1px'>CONTROLLER</button>
     </div>
 
     <div id='cfgKbPanel'>
@@ -6766,7 +6833,7 @@ function backendIdl({IDL}){
     adminDeleteForumThread:IDL.Func([IDL.Text],[Result],[]),
     adminDeleteForumReply:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     convertDepositToTokens:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminSetGameAntiCheat:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getGameAntiCheat:IDL.Func([IDL.Text],[IDL.Nat,IDL.Nat,IDL.Nat],['query']),adminGetFlaggedScores:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Nat,player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,elapsedMs:IDL.Nat,reason:IDL.Text,heldJackpot:IDL.Nat,status:IDL.Text,at:IDL.Int}))],['query']),adminResolveFlaggedScore:IDL.Func([IDL.Nat,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminDeleteProposal:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetProposalImportant:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getImportantProposalIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
+    getMuteStatus:IDL.Func([IDL.Principal],[IDL.Int],['query']),adminSetMute:IDL.Func([IDL.Principal,IDL.Nat],[Result],[]),adminRestoreHoleSubmission:IDL.Func([IDL.Text],[Result],[]),adminSetGameRunKey:IDL.Func([IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetGameRunKey:IDL.Func([IDL.Text],[IDL.Opt(IDL.Text)],['query']),gameHasRunCheck:IDL.Func([IDL.Text],[IDL.Bool],['query']),getMyRunNonce:IDL.Func([IDL.Text],[IDL.Opt(IDL.Text)],['query']),adminSetGameAntiCheat:IDL.Func([IDL.Text,IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getGameAntiCheat:IDL.Func([IDL.Text],[IDL.Nat,IDL.Nat,IDL.Nat],['query']),adminGetFlaggedScores:IDL.Func([],[IDL.Vec(IDL.Record({id:IDL.Nat,player:IDL.Principal,gameId:IDL.Text,score:IDL.Nat,elapsedMs:IDL.Nat,reason:IDL.Text,heldJackpot:IDL.Nat,status:IDL.Text,at:IDL.Int}))],['query']),adminResolveFlaggedScore:IDL.Func([IDL.Nat,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminDeleteProposal:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetProposalImportant:IDL.Func([IDL.Text,IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getImportantProposalIds:IDL.Func([],[IDL.Vec(IDL.Text)],['query']),adminVetoProposal:IDL.Func([IDL.Text,IDL.Text],[Result],[]),adminSetBindingTestMode:IDL.Func([IDL.Nat,IDL.Nat],[Result],[]),adminTestEndProposalVoting:IDL.Func([IDL.Text],[Result],[]),getBindingSettings:IDL.Func([],[IDL.Record({quorum:IDL.Nat,timelockNs:IDL.Int,crownedCount:IDL.Nat,proposalCap:IDL.Nat,totalCap:IDL.Nat})],['query']),createProposalV2:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Vec(IDL.Text),IDL.Text],[Result],[]),getProposalMetas:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Record({kind:IDL.Text,choices:IDL.Vec(IDL.Text),choiceTotals:IDL.Vec(IDL.Nat),target:IDL.Text,voterCount:IDL.Nat,execStatus:IDL.Text,executeAfter:IDL.Int})))],['query']),createProposal:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Text,IDL.Vec(IDL.Text),IDL.Text],[Result],[]),
     castVote:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     getVotingPower:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     getGamerExperience:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -7356,6 +7423,10 @@ function renderPayoutConfigAdmin(gameId,cfg){
         <label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>Max score<input id='acMax_${domId}' type='number' min='0' step='1' value='0' style='padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem'/></label>
         <label style='display:flex;flex-direction:column;gap:3px;font-size:.62rem;color:#9fb0d6'>Hold jackpots above (Tickets)<input id='acHold_${domId}' type='number' min='0' step='1' value='0' style='padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem'/></label>
       </div>
+      <div style='margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:.62rem;color:#9fb0d6'>Run check key (give it to the creator; blank = off)
+        <div style='display:flex;gap:6px;flex-wrap:wrap'><input id='runKey_${domId}' type='text' maxlength='128' placeholder='off' autocomplete='off' spellcheck='false' style='flex:1;min-width:180px;padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.7rem;font-family:monospace'/>
+        <button class='btn' onclick='adminGenRunKey("${domId}")' style='font-size:.62rem;padding:3px 8px'>Generate</button><button class='btn' onclick='adminSaveRunKey("${gameId}")' style='font-size:.62rem;padding:3px 8px;border-color:#22c55e;color:#86efac'>Save key</button><button class='btn' onclick='adminCopyRunKey("${domId}")' style='font-size:.62rem;padding:3px 8px'>Copy</button></div>
+        <span id='runKeyStatus_${domId}' style='font-size:.62rem;color:#9fb0d6'></span></div>
     </div>
     <div style='display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap'>
       <button class='btn' onclick='saveGamePayoutConfig("${gameId}")' style='font-size:.68rem;padding:5px 9px;border-color:#ffd700;color:#ffd700'>Save Payout Ladder</button>
@@ -7371,8 +7442,30 @@ async function hydratePayoutConfigAdmin(gameId){
   const cfg=await loadPayoutConfig(gameId);
   mount.innerHTML=renderPayoutConfigAdmin(gameId,cfg);
   try{ const ac=await (await getBackendActor(true)).getGameAntiCheat(gameId); const v=Array.isArray(ac)?ac:[0,0,0];
+    try{ const _rk=await (await getBackendActor(true)).adminGetGameRunKey(gameId); const _ri=document.getElementById('runKey_'+domId); if(_ri) _ri.value=(Array.isArray(_rk)&&_rk.length)?String(_rk[0]):''; const _rs=document.getElementById('runKeyStatus_'+domId); if(_rs) _rs.textContent=(Array.isArray(_rk)&&_rk.length)?'Run check is ON for this game':'Run check is off'; }catch(_){}
     [['acRate_',0],['acMax_',1],['acHold_',2]].forEach(([p,i])=>{ const el=document.getElementById(p+domId); if(el) el.value=String(Number(v[i]||0)); }); }catch(_){}
 }
+
+function adminGenRunKey(domId){
+  const b=new Uint8Array(24); crypto.getRandomValues(b);
+  const el=document.getElementById('runKey_'+domId); if(el) el.value=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');
+  const st=document.getElementById('runKeyStatus_'+domId); if(st) st.textContent='New key generated: press Save key, then give it to the creator';
+}
+async function adminSaveRunKey(gameId){
+  if(!isAdmin()) return;
+  const domId=payoutDomId(gameId);
+  const key=String(document.getElementById('runKey_'+domId)?.value||'').trim();
+  const st=document.getElementById('runKeyStatus_'+domId);
+  if(key&&!confirm('Turn ON the run check for this game?\n\nThe game must already send proofs with this exact key, or every score will be refused.')) return;
+  try{ const r=await (await getBackendActor(true)).adminSetGameRunKey(gameId,key);
+    if(st) st.innerHTML=r.err?'<span style="color:#ef4444">'+escHtml(String(r.err))+'</span>':'<span style="color:#22c55e">'+escHtml(String(r.ok))+'</span>';
+  }catch(e){ if(st) st.innerHTML='<span style="color:#ef4444">Save failed</span>'; }
+}
+function adminCopyRunKey(domId){
+  const v=String(document.getElementById('runKey_'+domId)?.value||''); const st=document.getElementById('runKeyStatus_'+domId);
+  try{ navigator.clipboard.writeText(v).then(()=>{ if(st) st.textContent='Copied'; }); }catch(_){}
+}
+window.adminGenRunKey=adminGenRunKey; window.adminSaveRunKey=adminSaveRunKey; window.adminCopyRunKey=adminCopyRunKey;
 
 async function saveGamePayoutConfig(gameId){
   if(!isAdmin()) return;
@@ -8600,7 +8693,7 @@ function normalizeGameSubmission(g,monMap,pricingMap){
   const pricing=pricingMap?.get(g.id);
   const paysTickets=mon?mon[0]:false;
   const wantsPurchasable=mon?mon[1]:false;
-  const tokenCost=pricing?Number(pricing[0])||1:1;
+  const tokenCost=1; /*one-token-per-play*/ // every game costs exactly 1 Token per play
   const purchasePrice=pricing?Number(pricing[1])||0:0;
   return {
     id:g.id, name:g.name, dev:g.developer, url:g.url, thumb:g.thumbnailUrl,
@@ -12014,7 +12107,7 @@ async function adminSetPendingGamePricing(gameId){
   if(!isAdmin()) return;
   const tokenCostEl=document.getElementById('adminPendingTokenCost_'+gameId);
   const purchasePriceEl=document.getElementById('adminPendingPurchasePrice_'+gameId);
-  const tokenCost=Math.max(0,Math.floor(Number(tokenCostEl?.value)||0));
+  const tokenCost=1; void tokenCostEl; // fixed: every game costs 1 Token per play
   const purchasePrice=Math.max(0,Math.floor(Number(purchasePriceEl?.value)||0));
   try{
     const be=await getBackendActor(true);
@@ -12085,7 +12178,7 @@ async function loadAdminPendingSubmissionTarget(){
       const purchaseInput=mon.wantsPurchasable
         ?`<input type='number' id='adminPendingPurchasePrice_${game.id}' value='${(typeof _reqPrice!=='undefined'&&_reqPrice)?_reqPrice:''}' placeholder='Purchase price' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(134,239,172,.3);border-radius:6px;color:#fff;font-size:.7rem'/>`
         :`<input type='number' disabled placeholder='Not purchasable' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#5a7baa;font-size:.7rem'/>`;
-      pricingRow=`<div style='display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap'><input type='number' id='adminPendingTokenCost_${game.id}' placeholder='Token cost/play' min='0' style='width:110px;padding:4px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(139,180,255,.3);border-radius:6px;color:#fff;font-size:.7rem'/>${purchaseInput}<button class='btn tiny' onclick='adminSetPendingGamePricing("${game.id}")' style='font-size:.65rem;padding:4px 10px'>Set Pricing</button></div>`;
+      pricingRow=`<div style='display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap'><span style='font-size:.7rem;color:#8bb4ff;padding:4px 6px'>1 Token/play</span>${purchaseInput}<button class='btn tiny' onclick='adminSetPendingGamePricing("${game.id}")' style='font-size:.65rem;padding:4px 10px'>Set Pricing</button></div>`;
     }
   }catch(_){}
   if(preview){
@@ -17050,7 +17143,7 @@ function hashInputs(inputs){
 async function endArcadeGame(gameId,score){
   if(!S.connected||!S.principalText) return;
   const durationMs=Date.now()-_gameStartTime;
-  const inputHash=hashInputs(_gameInputs);
+  const inputHash=(_arcadeSessionState&&_arcadeSessionState.runProof)||hashInputs(_gameInputs);
   _currentGamePlaying=null;
 
   // Score is submitted to the backend; the configured 8-level payout ladder is authoritative.
@@ -17081,6 +17174,8 @@ async function endArcadeGame(gameId,score){
     // a second standalone submitHighScore() write from the frontend.
     if(jackpotTickets>0){
       showJackpotPopup(formatTicketJackpotPopupContent(jackpotTierLabels,totalTickets),'ticket');
+    } else if(jackpotTierLabels.includes('dao_members_only')){
+      showJackpotPopup({title:'JACKPOT SCORE!',body:'Jackpots are for DAO members',detail:'Get a Voting Power Badge at the Prize Booth to win jackpots like this one.',cta:'Click anywhere to continue'},'ticket');
     }
     return {tickets:totalTickets,totalTickets,baseTickets,jackpotTickets,newRecord,jackpotTierLabels,jackpotUncappedTickets,jackpotCapped};
   }catch(e){
@@ -17461,5 +17556,307 @@ Object.defineProperty(window,'showView',{value:showViewHooked,writable:false,con
 // init compat badges
 document.querySelectorAll('.compat-badge').forEach(el=>{el.innerHTML=getCompatBadge(el.dataset.compat);});
 })();
-</script></body></html>
+</script><style id='universalScrollFix'>/*universal-scroll-fix*/
+/* Every scrolling page = exactly one screen below the nav, scrolls by itself, never drags the window along. */
+:root{--navH:52px}
+.view.active:not(#view-landing):not(#view-manifesto){height:calc(100vh - var(--navH))!important;max-height:calc(100vh - var(--navH))!important;min-height:0!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@supports (height:100dvh){.view.active:not(#view-landing):not(#view-manifesto){height:calc(100dvh - var(--navH))!important;max-height:calc(100dvh - var(--navH))!important}}
+/* Pinned (fixed) backgrounds force a full repaint on every scroll step - the main cause of sticky scrolling. The page is one screen tall, so a normal background looks identical. */
+.view{background-attachment:scroll!important}
+/* Player Portal clipped its list (overflow hidden) - let it scroll. */
+#view-player-portal{overflow-y:auto!important;overflow-x:hidden!important}
+/* Blackhole had a second scroller inside the page scroller; only the page scrolls now. */
+#blackholeScrollWrap{overflow:visible!important}
+/* Phones: window scroll-snapping fought the page scroller. */
+@media(max-width:760px){html,body{scroll-snap-type:none!important}}
+</style><script>(function(){function setNavH(){try{var n=document.querySelector('body > nav')||document.querySelector('nav');if(n&&n.offsetHeight)document.documentElement.style.setProperty('--navH',n.offsetHeight+'px');}catch(_){}}
+setNavH();window.addEventListener('resize',setNavH);window.addEventListener('load',setNavH);try{var n=document.querySelector('body > nav')||document.querySelector('nav');if(n&&window.ResizeObserver)new ResizeObserver(setNavH).observe(n);}catch(_){}})();</script><style id='ctrlHelpStyles'>/*ctrl-help-popup*/
+.ch-btn-wrap{display:flex;justify-content:center;padding:18px 0 6px}
+.ch-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;background:rgba(0,0,0,.6);border:1px solid rgba(0,170,255,.55);color:#bfe9ff;font-weight:800;font-size:.78rem;letter-spacing:2px;cursor:pointer;box-shadow:0 0 14px rgba(0,170,255,.25);backdrop-filter:blur(4px);transition:transform .15s,box-shadow .15s}
+.ch-btn:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(0,170,255,.45)}
+.ch-dot{width:8px;height:8px;border-radius:50%;background:#475569;box-shadow:none}
+.ch-dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
+#ctrlHelpModal{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.86);backdrop-filter:blur(8px);display:grid;place-items:center;padding:12px}
+#ctrlHelpModal .ch-box{width:min(720px,100%);max-height:92vh;overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(165deg,#0a0e1a,#101830 55%,#0a1020);border:1px solid rgba(0,170,255,.3);border-radius:18px;box-shadow:0 0 60px rgba(0,100,255,.18);padding:20px 20px 22px;color:#d6e2f5;scrollbar-width:thin;scrollbar-color:rgba(0,170,255,.3) transparent}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ch-title{font-size:1.25rem;font-weight:900;letter-spacing:4px;color:#fff;text-shadow:0 0 14px rgba(0,170,255,.5)}
+.ch-x{background:none;border:none;color:#5b7aa8;font-size:1.3rem;cursor:pointer;padding:4px 8px}
+.ch-status{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px dashed rgba(255,215,0,.45);background:rgba(255,215,0,.05);margin-bottom:14px}
+.ch-status.on{border:1px solid rgba(34,197,94,.55);background:rgba(34,197,94,.07)}
+.ch-pulse{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:1.3rem;background:rgba(255,215,0,.12);animation:chPulse 1.4s ease-in-out infinite}
+.ch-status.on .ch-pulse{background:rgba(34,197,94,.15);animation:none}
+@keyframes chPulse{50%{box-shadow:0 0 0 10px rgba(255,215,0,0)}0%{box-shadow:0 0 0 0 rgba(255,215,0,.35)}}
+.ch-st-main{font-weight:900;font-size:.92rem;color:#ffd86b;letter-spacing:.5px}
+.ch-status.on .ch-st-main{color:#4ade80}
+.ch-st-sub{font-size:.72rem;color:#9fb3d1;margin-top:3px;line-height:1.4}
+.ch-tabs{display:flex;gap:6px;margin-bottom:14px}
+.ch-tab{flex:1;padding:8px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);color:#6b85ad;font-weight:800;font-size:.72rem;letter-spacing:1.5px;cursor:pointer}
+.ch-tab.on{border-color:rgba(0,170,255,.5);background:rgba(0,170,255,.14);color:#7fd4ff}
+.ch-steps{margin:0;padding:0;list-style:none;counter-reset:s}
+.ch-steps li{counter-increment:s;position:relative;padding:10px 12px 10px 44px;margin-bottom:8px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.05);font-size:.8rem;line-height:1.5}
+.ch-steps li::before{content:counter(s);position:absolute;left:12px;top:10px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:.72rem;background:rgba(0,170,255,.18);color:#7fd4ff}
+.ch-steps b,.ch-fix b{color:#fff}
+.ch-fix{padding:11px 13px;margin-bottom:8px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.05);font-size:.78rem;line-height:1.5}
+.ch-fix .q{font-weight:900;color:#ffb4c8;margin-bottom:3px}
+.ch-fix.star{border:1px solid rgba(255,215,0,.5);background:rgba(255,215,0,.06);box-shadow:0 0 18px rgba(255,215,0,.08)}
+.ch-fix.star .q{color:#ffd86b}
+.ch-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:.58rem;font-weight:900;letter-spacing:1px;background:rgba(255,215,0,.18);color:#ffd86b;vertical-align:middle}
+.ch-note{font-size:.72rem;color:#8ea3c4;line-height:1.5;margin-bottom:12px}
+.ch-kb{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:end;padding:14px;border-radius:14px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.06);margin-bottom:12px}
+.ch-cluster{display:grid;gap:6px;justify-items:center}
+.ch-row{display:flex;gap:6px;justify-content:center}
+.ch-key{position:relative;min-width:52px;padding:7px 6px 6px;border-radius:9px;background:linear-gradient(#1b2440,#121a30);border:1px solid rgba(255,255,255,.12);border-bottom-width:3px;text-align:center;cursor:pointer;transition:all .08s}
+.ch-key .k{font-weight:900;font-size:.9rem;color:#eaf2ff}
+.ch-key .p{margin-top:4px;font-size:.56rem;font-weight:800;color:#7fd4ff;white-space:nowrap;letter-spacing:.3px}
+.ch-key .p.none{color:#475569}
+.ch-key.wide{min-width:150px}
+.ch-key.live{background:linear-gradient(#0f5132,#0b3d26);border-color:#22c55e;box-shadow:0 0 14px rgba(34,197,94,.5);transform:translateY(1px)}
+.ch-key.ask{border-color:#ffd700;box-shadow:0 0 0 2px rgba(255,215,0,.5),0 0 18px rgba(255,215,0,.35);animation:chAsk 1s ease-in-out infinite}
+@keyframes chAsk{50%{box-shadow:0 0 0 4px rgba(255,215,0,.25),0 0 24px rgba(255,215,0,.5)}}
+.ch-wiz{padding:12px 14px;border-radius:12px;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.06);margin-bottom:12px;display:none}
+.ch-wiz.on{display:block}
+.ch-wiz-q{font-weight:900;font-size:.95rem;color:#ffd86b}
+.ch-wiz-sub{font-size:.72rem;color:#9fb3d1;margin-top:3px}
+.ch-acts{display:flex;gap:8px;flex-wrap:wrap}
+.ch-act{padding:8px 14px;border-radius:10px;border:1px solid rgba(0,170,255,.4);background:rgba(0,170,255,.1);color:#7fd4ff;font-weight:800;font-size:.72rem;letter-spacing:1px;cursor:pointer}
+.ch-act.gold{border-color:rgba(255,215,0,.55);background:rgba(255,215,0,.12);color:#ffd86b}
+.ch-act.dim{border-color:rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:#8ea3c4}
+.ch-live{font-size:.7rem;color:#8ea3c4;margin-top:10px;min-height:1em}
+.ch-pl{display:flex;align-items:center;gap:12px;padding:11px 12px;margin-bottom:8px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.07);transition:border-color .1s,box-shadow .1s}
+.ch-pl.live{border-color:#22c55e;box-shadow:0 0 14px rgba(34,197,94,.35)}
+.ch-pl.kb{border-style:dashed;opacity:.9}
+.ch-pl-ico{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:rgba(0,170,255,.12);font-size:1.1rem}
+.ch-pl-body{flex:1;min-width:0}.ch-pl-name{font-weight:900;font-size:.84rem;color:#eaf2ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ch-pl-sub{font-size:.66rem;color:#8ea3c4;margin-top:2px;line-height:1.4}
+.ch-slots{display:flex;gap:4px;flex:0 0 auto}
+.ch-slot{min-width:38px;padding:7px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.35);color:#7f93b8;font-weight:900;font-size:.7rem;cursor:pointer}
+.ch-slot.on{border-color:#00aaff;background:rgba(0,170,255,.2);color:#fff;box-shadow:0 0 10px rgba(0,170,255,.35)}
+.ch-slot.off.on{border-color:#f87171;background:rgba(248,113,113,.15);color:#fecaca;box-shadow:none}
+.ch-tabs{flex-wrap:wrap}
+.ch-step{padding:10px 12px;border-radius:12px;background:rgba(0,170,255,.07);border:1px solid rgba(0,170,255,.25);font-size:.76rem;color:#bcd3f0;margin-bottom:12px;line-height:1.5}
+.ch-wiz .kc{display:inline-block;min-width:28px;padding:1px 8px;border-radius:7px;background:#1b2440;border:1px solid #ffd700;color:#fff;text-align:center}
+.ch-warn{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border-radius:12px;border:1px solid rgba(248,113,113,.55);background:rgba(248,113,113,.08);color:#fecaca;font-weight:800;font-size:.78rem}
+.ckwrap{display:flex;gap:16px;align-items:flex-end;padding:14px;border-radius:14px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.06);margin-bottom:10px;overflow-x:auto;scrollbar-width:thin}
+.ckb{flex:1;min-width:440px;display:grid;grid-template-columns:repeat(13,minmax(0,1fr));grid-auto-rows:56px;gap:5px}
+.cka{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,44px);grid-auto-rows:56px;gap:5px}
+.ck{position:relative;border-radius:9px;background:linear-gradient(#1b2440,#121a30);border:1px solid rgba(255,255,255,.13);border-bottom-width:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .08s;min-width:0;user-select:none}
+.ck:hover{border-color:rgba(0,170,255,.6)}
+.ck .k{font-weight:900;font-size:.86rem;color:#eaf2ff;line-height:1}
+.ck .p{margin-top:5px;font-size:.56rem;font-weight:800;color:#7fd4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
+.ck .p.none{color:#475569}
+.ck .dots{position:absolute;top:4px;left:5px;display:flex;gap:2px}
+.ck .dots i,.ch-legend i{display:inline-block;width:5px;height:5px;border-radius:50%}
+i.da{background:#38bdf8}i.dr{background:#c084fc}i.chgdot{background:#fb923c}
+.ck.chg::after{content:'';position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:#fb923c;box-shadow:0 0 6px #fb923c}
+.ck.sel{border-color:#ffd700;box-shadow:0 0 0 2px rgba(255,215,0,.5),0 0 18px rgba(255,215,0,.35);animation:chAsk 1s ease-in-out infinite}
+.ck.live{background:linear-gradient(#0f5132,#0b3d26);border-color:#22c55e;box-shadow:0 0 14px rgba(34,197,94,.5);transform:translateY(1px)}
+.ch-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.66rem;color:#8ea3c4;margin-bottom:4px}.ch-legend span{display:inline-flex;align-items:center;gap:6px}.ch-legend i{width:7px;height:7px}
+.ch-act.save{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.16);color:#86efac;padding:9px 22px;font-size:.8rem}
+.ch-act.save.off,.ch-act[disabled]{opacity:.4;cursor:default}
+.ck .p .ps{display:none}.ch-swipe{display:none;font-size:.66rem;color:#8ea3c4;margin:-4px 0 6px}
+@media(max-width:560px){.ck .p .pl{display:none}.ck .p .ps{display:inline}.ch-swipe{display:block}.ckb{min-width:420px}}
+.ch-view{display:flex;gap:6px;margin-bottom:10px}.ch-view button{flex:1;padding:8px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.3);color:#8ea3c4;font-weight:800;font-size:.74rem;cursor:pointer}.ch-view button.on{border-color:rgba(255,215,0,.55);background:rgba(255,215,0,.12);color:#ffd86b}
+.ch-gap{width:52px}.ch-key.round{border-radius:50%;min-width:56px;width:56px;height:56px;padding:9px 2px 0}
+.ch-saved{align-self:center;font-size:.72rem;font-weight:800;color:#4ade80;opacity:0;transition:opacity .25s}.ch-saved.on{opacity:1}
+@media(max-width:560px){.ch-pl{flex-wrap:wrap}.ch-slots{width:100%}.ch-slot{flex:1}.ch-kb{grid-template-columns:1fr}.ch-key{min-width:44px}.ch-key.wide{min-width:120px}.ch-title{font-size:1rem;letter-spacing:2px}}
+</style>
+<script>(function(){
+/* ===== Connect Controllers popup + controller-to-keyboard relay ===== */
+var CH_KEYS=[
+ {code:'KeyW',label:'W',key:'w',kc:87,hint:'Up / move forward'},
+ {code:'KeyA',label:'A',key:'a',kc:65,hint:'Left'},
+ {code:'KeyS',label:'S',key:'s',kc:83,hint:'Down'},
+ {code:'KeyD',label:'D',key:'d',kc:68,hint:'Right'},
+ {code:'Space',label:'Space',key:' ',kc:32,hint:'Jump / main action'},
+ {code:'KeyC',label:'C',key:'c',kc:67,hint:'Second action'},
+ {code:'ArrowUp',label:'↑',key:'ArrowUp',kc:38,hint:'Arrow up'},
+ {code:'ArrowDown',label:'↓',key:'ArrowDown',kc:40,hint:'Arrow down'},
+ {code:'ArrowLeft',label:'←',key:'ArrowLeft',kc:37,hint:'Arrow left'},
+ {code:'ArrowRight',label:'→',key:'ArrowRight',kc:39,hint:'Arrow right'},
+ {code:'Enter',label:'Enter',key:'Enter',kc:13,hint:'Start / confirm'},
+ {code:'Escape',label:'Esc',key:'Escape',kc:27,hint:'Pause / back'}
+];
+var CH_DEFAULT={KeyW:'lsu',KeyA:'lsl',KeyS:'lsd',KeyD:'lsr',Space:'b0',KeyC:'b2',ArrowUp:'b12',ArrowDown:'b13',ArrowLeft:'b14',ArrowRight:'b15',Enter:'b9',Escape:'b8'};
+var CH_NAMES={b0:'A / ✕',b1:'B / ○',b2:'X / □',b3:'Y / △',b4:'LB / L1',b5:'RB / R1',b6:'LT / L2',b7:'RT / R2',b8:'Select',b9:'Start',b10:'L-stick click',b11:'R-stick click',b12:'D-pad ↑',b13:'D-pad ↓',b14:'D-pad ←',b15:'D-pad →',b16:'Home',lsu:'L-stick ↑',lsd:'L-stick ↓',lsl:'L-stick ←',lsr:'L-stick →'};
+function chName(id){return id?(CH_NAMES[id]||('Button '+String(id).replace('b',''))):'not set';}
+function chLoad(){var m=null;try{localStorage.removeItem('arcade_ctrl_keymap');}catch(_){}var out={};for(var k in CH_DEFAULT)out[k]=CH_DEFAULT[k];if(m&&typeof m==='object'){for(var c in m){if(CH_DEFAULT.hasOwnProperty(c))out[c]=(m[c]===null?null:String(m[c]));}}return out;}
+function chSave(m){try{localStorage.setItem('arcade_ctrl_keymap',JSON.stringify(m));}catch(_){}}
+var chMap=chLoad();
+function chPads(){try{return navigator.getGamepads?Array.from(navigator.getGamepads()).filter(function(p){return p&&p.connected;}):[];}catch(_){return [];}}
+function chActive(pad){var s={};if(!pad)return s;var b=pad.buttons||[];for(var i=0;i<b.length;i++){if(b[i]&&(b[i].pressed||b[i].value>.5))s['b'+i]=1;}var ax=pad.axes||[],x=ax[0]||0,y=ax[1]||0;if(y<-.5)s.lsu=1;if(y>.5)s.lsd=1;if(x<-.5)s.lsl=1;if(x>.5)s.lsr=1;return s;}
+function chEsc(t){return String(t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+/* --- relay: mapped controller input -> {type:'arcade-keyboard'} messages to the game frame --- */
+var chPrev={};
+window.chResetRelay=function(){var f=document.getElementById('gameIframe');try{for(var pl in chPrev){for(var c in chPrev[pl]){if(chPrev[pl][c]&&f&&f.contentWindow){var K=CH_KEYS.filter(function(k){return k.code===c;})[0];if(K)f.contentWindow.postMessage({type:'arcade-keyboard',player:pl,code:K.code,key:K.key,keyCode:K.kc,state:'up'},'*');}}}}catch(_){}chPrev={};};
+setInterval(function(){
+  var f=document.getElementById('gameIframe');if(!f||!f.contentWindow){chPrev={};return;}
+  var pads=chPads();if(!pads.length)return;
+  for(var n=0;n<pads.length;n++){var pad=pads[n],pl=(window.arcadePadPlayer?window.arcadePadPlayer(pad):'p'+(pad.index+1));if(!pl)continue;var act=chActive(pad),st=chPrev[pl]||(chPrev[pl]={});
+    for(var i=0;i<CH_KEYS.length;i++){var K=CH_KEYS[i],src=chMap[K.code],now=!!(src&&act[src]);
+      if(now!==!!st[K.code]){st[K.code]=now;try{f.contentWindow.postMessage({type:'arcade-keyboard',player:pl,code:K.code,key:K.key,keyCode:K.kc,state:now?'down':'up'},'*');}catch(_){}}}}
+},16);
+
+/* --- bottom buttons on Showroom / The Back / Blackhole --- */
+function chMountButtons(){
+  ['showroomRowsWrap','backroomRowsWrap','blackholeScrollWrap'].forEach(function(id){
+    var host=document.getElementById(id);if(!host||host.querySelector('.ch-btn'))return;
+    var w=document.createElement('div');w.className='ch-btn-wrap';
+    w.innerHTML="<button type='button' class='ch-btn' onclick='openControllerHelp()'><span class='ch-dot'></span>🎮 CONNECT CONTROLLERS</button>";
+    host.appendChild(w);});
+}
+function chRefreshDots(){var on=chPads().length>0;document.querySelectorAll('.ch-btn .ch-dot').forEach(function(d){d.classList.toggle('on',on);});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',chMountButtons);else chMountButtons();
+setInterval(function(){chMountButtons();if(!document.hidden)chRefreshDots();},1500);
+
+/* --- popup --- */
+var chRaf=null,chTab='connect',chWiz=null,chPrevAct={};
+function chKeyHtml(code,wide){var K=CH_KEYS.filter(function(k){return k.code===code;})[0],src=chMap[code];
+  return "<div class='ch-key"+(wide?' wide':'')+"' data-code='"+code+"' title='"+chEsc(K.hint)+" — click to set' onclick='chSetOne(\""+code+"\")'><div class='k'>"+chEsc(K.label)+"</div><div class='p"+(src?'':' none')+"'>"+chEsc(chName(src))+"</div></div>";}
+function chRender(){
+  var box=document.querySelector('#ctrlHelpModal .ch-box');if(!box)return;
+  var tabs="<div class='ch-tabs'>"+[['connect','HOW TO CONNECT'],['players','PLAYERS'],['fix','PROBLEMS & FIXES']]/*controllers-simplified*/.map(function(t){return "<button class='ch-tab"+(chTab===t[0]?' on':'')+"' onclick='chShowTab(\""+t[0]+"\")'>"+t[1]+"</button>";}).join('')+"</div>";
+  var body='';
+  if(chTab==='connect'){
+    body="<ol class='ch-steps'>"+
+    "<li><b>Put the controller in pairing mode.</b> Usually: hold the pair button (Xbox), <b>Share/Create + PS</b> (PlayStation), or the sync button until the light flashes fast.</li>"+
+    "<li><b>Pair it in your device's Bluetooth settings.</b> Mac: System Settings → Bluetooth. Windows: Settings → Bluetooth &amp; devices. Phone: Settings → Bluetooth.</li>"+
+    "<li><b>Come back here and press any button.</b> Browsers keep controllers hidden until you press a button with the page open — the box above turns green when the arcade sees it.</li>"+
+    "<li><b>Open a game and play.</b> If a game doesn't react, press a button once inside it. Player 2? Connect a second controller — it shows as P2.</li>"+
+    "</ol><div class='ch-note'>Most reliable: Xbox (One S or newer), PlayStation 4 / 5 and Switch Pro controllers, in Chrome, Edge or Brave. Off-brand controllers work too once they're in the right mode — see <b>Problems &amp; Fixes</b>.</div>";
+  }else if(chTab==='players'){body=chPlayersHtml();
+  }else if(chTab==='fix'){
+    body="<div class='ch-fix star'><div class='q'>Works in Steam (or other apps) but not here<span class='ch-tag'>MOST COMMON</span></div>Your controller is probably in a mode only Steam's drivers understand. Browsers need it in its <b>Apple / iOS, macOS or X-input mode</b>. Forget it in Bluetooth settings, switch the mode, and pair again. Also fully quit Steam (menu bar → Quit) — it can hold on to the controller.<br><br><b>Example — GameSir T4 Mini:</b> forget the device, hold <b>B + HOME</b> until the 3rd light blinks fast, then pair <b>“Xbox Wireless Controller”</b> (that's the T4 Mini).</div>"+
+    "<div class='ch-fix'><div class='q'>Paired, but nothing happens here</div>Press a button while this page is open — browsers only reveal a controller after a button press. Still nothing? Try a gamepad tester site in the same browser: if it doesn't see the controller either, it's the pairing or the mode (see above), not the arcade.</div>"+
+    "<div class='ch-fix'><div class='q'>It keeps connecting to my console</div>Turn the console off or unpair the controller from it, then pair again here.</div>"+
+    "<div class='ch-fix'><div class='q'>Plugged in by USB and nothing</div>Some controllers' wired mode is Windows-only. Use Bluetooth in the controller's Apple / X-input mode instead.</div>"+
+    "<div class='ch-fix'><div class='q'>Brave sees it on a tester site but not here</div>Click the lion icon in the address bar and turn Shields off for the arcade, then reload. Chrome and Edge are the most reliable; Firefox and Safari are pickier.</div>"+
+    "<div class='ch-fix'><div class='q'>Connected, but a game ignores it</div>That game may be keyboard-only or not support controllers yet. To change which button does what, use the game's own <b>Controls</b> screen on its title screen.</div>"+
+    "<div class='ch-fix'><div class='q'>On a phone</div>Xbox and PlayStation controllers work in Chrome on Android and Safari on iPhone. Pair in the phone's Bluetooth settings first.</div>";
+  }else{
+    body=chMapHtml();
+  }
+  box.innerHTML="<div class='ch-head'><div class='ch-title'>🎮 CONNECT CONTROLLERS</div><button class='ch-x' onclick='closeControllerHelp()'>✕</button></div>"+
+    "<div class='ch-status' id='chStatus'><div class='ch-pulse'>🎮</div><div><div class='ch-st-main' id='chStMain'></div><div class='ch-st-sub' id='chStSub'></div></div></div>"+tabs+body;
+  chTick(true);
+}
+function chTick(once){
+  var pads=chPads(),st=document.getElementById('chStatus');if(!st){chRaf=null;return;}
+  var on=pads.length>0;st.classList.toggle('on',on);if(chTab==='players')chPlayersTick(pads);
+  var main=document.getElementById('chStMain'),sub=document.getElementById('chStSub');
+  if(on){main.textContent=pads.length===1?'Controller connected':(pads.length+' controllers connected');sub.innerHTML=pads.map(function(p){return '<b style="color:#e2e8f0">'+(window.arcadePadPlayer?(window.arcadePadPlayer(p)||'off').toUpperCase():('P'+(p.index+1)))+'</b> · '+chEsc(String(p.id||'Controller').replace(/\s*\(.*?\)\s*/g,' ').trim().slice(0,60));}).join('<br>');}
+  else{main.textContent='Waiting for a controller…';sub.textContent='Pair it in Bluetooth settings, then press any button on it.';}
+  // live highlights + guided setup
+  var act={};pads.forEach(function(p){var a=chActive(p);for(var k in a)act[k]=1;});
+  if(chTab==='map')chMapTick(act,on);
+  chPrevAct=act;
+  if(!once)chRaf=requestAnimationFrame(function(){chTick(false);});
+}
+var CH_AR_DEF={a:0,b:1,c:2,d:3,bumperL:4,bumperR:5,start:9,select:8,up:12,down:13,left:14,right:15};
+var CH_ACT_OF={KeyW:'up',KeyS:'down',KeyA:'left',KeyD:'right',KeyJ:'a',KeyK:'b',KeyL:'c',Semicolon:'d',KeyU:'bumperL',KeyI:'bumperR',Enter:'start',Backspace:'select'};
+var CH_ACT_TXT={up:'move up',down:'move down',left:'move left',right:'move right',a:'arcade A — main action',b:'arcade B',c:'arcade C',d:'arcade D',bumperL:'left bumper',bumperR:'right bumper',start:'start / pause',select:'select / menu'};
+var CH_SHORT={b0:'A',b1:'B',b2:'X',b3:'Y',b4:'LB',b5:'RB',b6:'LT',b7:'RT',b8:'Select',b9:'Start',b10:'L3',b11:'R3',b12:'D-pad↑',b13:'D-pad↓',b14:'D-pad←',b15:'D-pad→',b16:'Home',lsu:'Stick↑',lsd:'Stick↓',lsl:'Stick←',lsr:'Stick→'};
+var CH_DIR={KeyW:12,KeyS:13,KeyA:14,KeyD:15};
+var CH_TINY={b8:'Sel',b9:'Start',b12:'D↑',b13:'D↓',b14:'D←',b15:'D→',b16:'Home',lsu:'LS↑',lsd:'LS↓',lsl:'LS←',lsr:'LS→'};
+var CH_KB=[['Escape','Esc',1,1,1],['Backspace','Bksp',12,1,2],['KeyW','W',2,2,1],['KeyU','U',7,2,1],['KeyI','I',8,2,1],
+ ['KeyA','A',1,3,1],['KeyS','S',2,3,1],['KeyD','D',3,3,1],['KeyJ','J',7,3,1],['KeyK','K',8,3,1],['KeyL','L',9,3,1],['Semicolon',';',10,3,1],['Enter','Enter',12,3,2],
+ ['KeyC','C',3,4,1],['Space','Space',4,5,6]];
+var CH_ARW=[['ArrowUp','↑',2,1],['ArrowLeft','←',1,2],['ArrowDown','↓',2,2],['ArrowRight','→',3,2]];
+var chDraft=null,chSel=null,chWarn=false,chMsg='';
+function chPm(){var m=null;try{m=(typeof getPadMap==='function')?getPadMap():JSON.parse(localStorage.getItem('arcade_padmap')||'null');}catch(_){}var o={};for(var k in CH_AR_DEF)o[k]=CH_AR_DEF[k];if(m&&typeof m==='object'){for(var k2 in m){if(o.hasOwnProperty(k2)&&m[k2]!==null&&m[k2]!==undefined&&!isNaN(Number(m[k2])))o[k2]=Number(m[k2]);}}return o;}
+function chPmSave(pm){try{if(typeof savePadMap==='function')savePadMap(pm);else localStorage.setItem('arcade_padmap',JSON.stringify(pm));}catch(_){}}
+function chFlashSaved(){var e=document.getElementById('chSaved');if(!e)return;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on');},1800);}
+function chGroups(code){return (CH_ACT_OF[code]?'a':'')+(CH_DEFAULT.hasOwnProperty(code)?'r':'');}
+function chUnified(pm,rm){var u={};for(var c in CH_ACT_OF){var n=pm[CH_ACT_OF[c]];u[c]=(n>=0)?('b'+n):null;}for(var c2 in rm){u[c2]=rm[c2]||null;}return u;}
+function chSavedU(){return chUnified(chPm(),chMap);}
+function chDefaultU(){return chUnified(CH_AR_DEF,CH_DEFAULT);}
+function chDirty(){if(!chDraft)return false;var s=chSavedU();for(var k in s){if((chDraft[k]||null)!==(s[k]||null))return true;}return false;}
+function chAssignKey(code,inp){var g=chGroups(code);for(var k in chDraft){if(k===code||chDraft[k]!==inp)continue;var g2=chGroups(k);if((g.indexOf('a')>=0&&g2.indexOf('a')>=0)||(g.indexOf('r')>=0&&g2.indexOf('r')>=0))chDraft[k]=null;}chDraft[code]=inp;}
+function chSaveDraft(){
+  for(var c in CH_DEFAULT){chMap[c]=chDraft[c]||null;}chSave(chMap);
+  var used={};for(var c1 in CH_ACT_OF){var v1=chDraft[c1];if(v1&&v1.charAt(0)==='b')used[v1]=c1;}
+  var pm={};for(var c2 in CH_ACT_OF){var act=CH_ACT_OF[c2],v=chDraft[c2];
+    if(v&&v.charAt(0)==='b')pm[act]=+v.slice(1);
+    else if(CH_DIR.hasOwnProperty(c2))pm[act]=used['b'+CH_DIR[c2]]?-1:CH_DIR[c2];   // stick keeps the D-pad as a backup
+    else pm[act]=-1;}
+  chPmSave(pm);
+  try{if(window.arcadeResetPadState)window.arcadeResetPadState();}catch(_){}
+}
+function chKeyCap(code,label,col,row,span,saved){
+  var v=chDraft[code],g=chGroups(code),sel=chSel===code,chg=(v||null)!==(saved[code]||null);
+  var tip=label+': '+(CH_ACT_OF[code]?('arcade games → '+CH_ACT_TXT[CH_ACT_OF[code]]):'')+(g.indexOf('r')>=0?((CH_ACT_OF[code]?' · ':'')+'keyboard-relay games'):'')+' — controller: '+chName(v);
+  return "<div class='ck"+(sel?' sel':'')+(chg?' chg':'')+"' data-code='"+code+"' style='grid-column:"+col+" / span "+span+";grid-row:"+row+"' title='"+chEsc(tip)+"' onclick='chPick(\""+code+"\")'>"+
+    "<div class='k'>"+chEsc(label)+"</div><div class='p"+(v?'':' none')+"'><span class='pl'>"+chEsc(v?(CH_SHORT[v]||chName(v)):'—')+"</span><span class='ps'>"+chEsc(v?(CH_TINY[v]||CH_SHORT[v]||chName(v)):'—')+"</span></div><div class='dots'>"+(g.indexOf('a')>=0?"<i class='da'></i>":"")+(g.indexOf('r')>=0?"<i class='dr'></i>":"")+"</div></div>";
+}
+function chMapHtml(){
+  if(!chDraft)chDraft=chSavedU();
+  var saved=chSavedU(),dirty=chDirty();
+  var keys=CH_KB.map(function(k){return chKeyCap(k[0],k[1],k[2],k[3],k[4],saved);}).join('');
+  var arw=CH_ARW.map(function(k){return chKeyCap(k[0],k[1],k[2],k[3],1,saved);}).join('');
+  var prompt;
+  if(chSel){var lbl=(CH_KB.concat(CH_ARW).filter(function(k){return k[0]===chSel;})[0]||[0,chSel])[1];
+    prompt="<div class='ch-wiz on'><div class='ch-wiz-q'>Now press a button on your controller for <span class='kc'>"+chEsc(lbl)+"</span></div><div class='ch-wiz-sub'>"+(CH_ACT_OF[chSel]?('In arcade games this key is '+chEsc(CH_ACT_TXT[CH_ACT_OF[chSel]])+'. '):'')+'Currently: '+chEsc(chName(chDraft[chSel]))+(chMsg?("<br><span style='color:#fca5a5'>"+chEsc(chMsg)+"</span>"):'')+"</div><div class='ch-acts' style='margin-top:10px'><button class='ch-act dim' onclick='chUnassign()'>Unassign</button><button class='ch-act dim' onclick='chPick(null)'>Cancel</button></div></div>";}
+  else prompt="<div class='ch-step'><b>1.</b> Click a key below. &nbsp; <b>2.</b> Press the controller button you want for it. &nbsp; <b>3.</b> Press <b>Save</b> when you're done.</div>";
+  var warn=chWarn&&dirty?"<div class='ch-warn'>You have unsaved changes. <button class='ch-act gold' onclick='chSaveNow()'>Save</button><button class='ch-act dim' onclick='closeControllerHelp(true)'>Close without saving</button></div>":"";
+  return warn+prompt+
+    "<div class='ch-swipe'>↔ Swipe the keyboard sideways to see every key</div><div class='ckwrap'><div class='ckb'>"+keys+"</div><div class='cka'>"+arw+"</div></div>"+
+    "<div class='ch-legend'><span><i class='da'></i>Arcade-standard games (like Alley Cat Simulator)</span><span><i class='dr'></i>Keyboard-relay games</span><span><i class='chgdot'></i>Changed, not saved yet</span></div>"+
+    "<div class='ch-note' style='margin:6px 0 12px'>Xbox names shown: A = ✕, B = ○, X = □, Y = △ on PlayStation. In arcade games the left stick always moves too.</div>"+
+    "<div class='ch-acts'><button class='ch-act save"+(dirty?'':' off')+"' onclick='chSaveNow()'"+(dirty?'':' disabled')+">💾 Save</button><button class='ch-act dim' onclick='chDiscard()'"+(dirty?'':' disabled')+">Discard changes</button><button class='ch-act dim' onclick='chResetMap()'>Reset to defaults</button><span class='ch-saved' id='chSaved'>✓ Saved</span></div>"+
+    "<div class='ch-live' id='chLive'></div>";
+}
+function chMapTick(act,on){
+  if(!chDraft)return;
+  document.querySelectorAll('#ctrlHelpModal .ck').forEach(function(el){var v=chDraft[el.getAttribute('data-code')];el.classList.toggle('live',!!(v&&act[v]));});
+  var lv=document.getElementById('chLive');if(lv){var names=Object.keys(act).map(chName);lv.textContent=names.length?('Pressing: '+names.join(', ')):(on?'Press any controller button to see which keys it presses.':'Connect a controller to set up buttons.');}
+  if(chSel){var fresh=Object.keys(act).filter(function(k){return !chPrevAct[k];});
+    if(fresh.length){var inp=fresh[0];
+      if(inp.charAt(0)!=='b'&&CH_ACT_OF[chSel]&&!CH_DIR.hasOwnProperty(chSel)){chPrevAct=act;chMsg='Use a button for this key — the stick only works for movement keys.';chRender();return;}
+      chPrevAct=act;chAssignKey(chSel,inp);chSel=null;chMsg='';chRender();}}
+}
+window.chPick=function(code){chSel=(code&&chSel!==code)?code:null;chMsg='';chRender();};
+window.chUnassign=function(){if(!chSel)return;chDraft[chSel]=null;chSel=null;chMsg='';chRender();};
+window.chSaveNow=function(){if(!chDraft)return;chSaveDraft();chWarn=false;chSel=null;chMsg='';chRender();setTimeout(chFlashSaved,30);};
+window.chDiscard=function(){chDraft=chSavedU();chWarn=false;chSel=null;chMsg='';chRender();};
+function chWizNext(){chSel=null;chRender();}
+var chPlKey='';
+function chPlayersHtml(){
+  var pads=chPads().sort(function(a,b){return a.index-b.index;}),slots=window.arcadePadSlots?window.arcadePadSlots(true):{};chPlKey=pads.map(function(p){return p.index+':'+slots[p.index];}).join(',');
+  var rows=pads.map(function(p){var cur=slots[p.index]||('p'+(p.index+1));
+    var opts=['p1','p2','p3','p4','off'].map(function(s){return "<button class='ch-slot"+(cur===s?' on':'')+(s==='off'?' off':'')+"' onclick='chAssign("+p.index+",\""+s+"\")'>"+(s==='off'?'OFF':s.toUpperCase())+"</button>";}).join('');
+    return "<div class='ch-pl' data-idx='"+p.index+"'><div class='ch-pl-ico'>🎮</div><div class='ch-pl-body'><div class='ch-pl-name'>"+chEsc(String(p.id||'Controller').replace(/\s*\(.*?\)\s*/g,' ').trim().slice(0,48))+"</div><div class='ch-pl-sub'>Press a button on it to light this row</div></div><div class='ch-slots'>"+opts+"</div></div>";}).join('');
+  if(!pads.length)rows="<div class='ch-fix'><div class='q' style='color:#ffd86b'>No controllers yet</div>Pair a controller and press any button on it. It appears here and you can choose which player it is.</div>";
+  return "<div class='ch-note'>Choose which player each controller is. The first controller is <b>Player 1</b> unless you change it, so one person can play with just a controller. Click a player to set it. If another controller already has that player, the two swap. Saved on this browser.</div>"+rows+
+    chKbRow()+
+    "<div class='ch-acts' style='margin-top:12px'><button class='ch-act gold' onclick='chAutoSlots()'>Auto (first controller = P1)</button>"+(pads.length>1?"<button class='ch-act dim' onclick='chSwap12()'>Swap P1 ⇄ P2</button>":"")+"</div>";
+}
+function chKbRow(){var cur=window.arcadeKbSlot?window.arcadeKbSlot():'p1';
+  var opts=['p1','p2','p3','p4','off'].map(function(s){return "<button class='ch-slot"+(cur===s?' on':'')+(s==='off'?' off':'')+"' onclick='chKbAssign(\""+s+"\")'>"+(s==='off'?'OFF':s.toUpperCase())+"</button>";}).join('');
+  return "<div class='ch-pl kb'><div class='ch-pl-ico'>⌨️</div><div class='ch-pl-body'><div class='ch-pl-name'>Keyboard</div><div class='ch-pl-sub'>Can share a player with a controller. Some games also read the keyboard directly, so they may ignore this. <a href='#' onclick='event.preventDefault();closeControllerHelp(true);if(window.openInputConfig)openInputConfig();' style='color:#7fd4ff;font-weight:800'>Change keyboard keys ›</a></div></div><div class='ch-slots'>"+opts+"</div></div>";}
+window.chKbAssign=function(v){if(window.arcadeSetKbSlot)window.arcadeSetKbSlot(v);chRender();};
+function chPlayersTick(pads){
+  var slots=window.arcadePadSlots?window.arcadePadSlots():{};
+  var key=pads.slice().sort(function(a,b){return a.index-b.index;}).map(function(p){return p.index+':'+slots[p.index];}).join(',');
+  if(key!==chPlKey){chRender();return;}
+  pads.forEach(function(p){var row=document.querySelector("#ctrlHelpModal .ch-pl[data-idx='"+p.index+"']");if(!row)return;var a=chActive(p);row.classList.toggle('live',Object.keys(a).length>0);});
+}
+window.chAssign=function(i,s){if(window.arcadeSetPadSlot)window.arcadeSetPadSlot(i,s);chRender();};
+window.chAutoSlots=function(){if(window.arcadeAutoPadSlots)window.arcadeAutoPadSlots();chRender();};
+window.chSwap12=function(){var slots=window.arcadePadSlots?window.arcadePadSlots(true):{};var i1=null;for(var k in slots){if(slots[k]==='p1')i1=+k;}if(i1===null)return;window.chAssign(i1,'p2');};
+window.chShowTab=function(t){chSel=null;chTab=t;if(t!=='map')chWiz=null;chRender();};
+window.chWizStart=function(){};
+window.chSetOne=function(id){window.chPick(id);};
+window.chWizSkip=function(){chWizNext();};
+window.chWizClear=function(){window.chUnassign();};
+window.chWizStop=function(){chWiz=null;chRender();};
+window.chResetMap=function(){chDraft=chDefaultU();chSel=null;chMsg='';chRender();};
+window.openControllerHelp=function(tab){
+  closeControllerHelp(true);chTab=tab||'connect';chWiz=null;chMap=chLoad();chDraft=null;chSel=null;chWarn=false;chMsg='';
+  var m=document.createElement('div');m.id='ctrlHelpModal';m.innerHTML="<div class='ch-box' role='dialog' aria-label='Connect controllers'></div>";
+  m.addEventListener('click',function(e){if(e.target===m)closeControllerHelp();});
+  document.body.appendChild(m);chRender();if(chRaf)cancelAnimationFrame(chRaf);chRaf=requestAnimationFrame(function(){chTick(false);});
+};
+window.closeControllerHelp=function(force){var m=document.getElementById('ctrlHelpModal');if(m&&force!==true&&chDirty()){chTab='map';chWarn=true;chSel=null;chRender();var b=m.querySelector('.ch-box');if(b)b.scrollTop=0;return;}chDraft=null;chSel=null;chWarn=false;if(m)m.remove();if(chRaf){cancelAnimationFrame(chRaf);chRaf=null;}chWiz=null;};
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('ctrlHelpModal'))closeControllerHelp();});
+})();</script>
+</body></html>
 
