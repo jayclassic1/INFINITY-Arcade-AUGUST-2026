@@ -11,6 +11,32 @@
     @keyframes fadeInRestricted{from{opacity:0}to{opacity:1}}
     @keyframes pulseRestricted{0%{transform:scale(.7);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    #coinGate.cg{position:relative;overflow:hidden;background:#04060c;border:1px solid #23305a;border-radius:10px;isolation:isolate}
+    #coinGate .cg-bg{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) saturate(1.3);opacity:.28;z-index:-3}
+    #coinGate .cg-glow{position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse 60% 45% at 50% 42%,rgba(255,196,64,.16),transparent 70%),radial-gradient(ellipse 90% 70% at 50% 110%,rgba(80,110,255,.18),transparent 70%),linear-gradient(180deg,rgba(4,6,12,.55),rgba(4,6,12,.92))}
+    #coinGate .cg-scan{position:absolute;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px)}
+    #coinGate .cg-card{display:flex;flex-direction:column;align-items:center;gap:30px;padding:36px 24px 32px;max-width:100%;text-align:center}
+    #coinGate .cg-thumb{width:136px;height:120px;border-radius:10px;background:#0b1020 center/cover no-repeat;border:1px solid rgba(255,215,0,.35);box-shadow:0 0 0 4px rgba(0,0,0,.6),0 0 30px rgba(255,196,64,.18)}
+    #coinGate .cg-name{font-size:.8rem;letter-spacing:4px;text-transform:uppercase;color:#c9d4f5;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #coinGate .cg-marquee{font-size:clamp(1.5rem,5.6vw,3.4rem);font-weight:900;letter-spacing:.18em;white-space:nowrap;color:#ffd76a;line-height:1;text-shadow:0 0 6px rgba(255,215,106,.9),0 0 22px rgba(255,170,40,.55),0 0 48px rgba(255,140,0,.3);animation:cgFlicker 4.5s infinite}
+    @keyframes cgFlicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.55}94%{opacity:1}96%{opacity:.75}97%{opacity:1}}
+    #coinGate .cg-slot{display:flex;align-items:center;gap:14px;padding:10px 18px;border-radius:12px;background:linear-gradient(180deg,#141a2c,#0a0e1a);border:1px solid #2c3966;box-shadow:inset 0 2px 6px rgba(0,0,0,.7)}
+    #coinGate .cg-slit{width:6px;height:34px;border-radius:3px;background:#000;box-shadow:inset 0 0 0 1px #3a4770,0 0 10px rgba(255,190,60,.55);position:relative;overflow:hidden}
+    #coinGate .cg-slit::after{content:'';position:absolute;left:0;right:0;height:40%;background:linear-gradient(180deg,transparent,rgba(255,200,80,.9),transparent);animation:cgSlit 1.8s ease-in-out infinite}
+    @keyframes cgSlit{0%{top:-40%}100%{top:100%}}
+    #coinGate .cg-coin{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:.95rem;color:#5a3a00;background:radial-gradient(circle at 35% 30%,#fff3b0,#ffcc33 45%,#c98a00);box-shadow:0 0 12px rgba(255,200,60,.5),inset 0 -2px 3px rgba(0,0,0,.25)}
+    #coinGate .cg-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+    #coinGate .cg-price b{color:#fff;font-size:1rem;letter-spacing:1px}
+    #coinGate .cg-price span{color:#8f9cc4;font-size:.72rem;letter-spacing:.5px}
+    #coinGate .cg-hs{display:none;font-size:.72rem;letter-spacing:2px;color:#ffd76a;padding:5px 12px;border:1px solid rgba(255,215,106,.35);border-radius:999px;background:rgba(255,215,106,.06)}
+    #coinGate .cg-play{position:relative;padding:14px 56px;font-size:1.15rem;font-weight:900;letter-spacing:.3em;color:#1a1000;background:linear-gradient(180deg,#ffe58a,#ffbf2e 55%,#e09a00);border:none;border-radius:12px;cursor:pointer;box-shadow:0 5px 0 #8a5a00,0 0 28px rgba(255,190,50,.45);transition:transform .08s,box-shadow .08s,filter .15s}
+    #coinGate .cg-play:hover{filter:brightness(1.08)}
+    #coinGate .cg-play:active{transform:translateY(4px);box-shadow:0 1px 0 #8a5a00,0 0 18px rgba(255,190,50,.35)}
+    #coinGate .cg-play:focus-visible{outline:2px solid #fff;outline-offset:4px}
+    #coinGate .cg-buy{padding:12px 26px;font-size:.95rem;font-weight:800;letter-spacing:1px;color:#22c55e;background:rgba(34,197,94,.06);border:1px solid #22c55e;border-radius:12px;cursor:pointer}
+    #coinGate .cg-owned{display:none;color:#22c55e;font-size:.85rem;font-weight:800;letter-spacing:2px}
+    @media (max-width:600px){#coinGate .cg-card{padding:24px 16px;gap:14px}#coinGate .cg-thumb{width:102px;height:90px}#coinGate .cg-play{padding:13px 44px}}
+    @media (prefers-reduced-motion:reduce){#coinGate .cg-marquee,#coinGate .cg-slit::after{animation:none}}
     @keyframes glowRestricted{0%{text-shadow:0 0 40px rgba(239,68,68,.6),0 0 80px rgba(239,68,68,.3)}100%{text-shadow:0 0 60px rgba(239,68,68,.8),0 0 120px rgba(239,68,68,.5),0 0 180px rgba(239,68,68,.2)}}
     #loading h1{letter-spacing:8px;margin:0;background:linear-gradient(90deg,#ff0000,#ff8800,#ffdd00,#00ff66,#00aaff,#8b5cf6,#ff44aa,#ff0000);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbowShift 4s linear infinite;filter:drop-shadow(0 0 10px #00aaff) drop-shadow(0 0 24px #8b5cf6)}
     @keyframes loadPulse{from{text-shadow:0 0 8px #00aaff,0 0 16px #0066ff,0 0 26px #8b5cf6}to{text-shadow:0 0 14px #00e5ff,0 0 34px #0066ff,0 0 58px #a855f7}}
@@ -9389,18 +9415,19 @@ async function openBackroomGame(id){
       <span id='sessionRunOver' style='display:none;font-size:.75rem;font-weight:800;padding:4px 10px;border:1px solid rgba(255,215,0,.5);border-radius:6px;color:#ffd700;background:rgba(255,215,0,.08)'></span>
       <button id='insertMoreBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' style='display:none;padding:8px 18px;font-size:.82rem;background:rgba(0,0,0,.9);border:1px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;letter-spacing:1px'>INSERT TOKEN</button>
     </div>
-    <div id='coinGate' style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;border:1px solid #3456aa;border-radius:8px'>
-      <div style='font-size:2.5rem;color:var(--gold);letter-spacing:4px;text-shadow:0 0 20px rgba(255,215,0,.5);animation:pulse 2s infinite'>INSERT TOKEN</div>
-      ${sub.paysTickets!==false?`<div style='color:var(--muted);margin:16px 0 8px;font-size:.9rem'>${sub.tokenCost||1} Token${(sub.tokenCost||1)>1?'s':''} per run &middot; when the run ends, submit your score</div>`:`<div style='margin:16px 0 8px'></div>`}
-      <div style='color:#8bb4ff;font-size:.75rem;margin-bottom:8px'>⏱ Game sessions last up to 2 hours</div>
-      <div id='highScoreDisplay' style='display:none;color:#3d6090;font-size:.75rem;margin-bottom:8px'></div>
-      <div id='ownedNotice' style='display:none;color:#22c55e;font-size:.9rem;font-weight:700;margin-bottom:12px'>YOU OWN THIS GAME - PLAY FREE</div>
-      <div id='coinGateButtons' style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center'>
-        <button id='coinPlayBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' class='btn' style='padding:12px 40px;font-size:1.1rem;border-color:var(--gold);color:var(--gold);cursor:pointer;letter-spacing:2px'>PLAY</button>
-        ${sub.purchasePrice>0&&sub.paysTickets!==true?`
-        <button id='coinBuyBtn' onclick='buyGame("${id}")' class='btn' style='padding:12px 30px;font-size:1rem;border-color:#22c55e;color:#22c55e;cursor:pointer;letter-spacing:1px'>BUY (<span style='background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700'>${sub.purchasePrice} Tokens</span>)</button>
-        `:''}</div>
-      <div style='color:var(--cyan);font-size:.85rem;margin-top:12px'>Balance: <span id='coinGateBalance'>${Math.floor(S.quarters)||0}</span> Tokens</div>
+    <div id='coinGate' class='cg' style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center'>
+      <div class='cg-glow'></div><div class='cg-scan'></div>
+      <div class='cg-card'>
+        <div class='cg-marquee'>INSERT TOKEN</div>
+        <div id='highScoreDisplay' hidden style='display:none'></div>
+        <div id='ownedNotice' class='cg-owned'>YOU OWN THIS GAME &middot; PLAY FREE</div>
+        <div id='coinGateButtons' style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:4px'>
+          <button id='coinPlayBtn' onclick='arcadeButtonHit(this);insertCoin("${id}")' class='cg-play'>PLAY</button>
+          ${sub.purchasePrice>0&&sub.paysTickets!==true?`
+          <button id='coinBuyBtn' onclick='buyGame("${id}")' class='cg-buy'>BUY (<span style='background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700'>${sub.purchasePrice} Tokens</span>)</button>
+          `:''}</div>
+        <span id='coinGateBalance' hidden>${Math.floor(S.quarters)||0}</span>
+      </div>
     </div>
     <div id='gameContainer' style='flex:1;display:none;position:relative;min-height:0'>
       <div id='sessionLatestScore' style='display:none'></div>
@@ -9462,7 +9489,7 @@ async function openBackroomGame(id){
         const hs=Number(highScore?.score||0);
         if(hs>0){
           const hsEl=document.getElementById('highScoreDisplay');
-          if(hsEl){hsEl.textContent='High Score: '+hs.toLocaleString();hsEl.style.display='block';}
+          if(hsEl){hsEl.textContent='High Score: '+hs.toLocaleString();}
         }
       }catch(e){console.warn('Leaderboard high score fetch failed:',e);}
     },200);
