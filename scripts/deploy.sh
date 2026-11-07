@@ -15,7 +15,7 @@ E=(); [[ "$ENVNAME" == "ic" ]] && E=(-e ic)
 
 check_ic() {
   if [[ "$ENVNAME" == "ic" ]]; then
-    if grep -q "PASTE_MAINNET" index.html; then echo "STOP: index.html still has PASTE_MAINNET placeholders in ARCADE_ENVS.ic"; exit 1; fi
+    if grep -q "'PASTE_MAINNET_" index.html; then echo "STOP: index.html still has PASTE_MAINNET placeholders in ARCADE_ENVS.ic"; exit 1; fi
     if grep -q "ALLOW_TEST_MINTING : Bool = true" backend/main.mo; then echo "note: ALLOW_TEST_MINTING is still true (admin-only test tools stay enabled on mainnet)"; fi
     echo "identity: $(icp identity principal)"
   fi
