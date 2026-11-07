@@ -416,7 +416,8 @@ new MutationObserver(mutations=>{
     }
     return '';
   }
-  function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(/^(https:\/\/|\/(?!\/)|data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);base64,|http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?\/)/i.test(u))return u;return '';}
   function renderWalletNftMedia(n,style='width:100%;height:90px;object-fit:contain;background:#0a0a1a'){
     const mediaUrl=resolveWalletNftMediaUrl(n);
     if(mediaUrl&&typeof buildNftImageTag==='function') return buildNftImageTag(mediaUrl,[],style);
@@ -2515,8 +2516,8 @@ const ARCADE_CANISTER_ID=ENV.backend;
 let _arcadeAccountId=null;
 function getArcadeAccountId(){if(!_arcadeAccountId) _arcadeAccountId=principalToAccountHex(ARCADE_CANISTER_ID); return _arcadeAccountId;}
 const ACCOUNT_DOMAIN = new TextEncoder().encode('\x0Aaccount-id');
-const AUTH_SESSION_TTL_NS = BigInt(7*24*60*60)*1000000000n;
-const AUTH_IDLE_TIMEOUT_MS = 7*24*60*60*1000;
+const AUTH_SESSION_TTL_NS = BigInt(24*60*60)*1000000000n; // 24h login
+const AUTH_IDLE_TIMEOUT_MS = 4*60*60*1000; // 4h without activity on the page logs out
 const AUTH_CLIENT_CREATE_OPTIONS = Object.freeze({idleOptions:Object.freeze({idleTimeout:AUTH_IDLE_TIMEOUT_MS})});
 let authClient=null, identityPrincipal=null;
 
@@ -3422,7 +3423,7 @@ function renderSquareAvatar(avatar,size,radius){
     const tag=buildProfileAvatarImageTag(avatar,`width:${size}px;height:${size}px;border-radius:${radius}px;object-fit:cover;border:1px solid rgba(255,255,255,.1)`);
     if(tag) return tag;
   }
-  const url=(typeof avatar==='string')?avatar:(avatar?.avatarUrl||null);
+  const url=safeUrl((typeof avatar==='string')?avatar:(avatar?.avatarUrl||null));
   if(url) return `<img src="${url}" style="width:${size}px;height:${size}px;border-radius:${radius}px;object-fit:cover;border:1px solid rgba(255,255,255,.1)"/>`;
   return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:rgba(22,27,34,.7);border:1px solid rgba(255,255,255,.1)"></div>`;
 }
@@ -3851,7 +3852,7 @@ function updateProfileDisplay(){
   const p=getProfile();
   if(p&&p.name){
     if(p.avatarUrl||p.avatarNft){
-      pill.innerHTML=buildProfileAvatarImageTag(p,'width:22px;height:22px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px')+` ${p.name}`;
+      pill.innerHTML=buildProfileAvatarImageTag(p,'width:22px;height:22px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px')+` ${escHtml(p.name)}`;
     }else{
       pill.textContent=p.name;
     }
@@ -4052,7 +4053,7 @@ async function renderLotteryPanel(){
         :`<span style="font-size:.68rem;color:#7f93c2">${c?'You have no entries this cycle. ':''}Entries unlock at ${l.tiers.join(' / ')} VP Badges.</span>`;
       const body=c?`<div style="font-size:.74rem;color:#cbd5e1;line-height:1.7">Draw <b>${Math.min(Number(c.drawsDone)+1,Number(c.drawsTotal))}</b> of <b>${Number(c.drawsTotal)}</b> · Next draw in <b class="lottery-countdown" data-at="${Number(c.nextDrawAt)/1e6}" style="color:${l.color}">…</b><br>Prize per win: <b style="color:${l.color}">${Number(c.perWin).toLocaleString()} ${l.unit}</b> · Entries left: <b>${Number(c.remaining)}</b> of ${Number(c.entriesTotal)}</div>`
         :`<div style="font-size:.74rem;color:#7f93c2">No cycle running. ${st.enabled?'A new cycle starts as soon as the DAO treasury can fund every entry.':'The lottery is paused.'}</div>`;
-      return `<div style="flex:1;min-width:240px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid ${l.color}55;box-shadow:0 0 14px ${l.color}22"><div style="font-size:.72rem;font-weight:900;letter-spacing:2px;color:${l.color};margin-bottom:6px">${l.name}</div>${body}<div style="margin-top:8px">${myHtml}</div></div>`;
+      return `<div style="flex:1;min-width:240px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid ${l.color}55;box-shadow:0 0 14px ${l.color}22"><div style="font-size:.72rem;font-weight:900;letter-spacing:2px;color:${l.color};margin-bottom:6px">${escHtml(l.name)}</div>${body}<div style="margin-top:8px">${myHtml}</div></div>`;
     };
     const recent=[...(hist||[])].reverse().slice(0,6).map(h=>{
       const w=(h[2]||[]).length, each=w?Math.floor(Number(h[3])/w):0, isT=h[1]==='token-lottery';
@@ -4411,8 +4412,8 @@ async function openListNftModal(){
       return;
     }
     grid.innerHTML=allNfts.map(n=>`<div style='background:#0d1a30;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .2s' onmouseenter='this.style.borderColor="var(--gold)"' onmouseleave='this.style.borderColor="#1a3a6a"' onclick='document.getElementById("listNftPickerModal").remove();listNftInBooth("${n.canisterId}","${n.tokenId||''}",${n.index})'>
-      <img src='${n.imageUrl}' style='width:100%;height:100px;object-fit:contain;background:#0a0a1a' onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><rect fill=%22%23112%22 width=%221%22 height=%221%22/></svg>'"/>
-      <div style='padding:5px 6px;text-align:center'><div style='font-size:.7rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${n.name}</div><div style='font-size:.5rem;color:var(--muted);margin-top:2px'>${n.standard}</div></div>
+      <img src='${safeUrl(n.imageUrl)}' style='width:100%;height:100px;object-fit:contain;background:#0a0a1a' onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><rect fill=%22%23112%22 width=%221%22 height=%221%22/></svg>'"/>
+      <div style='padding:5px 6px;text-align:center'><div style='font-size:.7rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(n.name)}</div><div style='font-size:.5rem;color:var(--muted);margin-top:2px'>${n.standard}</div></div>
     </div>`).join('');
   }catch(e){
     grid.innerHTML='<div style="color:var(--red);font-size:.8rem;grid-column:1/-1;text-align:center;padding:20px">'+escHtml(safeUserErrorMessage(e,'NFT scan'))+'</div>';
@@ -4537,8 +4538,8 @@ async function scanAndCacheWalletNfts(forceRefresh=true){
 }
 
 function buildNftImageTag(src,fallbacks=[],style="width:100%;height:100%;object-fit:contain"){
-  const candidates=[src,...fallbacks].filter((u,i,a)=>u&&a.indexOf(u)===i);
-  const first=(window._nftImageResolvedCache&&window._nftImageResolvedCache[src])||candidates[0]||'';
+  const candidates=[src,...fallbacks].map(safeUrl).filter((u,i,a)=>u&&a.indexOf(u)===i);
+  const first=safeUrl((window._nftImageResolvedCache&&window._nftImageResolvedCache[src])||candidates[0]||'');
   const attr=JSON.stringify(candidates).replace(/"/g,'&quot;');
   return `<img src="${first}" data-candidates="${attr}" data-ci="0" loading="lazy" decoding="async" style="${style}" onload="try{const arr=JSON.parse(this.dataset.candidates||'[]');window._nftImageResolvedCache=window._nftImageResolvedCache||{};if(arr[0])window._nftImageResolvedCache[arr[0]]=this.currentSrc||this.src;}catch(_e){}" onerror="try{var a=JSON.parse(this.dataset.candidates||'[]');var i=parseInt(this.dataset.ci||'0',10)+1;if(i<a.length){this.dataset.ci=String(i);this.src=a[i];window._nftImageResolvedCache=window._nftImageResolvedCache||{};if(a[0])window._nftImageResolvedCache[a[0]]=a[i];}else{this.style.display='none';}}catch(_e){this.style.display='none';}"/>`;
 }
@@ -4644,7 +4645,7 @@ async function loadWalletNfts(forceRefresh=false){
     const cachedNfts=_ownedWalletNftsCache.items;
     grid.innerHTML=cachedNfts.slice(0,6).map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
       ${buildNftImageTag(n.imageUrl,[],`width:100%;height:90px;object-fit:contain;background:#0a0a1a`)}
-      <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${n.collection} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
+      <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${escHtml(n.collection)} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
     </div>`).join('')+_walletMoreNfts(cachedNfts.length);
     queueMicrotask(()=>loadWalletNfts(true));
     return;
@@ -4658,7 +4659,7 @@ async function loadWalletNfts(forceRefresh=false){
     }
     grid.innerHTML=allNfts.slice(0,6).map(n=>`<div style='background:#0a1428;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden'>
       ${buildNftImageTag(n.imageUrl,[],`width:100%;height:90px;object-fit:contain;background:#0a0a1a`)}
-      <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${n.collection} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
+      <div style='padding:4px 6px;text-align:center'><div style='font-size:.65rem;color:#fff'>${escHtml(n.collection)} #${n.index}</div><div style='font-size:.5rem;color:var(--muted);margin-top:1px'>${n.standard||'ICRC-7'}</div><div style='font-size:.45rem;color:var(--muted);word-break:break-all;line-height:1.2;margin-top:2px;opacity:.7'>${n.tokenId||''}</div></div>
     </div>`).join('')+_walletMoreNfts(allNfts.length);
   }catch(e){
     console.error('Wallet NFT scan failed:',e);
@@ -4666,7 +4667,8 @@ async function loadWalletNfts(forceRefresh=false){
   }
 }
 
-function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(/^(https:\/\/|\/(?!\/)|data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);base64,|http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?\/)/i.test(u))return u;return '';}
 async function buyQuartersPrompt(){
   if(!S.connected) return showConnect();
   if(!S.identity) return alert('Please connect your wallet first');
@@ -4860,7 +4862,12 @@ window.addEventListener('message',async(event)=>{
   const scoreTypeMap={'SCORE':'arcade-latest-score','GAME_OVER':'arcade-latest-score','LATEST_SCORE':'arcade-latest-score','ARCADE_SET_LATEST_SCORE':'arcade-latest-score'};
   const typeMap={...scoreTypeMap,'SAVE_CHECKPOINT':'arcade-checkpoint','LOAD_CHECKPOINT':'arcade-load-checkpoint','CLEAR_CHECKPOINT':'arcade-clear-checkpoint','REQUEST_COIN':'arcade-request-coin','GET_INVENTORY':'arcade-get-inventory','CHECK_NFT':'arcade-check-nft','GET_INPUT_CONFIG':'arcade-get-input-config','GET_PLAYER_STATS':'arcade-get-player-stats','GET_BADGES':'arcade-get-badges','GET_PERKS':'arcade-get-perks','GET_CONTROLLERS':'arcade-get-controllers'};
   const msgType=typeMap[event.data.type]||event.data.type;
-  const gameId=event.data.gameId||_currentGamePlaying;
+  // Security: a message is only honoured when it comes from the game frame (or a frame inside it),
+  // and it always applies to the game currently being played - never to a gameId the sender names.
+  { const _gf0=document.getElementById('gameIframe'); const _gw0=_gf0&&_gf0.contentWindow; let _from=false;
+    try{ _from=!!_gw0&&!!event.source&&event.source!==window&&(event.source===_gw0||event.source.parent===_gw0); }catch(_){ _from=false; }
+    if(!_from) return; }
+  const gameId=_currentGamePlaying;
   // Run check: a game asks for this run's code and proves its final score with
   // sha256(runKey + ':' + runCode + ':' + score). Only the game's own frame gets an answer.
   if(msgType==='arcade-get-run'||msgType==='GET_RUN'){
@@ -4935,8 +4942,9 @@ window.addEventListener('message',async(event)=>{
   }
 
   // Checkpoint save (on-chain + localStorage fallback)
+  const _ckTicket=(()=>{ if(!gameId) return false; try{ const g=getSubmissions().find(x=>x.id===gameId); return !!(g&&g.paysTickets!==false); }catch(_){ return false; } })();
   if(msgType==='arcade-checkpoint'){
-    if(!gameId||!S.connected) return;
+    if(!gameId||!S.connected||_ckTicket) return; // ticket games: every paid run starts fresh
     const saveData=JSON.stringify({data:event.data.data,savedAt:Date.now()});
     // localStorage as instant fallback
     const key='arcade_checkpoint_'+S.principalText+'_'+gameId;
@@ -4950,7 +4958,7 @@ window.addEventListener('message',async(event)=>{
 
   // Checkpoint load request (try on-chain first, fall back to localStorage)
   if(msgType==='arcade-load-checkpoint'){
-    if(!gameId||!S.connected){
+    if(!gameId||!S.connected||_ckTicket){
       event.source?.postMessage({type:'arcade-checkpoint-data',data:null},'*');
       return;
     }
@@ -6576,7 +6584,6 @@ function backendIdl({IDL}){
     listExistingNft:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     listExistingNftWithTokenKey:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     createPendingExistingNftListingWithTokenKey:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
-    listMintedNft:IDL.Func([IDL.Text,IDL.Text,IDL.Text,IDL.Nat,IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     promoteNftToJaysPicks:IDL.Func([IDL.Text],[Result],[]),
     adminSetNftCollectionTag:IDL.Func([IDL.Text,IDL.Text],[Result],[]),
     removeNftListing:IDL.Func([IDL.Text],[Result],[]),
@@ -6635,7 +6642,6 @@ function backendIdl({IDL}){
     adminRejectZipGame:IDL.Func([IDL.Text,IDL.Text,IDL.Text],[Result],[]),
     adminSetSubmissionFeeConfig:IDL.Func([IDL.Nat,IDL.Nat,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     purchaseGame:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Record({tokenBalance:IDL.Nat}),err:IDL.Text})],[]),
-    recordIcpTip:IDL.Func([IDL.Text,IDL.Principal,IDL.Nat,IDL.Bool,IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
     getGameIcpTipSummary:IDL.Func([IDL.Text],[IcpTipSummary],['query']),
     getRecentGameIcpTips:IDL.Func([IDL.Text,IDL.Nat],[IDL.Vec(TipReceipt)],['query']),
     tryGame:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Record({tokenBalance:IDL.Nat,demoSeconds:IDL.Nat}),err:IDL.Text})],[]),
@@ -6749,6 +6755,8 @@ function backendIdl({IDL}){
     claimCreatorEarningsOnly:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     claimNftSellerEarningsOnly:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     sendTokens:IDL.Func([IDL.Principal,IDL.Nat],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),getMyTokenTransfers:IDL.Func([],[IDL.Record({sentLast24h:IDL.Nat,dailyLimit:IDL.Nat,history:IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Principal,IDL.Nat,IDL.Int))})],['query']),adminGetTokenTransfers:IDL.Func([IDL.Nat],[IDL.Vec(IDL.Tuple(IDL.Principal,IDL.Principal,IDL.Nat,IDL.Int))],['query']),tipCreatorWithTokens:IDL.Func([IDL.Text,IDL.Nat],[Result],[]),
+    adminSetTipDailyCap:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),
+    getTipDailyCap:IDL.Func([],[IDL.Nat],['query']),
     getTipEarningsBalanceOf:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
     requestAutoPayoutDestination:IDL.Func([IDL.Text,IDL.Opt(IDL.Principal),IDL.Text,IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),cancelAutoPayoutChange:IDL.Func([],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),setAutoPayoutEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),getMyAutoPayout:IDL.Func([],[IDL.Record({destLabel:IDL.Text,pendingLabel:IDL.Text,pendingEffectiveAt:IDL.Int,enabled:IDL.Bool,nextPayoutAt:IDL.Int,lastPayoutAt:IDL.Int,lastAmount:IDL.Nat,lastResult:IDL.Text,failures:IDL.Nat})],['query']),adminTestAutoPayoutNow:IDL.Func([IDL.Principal],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),claimTipEarnings:IDL.Func([],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     getCreatorIcpTipTotal:IDL.Func([IDL.Principal],[IDL.Nat],['query']),
@@ -6784,7 +6792,6 @@ function backendIdl({IDL}){
     // v4 withdraw (with subaccount hex from frontend)
     withdrawDeposit:IDL.Func([IDL.Principal,IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
     withdrawDepositToAccount:IDL.Func([IDL.Text,IDL.Nat,IDL.Text],[IDL.Variant({ok:IDL.Nat,err:IDL.Text})],[]),
-    debugSubaccount:IDL.Func([],[IDL.Record({subHex:IDL.Text,callerText:IDL.Text,selfText:IDL.Text,balanceE8s:IDL.Nat})],[]),
     getTotalCirculation:IDL.Func([],[IDL.Record({totalTickets:IDL.Nat,totalTokens:IDL.Nat,totalPlayers:IDL.Nat})],['query']),
     // adminSetTickets REMOVED - no admin ticket manipulation
 
@@ -6866,7 +6873,7 @@ function backendIdl({IDL}){
     adminWithdrawBoostTreasury:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),
     hasJackpotNotifications:IDL.Func([IDL.Principal],[IDL.Bool],['query']),
     claimJackpotNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Int))],[]),
-    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetSolvencyReport:IDL.Func([],[IDL.Variant({ok:IDL.Record({tokensE8s:IDL.Nat,ticketsE8s:IDL.Nat,gameTicketPoolsE8s:IDL.Nat,creatorRoyaltiesE8s:IDL.Nat,nftSellerEarningsE8s:IDL.Nat,tipEarningsE8s:IDL.Nat,refundsE8s:IDL.Nat,arcadeSharesE8s:IDL.Nat,daoTreasuryE8s:IDL.Nat,lotteryLockedE8s:IDL.Nat,totalLiabilitiesE8s:IDL.Nat,ledgerBalanceE8s:IDL.Nat,surplusE8s:IDL.Nat,shortfallE8s:IDL.Nat}),err:IDL.Text})],[]),getDaoTreasuryOverview:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,lockedTokenE8s:IDL.Nat,lockedTicketE8s:IDL.Nat,inGamesE8s:IDL.Nat,inProposalsE8s:IDL.Nat,inOfficialNftE8s:IDL.Nat,inPlayerNftE8s:IDL.Nat,inVpBadgeE8s:IDL.Nat,lotteryTokensPaid:IDL.Nat,lotteryTicketsPaid:IDL.Nat,lotteryDraws:IDL.Nat,vpHolders:IDL.Nat})],['query']),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),adminWithdrawPrizeBoothArcadeShare:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
+    getLotterySettings:IDL.Func([],[IDL.Record({enabled:IDL.Bool,tokenPayoutBps:IDL.Nat,ticketPayoutBps:IDL.Nat,testHoursPerWeek:IDL.Nat})],['query']),adminSetLotteryEnabled:IDL.Func([IDL.Bool],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryPayoutBps:IDL.Func([IDL.Text,IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminSetLotteryTestSpeed:IDL.Func([IDL.Nat],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminLotteryDrawNow:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Text,err:IDL.Text})],[]),adminGetSolvencyReport:IDL.Func([],[IDL.Variant({ok:IDL.Record({tokensE8s:IDL.Nat,ticketsE8s:IDL.Nat,gameTicketPoolsE8s:IDL.Nat,creatorRoyaltiesE8s:IDL.Nat,nftSellerEarningsE8s:IDL.Nat,tipEarningsE8s:IDL.Nat,refundsE8s:IDL.Nat,arcadeSharesE8s:IDL.Nat,daoTreasuryE8s:IDL.Nat,lotteryLockedE8s:IDL.Nat,totalLiabilitiesE8s:IDL.Nat,ledgerBalanceE8s:IDL.Nat,surplusE8s:IDL.Nat,shortfallE8s:IDL.Nat}),err:IDL.Text})],[]),getDaoTreasuryOverview:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,lockedTokenE8s:IDL.Nat,lockedTicketE8s:IDL.Nat,inGamesE8s:IDL.Nat,inProposalsE8s:IDL.Nat,inOfficialNftE8s:IDL.Nat,inPlayerNftE8s:IDL.Nat,inVpBadgeE8s:IDL.Nat,inTipsE8s:IDL.Nat,lotteryTokensPaid:IDL.Nat,lotteryTicketsPaid:IDL.Nat,lotteryDraws:IDL.Nat,vpHolders:IDL.Nat})],['query']),getLotteryStatus:IDL.Func([],[IDL.Record({enabled:IDL.Bool,daoTreasuryE8s:IDL.Nat,token:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat})),ticket:IDL.Opt(IDL.Record({startedAt:IDL.Int,drawsTotal:IDL.Nat,drawsDone:IDL.Nat,nextDrawAt:IDL.Int,perWin:IDL.Nat,entriesTotal:IDL.Nat,remaining:IDL.Nat}))})],['query']),getMyLotteryEntries:IDL.Func([IDL.Principal],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Bool))],['query']),hasLotteryWins:IDL.Func([IDL.Principal],[IDL.Bool],['query']),claimLotteryWinNotifications:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Text,IDL.Nat,IDL.Nat,IDL.Int))],[]),adminWithdrawPrizeBoothArcadeShare:IDL.Func([IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))}),IDL.Nat],[ResultNat],[]),getPrizeBoothArcadeShareBalance:IDL.Func([],[IDL.Nat],['query']),getLotteryHistory:IDL.Func([],[IDL.Vec(IDL.Tuple(IDL.Int,IDL.Text,IDL.Vec(IDL.Text),IDL.Nat))],['query']),
     adminRunLottery:IDL.Func([],[Result],[]),
     getTreasuryBalance:IDL.Func([],[IDL.Record({balanceE8s:IDL.Nat,reservedE8s:IDL.Nat,outstandingTokens:IDL.Nat,withdrawableE8s:IDL.Nat,tokenLiabilityE8s:IDL.Nat,royaltyLiabilityE8s:IDL.Nat,refundLiabilityE8s:IDL.Nat,ticketPoolLiabilityE8s:IDL.Nat,ticketHolderLiabilityE8s:IDL.Nat,backedTicketPoolTickets:IDL.Nat,safetyBufferE8s:IDL.Nat})],[]),
     getTreasuryLaneSnapshot:IDL.Func([],[IDL.Record({protectedAccountId:IDL.Text,operatingAccountId:IDL.Text,protectedBalanceE8s:IDL.Nat,operatingBalanceE8s:IDL.Nat,backendSafeWithdrawableE8s:IDL.Nat,protectedReservedE8s:IDL.Nat,operatingIncludedInBacking:IDL.Bool,operatingIncludedInBackendSafeMath:IDL.Bool})],[]),
@@ -6887,7 +6894,6 @@ async function getBackendActor(useIdentity=false){
     ? new HttpAgent({host:icpHost(),identity:authClient.getIdentity()})
     : new HttpAgent({host:icpHost()});
     await fetchRootKeyIfLocal(agent);
-  if(!useIdentity) await agent.fetchRootKey?.().catch(()=>{});
   const actor=Actor.createActor(backendIdl,{agent,canisterId:BACKEND_CANISTER});
   if(!useIdentity) backendActor=actor;
   return actor;
@@ -7961,12 +7967,12 @@ async function renderNftShop(){
     return `<div class='card' onclick='showUserNftDetail("${s.id}")' style='padding:0;overflow:hidden;cursor:pointer;${neonBorder}${!isAvailable?';opacity:.6':''}'>
       <div style='height:100px;display:grid;place-items:center;position:relative;overflow:hidden;background:#0a0a1a'>
         <img src="${firstImg}" data-fallbacks="${fallbackAttr}" data-fi="0" style="width:100%;height:100%;object-fit:contain" onerror="var a=(this.dataset.fallbacks||'').split('||');var i=(parseInt(this.dataset.fi||'0',10)+1);if(i<a.length){this.dataset.fi=String(i);this.src=a[i];}else{this.style.display='none';}"/>
-        <span style='position:absolute;top:4px;right:4px;font-size:.55rem;padding:1px 6px;border-radius:4px;background:rgba(0,0,0,.7);color:${RARITY_COLORS_U[s.rarity]||"#fff"};font-weight:700'>${s.rarity}</span>
+        <span style='position:absolute;top:4px;right:4px;font-size:.55rem;padding:1px 6px;border-radius:4px;background:rgba(0,0,0,.7);color:${RARITY_COLORS_U[s.rarity]||"#fff"};font-weight:700'>${escHtml(s.rarity)}</span>
         ${badge.label?`<span style='position:absolute;top:4px;left:4px;font-size:.5rem;padding:1px 4px;border-radius:3px;background:${badge.bg};color:${badge.color};border:1px solid ${badge.border}'>${badge.label}</span>`:`<span style='position:absolute;top:4px;left:4px;font-size:.5rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,.2);color:#c084fc;border:1px solid #c084fc'>👤</span>`}
         ${escBadge}
       </div>
       <div style='padding:4px 6px'>
-        <b style='font-size:.65rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${s.name}</b>
+        <b style='font-size:.65rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</b>
         <div style='display:flex;justify-content:space-between;align-items:center;margin-top:2px'>
           <span style='color:var(--gold);font-weight:800;font-size:.6rem'>🎟️ ${s.ticketCost.toLocaleString()}</span>
         </div>
@@ -8016,7 +8022,7 @@ async function renderNftShop(){
         <img src="${firstImg}" data-fallbacks="${fallbackAttr}" data-fi="0" style="width:100%;height:100%;object-fit:contain" onerror="var a=(this.dataset.fallbacks||'').split('||');var i=(parseInt(this.dataset.fi||'0',10)+1);if(i<a.length){this.dataset.fi=String(i);this.src=a[i];}else{this.style.display='none';}"/>
       </div>
       <div style='padding:4px 6px'>
-        <div style='font-weight:700;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${s.name}</div>
+        <div style='font-weight:700;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</div>
         <div style='color:var(--gold);font-weight:800;font-size:.6rem;margin-top:2px'>🎟️ ${s.ticketCost?.toLocaleString()||'?'}</div>
       </div>
     </div>`;
@@ -8061,7 +8067,7 @@ async function renderNftShop(){
   try{_grailIds=new Set(await (await getBackendActor()).getNftGrailIds());}catch(e){console.warn('Grail fetch:',e);}
   const grailNfts=allUserNfts.filter(s=>_grailIds.has(s.id));
   const grailRow=qs('nftRowGrails');
-  if(grailRow) grailRow.innerHTML=grailNfts.length?grailNfts.map(s=>`<div onclick='showUserNftDetail("${s.id}")' style='min-width:160px;max-width:160px;cursor:pointer;border-radius:10px;padding:3px;background:linear-gradient(135deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);flex-shrink:0;transition:all .2s;box-shadow:0 0 12px rgba(255,68,170,.2)' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.05)";this.style.boxShadow="0 0 20px rgba(255,68,170,.5)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)";this.style.boxShadow="0 0 12px rgba(255,68,170,.2)"'><img src="${s.imgData}" style='width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;display:block;border-radius:7px' onerror='this.style.display="none"'/></div>`).join(''):'<div style="color:#5a3d5a;font-size:.8rem;padding:20px">No grails listed yet</div>';
+  if(grailRow) grailRow.innerHTML=grailNfts.length?grailNfts.map(s=>`<div onclick='showUserNftDetail("${s.id}")' style='min-width:160px;max-width:160px;cursor:pointer;border-radius:10px;padding:3px;background:linear-gradient(135deg,#ff004c,#ff8a00,#ffe600,#2bff00,#00c8ff,#7a00ff,#ff00c8);flex-shrink:0;transition:all .2s;box-shadow:0 0 12px rgba(255,68,170,.2)' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.05)";this.style.boxShadow="0 0 20px rgba(255,68,170,.5)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)";this.style.boxShadow="0 0 12px rgba(255,68,170,.2)"'><img src="${safeUrl(s.imgData)}" style='width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;display:block;border-radius:7px' onerror='this.style.display="none"'/></div>`).join(''):'<div style="color:#5a3d5a;font-size:.8rem;padding:20px">No grails listed yet</div>';
 
   // Arcade Collections - show one thumbnail card per collection (not individual NFTs)
   const collectionNfts=allUserNfts.filter(s=>isCollectionNft(s));
@@ -8252,7 +8258,7 @@ async function renderCollection(forceRefresh=false){
     return `<div class='card' onclick='showCollectionNftDetail(${JSON.stringify(JSON.stringify(n))})' style='padding:0;overflow:hidden;width:min(120px,100%);max-width:120px;border:2px solid ${borderColor};box-shadow:0 0 12px ${borderColor}66,0 0 24px ${borderColor}33;cursor:pointer'>
       <div style='height:100px;background:#0a0a1a;overflow:hidden;display:grid;place-items:center'>${imgTag}</div>
       <div style='padding:4px 6px;text-align:center'>
-        <b style='font-size:.65rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${n.name}</b>
+        <b style='font-size:.65rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(n.name)}</b>
         <div style='font-size:.5rem;color:var(--muted)'>${n.standard}</div>
         <div style='display:flex;gap:4px;margin-top:4px'>${sendBtn}${listBtn}</div>
       </div>
@@ -8334,7 +8340,7 @@ function showCollectionNftDetail(jsonStr){
     <button onclick='event.stopPropagation();setProfilePfpFromCollectionNft(${JSON.stringify(JSON.stringify(n)).replace(/'/g,"&#39;")})' style='position:absolute;top:10px;left:10px;z-index:10;background:rgba(0,0,0,.75);border:2px solid transparent;border-image:linear-gradient(90deg,#ff0000,#ff8800,#ffdd00,#00ff66,#00aaff,#8b5cf6,#ff44aa,#ff0000) 1;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.72rem;font-weight:700;box-shadow:0 0 12px rgba(139,92,246,.4);transition:box-shadow .2s' onmouseenter='this.style.boxShadow="0 0 20px rgba(255,255,255,.4)"' onmouseleave='this.style.boxShadow="0 0 12px rgba(139,92,246,.4)"'><span style="background:linear-gradient(90deg,#ff0000,#ff8800,#ffdd00,#00ff66,#00aaff,#8b5cf6,#ff44aa,#ff0000);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbowShift 3s linear infinite">Set as PFP</span></button>
     <button onclick='document.getElementById("collectionNftModal")?.remove()' style='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.7);border:1px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:grid;place-items:center'>×</button>
     <div style='padding:18px 18px 0;text-align:center'>
-      <h3 style='margin:0 0 6px;color:#e0e6f0;font-size:1.25rem'>${n.name||`${n.collection} #${n.index}`}</h3>
+      <h3 style='margin:0 0 6px;color:#e0e6f0;font-size:1.25rem'>${escHtml(n.name||`${n.collection} #${n.index}`)}</h3>
       <div style='font-size:.75rem;color:#8ab4d8'>${n.collection||'NFT'} • ${n.standard||''}</div>
     </div>
     <div style='max-height:min(55vh,500px);background:#0a0a1a;display:grid;place-items:center;padding:20px'>
@@ -8978,19 +8984,19 @@ async function renderShowroom(){
 
   function gameCard(s,borderColor,isSpotlight){
     const detailsBtn=`<div onclick='event.stopPropagation();openGameDetails("${s.id}")' style='padding:3px 8px;text-align:center;font-size:.6rem;color:var(--cyan);cursor:pointer;border-top:1px solid rgba(255,255,255,.08);letter-spacing:.5px;transition:color .2s' onmouseenter='this.style.color="#fff"' onmouseleave='this.style.color="var(--cyan)"'>DETAILS</div>`;
-    const creatorStatsRow=`<div style='padding:8px 9px 6px;background:rgba(2,6,23,.5);border-bottom:1px solid rgba(255,255,255,.06)'><div style='font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${s.name}</div></div>`;
+    const creatorStatsRow=`<div style='padding:8px 9px 6px;background:rgba(2,6,23,.5);border-bottom:1px solid rgba(255,255,255,.06)'><div style='font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</div></div>`;
     const statsRow=renderGameCardStatsSlot(s.id,s.paysTickets!==false);
     if(isSpotlight){
       return `<div onclick='openBackroomGame("${s.id}")' style='min-width:140px;max-width:140px;margin:5px 7px;cursor:pointer;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);transition:transform .18s ease,box-shadow .18s ease;flex-shrink:0;border:2px solid transparent;background-image:linear-gradient(#0a0a1a,#0a0a1a),linear-gradient(135deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);background-origin:border-box;background-clip:padding-box,border-box;box-shadow:0 0 8px rgba(255,0,100,.25),0 0 16px rgba(0,150,255,.15);position:relative;transform-origin:center' onmouseenter='this.style.transform="translateY(-2px) scale(1.04)";this.style.zIndex="5";this.style.boxShadow="0 0 16px rgba(255,0,100,.4),0 0 30px rgba(0,150,255,.3)"' onmouseleave='this.style.transform="translateY(0) scale(1)";this.style.zIndex="";this.style.boxShadow="0 0 8px rgba(255,0,100,.25),0 0 16px rgba(0,150,255,.15)"'>
         ${creatorStatsRow}
-        ${s.thumb?`<img src='${s.thumb}' style='width:100%;height:120px;object-fit:cover'/>`:`<div style='height:120px;background:#1a2548;display:grid;place-items:center;font-size:2rem'>🎮</div>`}
+        ${s.thumb?`<img src='${safeUrl(s.thumb)}' style='width:100%;height:120px;object-fit:cover'/>`:`<div style='height:120px;background:#1a2548;display:grid;place-items:center;font-size:2rem'>🎮</div>`}
         ${statsRow}
         ${detailsBtn}
       </div>`;
     }
     return `<div onclick='openBackroomGame("${s.id}")' style='min-width:140px;max-width:140px;margin:5px 7px;cursor:pointer;border-radius:10px;border:2px solid ${borderColor};overflow:hidden;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);transition:transform .18s ease,box-shadow .18s ease;flex-shrink:0;position:relative;transform-origin:center;box-shadow:0 0 0 rgba(0,0,0,0)' onmouseenter='this.style.transform="translateY(-2px) scale(1.04)";this.style.zIndex="5";this.style.boxShadow="0 0 14px ${borderColor}"' onmouseleave='this.style.transform="translateY(0) scale(1)";this.style.zIndex="";this.style.boxShadow="0 0 0 rgba(0,0,0,0)"'>
       ${creatorStatsRow}
-      ${s.thumb?`<img src='${s.thumb}' style='width:100%;height:120px;object-fit:cover'/>`:`<div style='height:120px;background:#1a2548;display:grid;place-items:center;font-size:2rem'>🎮</div>`}
+      ${s.thumb?`<img src='${safeUrl(s.thumb)}' style='width:100%;height:120px;object-fit:cover'/>`:`<div style='height:120px;background:#1a2548;display:grid;place-items:center;font-size:2rem'>🎮</div>`}
       ${statsRow}
       ${detailsBtn}
     </div>`;
@@ -9103,7 +9109,7 @@ async function renderBackroom(){
     // Thumbnail only — fitted with object-fit:contain so the full image always shows, never
     // cropped, including on the card's hover scale-up.
     const thumbDiv=s.thumb
-      ?`<div style='background:#1a2548'><img src='${s.thumb}' style='width:100%;height:120px;object-fit:contain;display:block'/></div>`
+      ?`<div style='background:#1a2548'><img src='${safeUrl(s.thumb)}' style='width:100%;height:120px;object-fit:contain;display:block'/></div>`
       :`<div style='height:120px;background:#1a2548;display:grid;place-items:center;font-size:2rem'>🎮</div>`;
     const detailsBtn=`<div onclick='event.stopPropagation();openGameDetails("${s.id}")' style='padding:3px 6px;text-align:center;font-size:.6rem;color:var(--cyan);cursor:pointer;letter-spacing:.5px;flex:1' onmouseenter='this.style.color="#fff"' onmouseleave='this.style.color="var(--cyan)"'>DETAILS</div>`;
     const tipBtn=getGameCreatorPrincipalText(s)?`<button onclick='event.stopPropagation();openTipModal("${s.id}")' style='padding:3px 6px;border-radius:4px;cursor:pointer;font-size:.58rem;border:1px solid rgba(255,215,0,.35);background:rgba(255,215,0,.08);color:#ffd700;line-height:1;flex-shrink:0'>Tip</button>`:'';
@@ -9206,7 +9212,7 @@ async function openBackroomGame(id){
     resetArcadeInputReadiness('back-free-iframe-load');
     resetArcadeStartOverlay('back-free-iframe-load');
     const wrap=document.getElementById('gameIframeWrap');
-    wrap.innerHTML=`<iframe id='gameIframe' src='${arcadeVersionedGameUrl(sub.url)}' style='flex:1;border:none;border-radius:8px;background:#000;width:100%;height:100%' allow='fullscreen;gamepad' tabindex='0'></iframe>`;
+    wrap.innerHTML=`<iframe id='gameIframe' sandbox='allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-downloads' src='${arcadeVersionedGameUrl(sub.url)}' style='flex:1;border:none;border-radius:8px;background:#000;width:100%;height:100%' allow='fullscreen;gamepad' tabindex='0'></iframe>`;
     startGamepadForwarding();
     setTimeout(()=>{ ensureGameIframeFocus(); },300);
     setTimeout(()=>{ ensureGameIframeFocus(); },900);
@@ -9321,7 +9327,8 @@ async function openTipModal(gameId, presetAmount=1){
   modal.innerHTML=`<div class='panel' style='width:min(460px,94vw);padding:18px'>
     <div style='display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px'><h2 style='margin:0;color:#ffd700;font-size:1rem'>Tip Creator</h2><button class='btn' onclick='document.getElementById("m-icp-tip").remove()'>Close</button></div>
     <div style='font-size:.85rem;color:#fff;font-weight:800'>${escHtml(sub.name||'Game')}</div>
-    <div style='font-size:.68rem;color:#8aa6d8;word-break:break-all;margin:4px 0 12px'>Creator wallet: ${escHtml(creatorPrincipalText)}</div>
+    <div style='font-size:.68rem;color:#8aa6d8;word-break:break-all;margin:4px 0 6px'>Creator wallet: ${escHtml(creatorPrincipalText)}</div>
+    <div style='font-size:.64rem;color:#9ca3af;margin:0 0 12px'>90% goes to the creator, 10% supports the DAO treasury. Daily limit: 100 Tokens per player.</div>
     <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>
       <button class='btn' onclick='setTokenTipAmount(1)'>1 Token</button>
       <button class='btn' onclick='setTokenTipAmount(5)'>5 Tokens</button>
@@ -9435,7 +9442,7 @@ async function openGameDetails(id){
   if(allImages.length>1){
     galleryHtml=`
       <div style='position:relative;width:100%;flex-shrink:0'>
-        <img id='${galleryId}_img' src='${allImages[0]}' alt='${sub.name}' style='width:100%;max-height:70vh;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#111;object-fit:contain' onerror='this.style.display="none"'>
+        <img id='${galleryId}_img' src='${safeUrl(allImages[0])}' alt='${escHtml(sub.name)}' style='width:100%;max-height:70vh;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#111;object-fit:contain' onerror='this.style.display="none"'>
         <button onclick='galleryNav("${galleryId}",-1)' style='position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center'>&#8249;</button>
         <button onclick='galleryNav("${galleryId}",1)' style='position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center'>&#8250;</button>
         <div id='${galleryId}_dots' style='display:flex;justify-content:center;gap:6px;margin-top:8px'>
@@ -9444,14 +9451,14 @@ async function openGameDetails(id){
       </div>`;
   }else if(allImages.length===1){
     galleryHtml=`<div style='width:100%;flex-shrink:0'>
-      <img src='${allImages[0]}' alt='${sub.name}' style='width:100%;max-height:70vh;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#111;object-fit:contain' onerror='this.style.display="none"'>
+      <img src='${safeUrl(allImages[0])}' alt='${escHtml(sub.name)}' style='width:100%;max-height:70vh;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#111;object-fit:contain' onerror='this.style.display="none"'>
     </div>`;
   }
 
   modal.innerHTML=`<div class='panel' style='width:min(900px,98vw);max-height:90vh;display:flex;flex-direction:column;position:relative'>
     <div class='x' onclick='closeGameModal()'>✕</div>
     <div style='padding:4px 0 12px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap'>
-      <h2 style='margin:0'>${sub.name}</h2>
+      <h2 style='margin:0'>${escHtml(sub.name)}</h2>
       ${publicPoolBadge}
       <span style='color:var(--muted);font-size:.85rem'>by ${sub.dev||'Unknown'}</span>
       ${!isBackroom?renderCompactGameStats({ticketPool:backedTicketPoolCount,highScore:modalHighScore,highScoreOwner:modalHighScoreOwner,poolAvailable:isTicketGame},false):''}
@@ -9638,7 +9645,7 @@ async function _insertCoinInner(id){
   // Load or reload the game iframe
   resetArcadeInputReadiness('insert-coin-iframe-load');
   resetArcadeStartOverlay('insert-coin-iframe-load');
-  wrap.innerHTML=`<iframe id='gameIframe' src='${arcadeVersionedGameUrl(sub.url)}' style='flex:1;border:none;border-radius:8px;background:#000;width:100%;height:100%' allow='fullscreen;gamepad' tabindex='0'></iframe>`;
+  wrap.innerHTML=`<iframe id='gameIframe' sandbox='allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-downloads' src='${arcadeVersionedGameUrl(sub.url)}' style='flex:1;border:none;border-radius:8px;background:#000;width:100%;height:100%' allow='fullscreen;gamepad' tabindex='0'></iframe>`;
 
   startGamepadForwarding();
   setTimeout(()=>{ ensureGameIframeFocus(); },300);
@@ -9793,9 +9800,9 @@ async function openCategoryPage(room,category){
     <div style='flex:1;overflow-y:auto;padding:0 20px 20px'>
       <div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding-top:8px'>
         ${games.length?games.map(s=>`<div onclick='document.getElementById("m-category-page").remove();openBackroomGame("${s.id}")' style='cursor:pointer;border-radius:10px;border:2px solid ${borderColor};overflow:hidden;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);transition:all .2s' onmouseenter='this.style.position="relative";this.style.zIndex="5";this.style.transform="scale(1.03)"' onmouseleave='this.style.position="";this.style.zIndex="";this.style.transform="scale(1)"'>
-          ${s.thumb?`<img src='${s.thumb}' style='width:100%;height:100px;object-fit:cover'/>`:`<div style='height:100px;background:#1a2548;display:grid;place-items:center;font-size:2.5rem'>🎮</div>`}
+          ${s.thumb?`<img src='${safeUrl(s.thumb)}' style='width:100%;height:100px;object-fit:cover'/>`:`<div style='height:100px;background:#1a2548;display:grid;place-items:center;font-size:2.5rem'>🎮</div>`}
           <div style='padding:8px 10px'>
-            <div style='font-weight:700;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${s.name}</div>
+            <div style='font-weight:700;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</div>
             <div style='font-size:.65rem;color:var(--muted);margin-top:2px'>${s.dev||'Unknown'}</div>
             ${stats[s.id]?`<div style='font-size:.6rem;color:${titleColor};margin-top:4px'>${stats[s.id].plays} plays</div>`:''}
           </div>
@@ -10238,7 +10245,8 @@ async function renderDaoTreasuryOverview(){
       {icon:'🏅',name:'VP Badges',rate:'20% of every badge',v:N(o.inVpBadgeE8s),c:'#ffd86b'},
       {icon:'🖼️',name:'Official Arcade NFTs',rate:'20% of every redemption',v:N(o.inOfficialNftE8s),c:'#c084fc'},
       {icon:'🛒',name:'Player NFT sales',rate:'1.5% of every sale',v:N(o.inPlayerNftE8s),c:'#f472b6'},
-      {icon:'🗳️',name:'Proposal fees',rate:'100% of the 5-Token fee',v:N(o.inProposalsE8s),c:'#22c55e'}
+      {icon:'🗳️',name:'Proposal fees',rate:'100% of the 5-Token fee',v:N(o.inProposalsE8s),c:'#22c55e'},
+      {icon:'💝',name:'Creator tips',rate:'10% of every Token tip',v:N(o.inTipsE8s||0n),c:'#f472b6'}
     ];
     const tracked=src.reduce((t,x)=>t+x.v,0);
     const early=Math.max(0,bal+locked+paidE8s-tracked);
@@ -10993,8 +11001,8 @@ async function renderMyNftSubmissions(){
         :escStatus==='returned'?'<span style="color:var(--muted);font-size:.65rem">↩ Returned</span>'
         :'';
       return `<div style='display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2a3a5f'>
-        <img src="${s.imgData}" style="width:40px;height:40px;object-fit:cover;border-radius:6px"/>
-        <div style='flex:1'><b>${s.name}</b> <span style='color:${TIER_COLORS[s.tier]||"var(--muted)"}; font-size:.75rem'>${TIER_LABELS[s.tier]||s.tier||'Open Floor'}</span><br><span class='tiny'>🎟️ ${s.ticketCost.toLocaleString()} tickets | ${s.rarity}</span>${escrowBtn?'<br>'+escrowBtn:''}</div>
+        <img src="${safeUrl(s.imgData)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px"/>
+        <div style='flex:1'><b>${escHtml(s.name)}</b> <span style='color:${TIER_COLORS[s.tier]||"var(--muted)"}; font-size:.75rem'>${TIER_LABELS[s.tier]||s.tier||'Open Floor'}</span><br><span class='tiny'>🎟️ ${s.ticketCost.toLocaleString()} tickets | ${escHtml(s.rarity)}</span>${escrowBtn?'<br>'+escrowBtn:''}</div>
       </div>`;
     }).join('');
   }catch(e){el.innerHTML='<span style="color:var(--red)">'+escHtml(safeUserErrorMessage(e,'load action'))+'</span>'; }
@@ -12932,7 +12940,7 @@ async function adminLoadCollections(){
         `<div style="color:#a855f7;font-size:.6rem">Abilities: ${c.abilities.map(a=>a[0]).join(', ')}</div>`:'';
       return `<div style='background:rgba(0,0,0,.3);border:1px solid rgba(57,255,20,.15);border-radius:8px;padding:8px;margin-bottom:6px'>
         <div style='display:flex;justify-content:space-between;align-items:center'>
-          <div><b style='color:#39ff14'>${c.name}</b> <span style='color:#3d6090'>(${c.id})</span></div>
+          <div><b style='color:#39ff14'>${escHtml(c.name)}</b> <span style='color:#3d6090'>(${c.id})</span></div>
           <div style='display:flex;gap:4px'>${mintBtn} ${manageBtn} ${deleteBtn}</div>
         </div>
         <div style='color:#5a7a9a;font-size:.6rem;margin-top:2px'>${c.totalSupply} NFTs | ${Number(c.ticketCost)} tickets each | ${c.description||'No description'}</div>
@@ -13517,7 +13525,7 @@ async function renderNftAdminList(){
     html+=g.nfts.map(s=>{
       const isGrail=_adminGrailSet.has(s.id);
       return `<div style='display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(168,85,247,.1)'>
-        <img src="${s.imgData}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'"/>
+        <img src="${safeUrl(s.imgData)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'"/>
         <div style='flex:1'><b style='font-size:.8rem'>${escHtml(s.name)}</b>${isGrail?' <span style="font-size:.55rem;color:#ff44aa;font-weight:700">GRAIL</span>':''}${_adminSpotlightSet.has(s.id)?' <span style="font-size:.55rem;color:#ffd700;font-weight:700">SPOTLIGHT</span>':''}<br><span class='tiny' style='color:#5a7a9a'><span onclick='adminEditNftPrice("${s.id}",${s.ticketCost})' style='cursor:pointer;text-decoration:underline dotted' title='Click to edit price'>${s.ticketCost.toLocaleString()} tickets</span></span></div>
         <div style='display:flex;gap:4px'>
         <button class='btn' onclick='adminEditNftPrice("${s.id}",${s.ticketCost})' style='font-size:.55rem;padding:2px 6px;border-color:#ffd700;color:#ffd700'>Price</button>
@@ -13536,8 +13544,8 @@ async function renderNftAdminList(){
       const isGrail=_adminGrailSet.has(s.id);
       const tierDisplay=`<span style='color:${TIER_COLORS[s.tier]||"var(--muted)"}'>${TIER_LABELS[s.tier]||'Open Floor'}</span>`;
       return `<div style='display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2a3a5f'>
-      <img src="${s.imgData}" style="width:50px;height:50px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'"/>
-      <div style='flex:1'><b>${escHtml(s.name)}</b> - ${s.rarity} - ${tierDisplay}<br><span class='tiny'>${s.ticketCost.toLocaleString()} tickets | ${s.type==='existing'?'Existing':'Minted'} | by ${(s.creator||'').substring(0,12)}...</span></div>
+      <img src="${safeUrl(s.imgData)}" style="width:50px;height:50px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'"/>
+      <div style='flex:1'><b>${escHtml(s.name)}</b> - ${escHtml(s.rarity)} - ${tierDisplay}<br><span class='tiny'>${s.ticketCost.toLocaleString()} tickets | ${s.type==='existing'?'Existing':'Minted'} | by ${(s.creator||'').substring(0,12)}...</span></div>
       <div style='display:flex;gap:4px;flex-wrap:wrap'>
       
       ${_adminSpotlightSet.has(s.id)?`<button class='btn' onclick='adminToggleSpotlight("${s.id}",false)' style='font-size:.6rem;padding:3px 6px;border-color:#ffd700;color:#ffd700'>Unspot</button>`:`<button class='btn' onclick='adminToggleSpotlight("${s.id}",true)' style='font-size:.6rem;padding:3px 6px;border-color:#555;color:#888'>Spot</button>`}
@@ -14336,8 +14344,8 @@ async function renderGameAdminList(){
     const audit=ticketPoolAudit.get(s.id)||{};
     const poolAuditLine=(s.paysTickets&&!isBackroom)?`<br><span class='tiny' style='color:#9dd6ff'>Backed Pool: <b style='color:#d8fbe4'>${Number(audit.backed||0).toLocaleString()}</b> | Raw Pool: <b style='color:#f9c2ff'>${Number(audit.raw||0).toLocaleString()}</b></span>`:'';
     return `<div style='display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2a3a5f'>
-    ${s.thumb?`<img src="${s.thumb}" style="width:50px;height:50px;object-fit:cover;border-radius:6px"/>`:`<div style="width:50px;height:50px;background:#1a2548;border-radius:6px;display:grid;place-items:center">🎮</div>`}
-    <div style='flex:1'><b>${s.name}</b> <span style='font-size:.7rem;color:${TIER_COLORS[gt]||"var(--muted)"}'>${TIER_LABELS[gt]||gt}</span><br>
+    ${s.thumb?`<img src="${safeUrl(s.thumb)}" style="width:50px;height:50px;object-fit:cover;border-radius:6px"/>`:`<div style="width:50px;height:50px;background:#1a2548;border-radius:6px;display:grid;place-items:center">🎮</div>`}
+    <div style='flex:1'><b>${escHtml(s.name)}</b> <span style='font-size:.7rem;color:${TIER_COLORS[gt]||"var(--muted)"}'>${TIER_LABELS[gt]||gt}</span><br>
     <span class='tiny'>by ${s.dev||'Unknown'} | ${s.compat||'both'} | fee: ${s.feePaid||0} ICP</span>${poolAuditLine}<br>
     <span class='tiny' style='color:var(--muted)'>${s.url?.substring(0,40)}...</span>
     </div>
@@ -14580,8 +14588,8 @@ function renderPlayerCards(players,container){
     const principal=p.principal.toText?p.principal.toText():p.principal.toString();
     const localProfile=getPublicProfiles()[principal]||getProfileFor(principal)||{};
     const avatarHtml=renderSquareAvatar({...localProfile,avatarUrl:localProfile.avatarUrl||p.avatarUrl||null},44,10);
-    const name=p.name||principal.slice(0,12)+'...';
-    const bio=p.bio?`<div style="font-size:.75rem;color:#5a7a9a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">${p.bio}</div>`:'';
+    const name=escHtml(p.name||principal.slice(0,12)+'...');
+    const bio=p.bio?`<div style="font-size:.75rem;color:#5a7a9a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">${escHtml(p.bio)}</div>`:'';
     return `<div onclick="viewPublicProfile('${principal}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,20,40,.4);border:1px solid rgba(0,170,255,.1);border-radius:10px;cursor:pointer;transition:all .2s" onmouseenter="this.style.borderColor='rgba(0,170,255,.4)';this.style.background='rgba(0,30,60,.6)'" onmouseleave="this.style.borderColor='rgba(0,170,255,.1)';this.style.background='rgba(0,20,40,.4)'">${avatarHtml}<div><div style="font-weight:700;color:#e0e6f0;font-size:.9rem">${name}</div>${bio}</div></div>`;
   }).join('');
 }
@@ -15383,7 +15391,7 @@ async function renderDaoMain(){
   html+=`<div id='createProposalForm' style='display:none;background:rgba(239,68,68,.04);border:2px solid rgba(239,68,68,.15);border-radius:14px;padding:18px;margin-bottom:16px'>
     <div style='font-size:.7rem;color:#7f3d3d;letter-spacing:2px;margin-bottom:6px'>CATEGORY</div>
     <select id='proposalCategory' style='width:100%;padding:10px;background:rgba(0,0,0,.4);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#e0e6f0;font-size:.85rem;margin-bottom:10px;outline:none'>
-      ${PROPOSAL_CATEGORIES.map(c=>`<option value='${c.id}'>${c.name}</option>`).join('')}
+      ${PROPOSAL_CATEGORIES.map(c=>`<option value='${c.id}'>${escHtml(c.name)}</option>`).join('')}
     </select>
     <div style='font-size:.7rem;color:#7f3d3d;letter-spacing:2px;margin-bottom:6px'>TITLE</div>
     <input id='proposalTitle' placeholder='What are you proposing?' maxlength='120' style='width:100%;box-sizing:border-box;padding:10px 14px;background:rgba(0,0,0,.4);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#fff;font-size:.9rem;margin-bottom:10px;outline:none'/>
@@ -16369,7 +16377,8 @@ function renderForumBody(text,imageUrl){
   }
   return html;
 }
-function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(/^(https:\/\/|\/(?!\/)|data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);base64,|http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?\/)/i.test(u))return u;return '';}
 function getTimeAgo(date){
   const s=Math.floor((Date.now()-date.getTime())/1000);
   if(s<60) return 'just now';
@@ -16784,7 +16793,7 @@ async function showUserNftDetail(id){
     btn.style.opacity='1';
     btn.onclick=async()=>{
       if(!S.identity) return alert('Please connect your wallet first');
-      if(!await arcadeConfirm('🎟️ Buy NFT','Spend <b>'+s.ticketCost.toLocaleString()+' tickets</b> to buy <b>'+s.name+'</b>?<br><br>The NFT will be transferred to your wallet on-chain.')) return;
+      if(!await arcadeConfirm('🎟️ Buy NFT','Spend <b>'+s.ticketCost.toLocaleString()+' tickets</b> to buy <b>'+escHtml(s.name)+'</b>?<br><br>The NFT will be transferred to your wallet on-chain.')) return;
       btn.textContent='⏳ Processing...';btn.disabled=true;
       try{
         const be2=await getBackendActor(true);
@@ -16807,7 +16816,7 @@ async function showUserNftDetail(id){
       btn.style.opacity='1';
       btn.onclick=async()=>{
         if(!S.identity) return alert('Please connect your wallet first');
-        if(!await arcadeConfirm('🎟️ Buy NFT','Spend <b>'+s.ticketCost.toLocaleString()+' tickets</b> to buy <b>'+s.name+'</b>?<br><br>The NFT will be transferred to your wallet on-chain.')) return;
+        if(!await arcadeConfirm('🎟️ Buy NFT','Spend <b>'+s.ticketCost.toLocaleString()+' tickets</b> to buy <b>'+escHtml(s.name)+'</b>?<br><br>The NFT will be transferred to your wallet on-chain.')) return;
         btn.textContent='⏳ Processing...';btn.disabled=true;
         try{
           const be2=await getBackendActor(true);

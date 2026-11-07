@@ -7,6 +7,8 @@
 #   scripts/deploy.sh ic    first-time      # creates all four canisters once (empty game_assets is fine then)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# icp-cli keeps the mainnet name->id mapping in .icp/data/mappings (newer) or .icp/cache/mappings (1.0.x)
+ic_ids() { for f in .icp/data/mappings/ic.ids.json .icp/cache/mappings/ic.ids.json; do [[ -f "$f" ]] && { echo "$f"; return 0; }; done; return 1; }
 ENVNAME="${1:-}"; WHAT="${2:-}"
 [[ "$ENVNAME" == "local" || "$ENVNAME" == "ic" ]] || { echo "usage: scripts/deploy.sh <local|ic> <frontend|backend|nft|both|first-time>"; exit 1; }
 E=(); [[ "$ENVNAME" == "ic" ]] && E=(-e ic)
@@ -30,10 +32,12 @@ case "$WHAT" in
   both)     backend; frontend ;;
   first-time)
     [[ "$ENVNAME" == "ic" ]] || { echo "first-time is for ic only"; exit 1; }
-    if [[ -f .icp/data/mappings/ic.ids.json ]]; then echo "STOP: .icp/data/mappings/ic.ids.json already exists - canisters are created. Use frontend/backend/nft."; exit 1; fi
+    if f=$(ic_ids); then echo "STOP: $f already exists - mainnet canisters are already created. Use frontend/backend/nft."; exit 1; fi
     echo "identity: $(icp identity principal)"; echo "cycles:   $(icp cycles balance -e ic)"
     node scripts/build-frontend-publish.mjs
     icp deploy -e ic
-    echo; echo "Canister IDs (also saved in .icp/data/mappings/ic.ids.json):"; cat .icp/data/mappings/ic.ids.json ;;
+    f=$(ic_ids) || { echo "Deployed, but no ic.ids.json found - run: find .icp -name 'ic.ids.json'"; exit 1; }
+    mkdir -p mainnet-ids && cp "$f" mainnet-ids/ic.ids.json
+    echo; echo "Canister IDs (saved in $f and copied to mainnet-ids/ic.ids.json - commit that copy):"; cat "$f" ;;
   *) echo "usage: scripts/deploy.sh <local|ic> <frontend|backend|nft|both|first-time>"; exit 1 ;;
 esac

@@ -134,7 +134,7 @@ By submitting a game ("Submission") you agree to the following.
 - If you submit a Ticket Game, its scoring is deterministic, skill-based and fair, and it does not award score for anything other than play.
 
 ### 9.2 Licence to the Platform
-You grant Infinity Arcade a non-exclusive, royalty-free, worldwide licence to host, display, distribute, promote and (where needed for integration, security or compatibility) modify your game on the Platform for as long as it is listed. You keep ownership of your game.
+You grant Infinity Arcade a non-exclusive, royalty-free, worldwide licence to host, display, distribute, promote and (where needed for integration, security or compatibility) modify your game on the Platform for as long as it is listed. You keep ownership of your game. Game files are served publicly from the Platform's game canister, like any website: anyone can view or download them, and the Platform does not prevent this. Do not include anything private in a Submission.
 
 ### 9.3 Tiers and fees
 - **The Back** is the open tier for Token-per-play and purchasable games. **The Showroom** is the curated tier that may host Ticket Games.
@@ -148,7 +148,7 @@ Revenue share is set by the smart contract in effect when a play or purchase hap
 - Your share accrues as **claimable ICP earnings** inside the Platform. It is not sent anywhere until you claim it or enable auto-payout.
 - **Manual claims** send earnings to your **Principal Wallet**, an ICP ledger account controlled by your Internet Identity. Claims are subject to a minimum (currently 0.0002 ICP) and the ICP network fee (currently 0.0001 ICP) is deducted from each claim. From the Principal Wallet you may send ICP anywhere; those transfers are signed by you and are your responsibility.
 - **Auto-payout**, if you enable it, sends your combined claimable earnings to an address you set, on a fixed schedule (currently every 14 days). A new or changed address takes effect after a delay (currently 48 hours), during which you may cancel the change. If a payout fails repeatedly (currently 3 times), auto-payout turns itself off and your earnings stay claimable. We are not responsible for ICP sent to an address you entered incorrectly or that you do not control.
-- Tips received in Tokens accrue as a separate claimable ICP balance under the same rules. ICP tips sent wallet-to-wallet by players never pass through the Platform.
+- Tips received in Tokens accrue as a separate claimable ICP balance under the same rules. A share of every Token tip (currently **10%**) goes to the DAO treasury; the rest accrues to the creator. Tips are limited per player per day (currently 100 Tokens). ICP tips sent wallet-to-wallet by players never pass through the Platform.
 - Earnings are payment for use of your game under Section 9.2. They are not wages, dividends, or a share of Platform profits.
 
 ### 9.6 Taxes

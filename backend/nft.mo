@@ -218,6 +218,11 @@ persistent actor NftCanister {
           if (not isOwner and not isOperatorCaller) {
             return #Err(#Unauthorized);
           };
+          // An operator (the arcade backend) may only move tokens that are IN arcade custody
+          // (owned by an operator). It can never pull a token out of a player's wallet.
+          if (not isOwner and isOperatorCaller and not isOperator(currentOwner.owner)) {
+            return #Err(#Unauthorized);
+          };
           // Closed-loop rule: a plain token owner (including an admin who happens to own a
           // token personally) may only ever send it INTO arcade custody (i.e. to an approved
           // operator) — never to any other wallet or outside marketplace. Operator-initiated

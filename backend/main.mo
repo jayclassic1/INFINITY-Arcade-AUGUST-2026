@@ -540,6 +540,13 @@ persistent actor ArcadeBackend {
   // the local one because II principals are derived per website origin). Survives upgrades.
   stable var extraAdmins : [Principal] = [];
 
+  // Every update call is checked here before it is executed (and before the canister pays for it).
+  // Anonymous principals cannot change state (the website signs every update call with the
+  // player's Internet Identity), and no argument may exceed ~2 MB. Queries are not affected.
+  system func inspect({ caller : Principal; arg : Blob; msg : Any }) : Bool {
+    (not Principal.isAnonymous(caller)) and arg.size() <= 2_000_000
+  };
+
   // Sole admin principal (Infinity-Arcade-Identity, set 2026-08-15)
   transient let JAY_PRINCIPAL : Principal = Principal.fromText("fvuhj-qdha4-tu5gc-4hvim-yaxae-g5grp-xjiz3-u5rpo-5cniw-gpolf-eqe");
 
@@ -740,6 +747,17 @@ persistent actor ArcadeBackend {
   let MAX_ZIP_CHUNK_BYTES : Nat = 1_800_000; // ~1.8MB, safely under the IC's ~2MB per-call argument limit
   let MAX_PENDING_ZIP_UPLOADS_PER_USER : Nat = 6; // 2 uploads (zip+thumbnail) per game submission, so this allows up to 3 pending game submissions per user — was 3, which meant a user could never complete a second submission (its zip would use the last slot, then its thumbnail upload would fail)
   let MAX_THUMBNAIL_UPLOAD_BYTES : Nat = 2 * 1024 * 1024; // 2MB, matches the existing thumbnail cap
+  let ZIP_UPLOAD_TTL_NS : Int = 86_400_000_000_000; // an upload that is still "uploading" after 24h is abandoned and no longer counts
+  let MAX_ZIP_CHUNKS_PER_UPLOAD : Nat = 8; // 10MB at the website's 1.5MB chunks is 7
+  func zipUploadIsStale(u : PendingZipUpload, now : Int) : Bool { u.status == "uploading" and now - u.createdAt > ZIP_UPLOAD_TTL_NS };
+  func zipBytesReceived(uploadId : Text, chunkCount : Nat) : Nat {
+    var total : Nat = 0; var i : Nat = 0;
+    while (i < chunkCount) {
+      switch (zipChunks.get(uploadId # "#" # Nat.toText(i))) { case (?b) { total += b.size() }; case null {} };
+      i += 1;
+    };
+    total
+  };
   stable var holePunishmentEntries : [HolePunishment] = [];
   let HOLE_SOFT_PUNISH_NS : Int = 7 * 24 * 60 * 60 * 1_000_000_000; // 7 days in nanoseconds
   stable var holeVoteEntries : [HoleVote] = [];
@@ -882,7 +900,6 @@ persistent actor ArcadeBackend {
   // created_at_time) inside its 24h window as #Duplicate. Stamping every transfer makes an
   // accidental retry safe: the money can only move once.
   func ledgerNow() : Nat64 { Nat64.fromNat(Int.abs(Time.now())) };
-  transient let ICP_TIP_MIN_E8S : Nat = 10_000;
   transient var operatingTreasuryWithdrawalInFlight = false;
   transient var blackholeTreasuryWithdrawalInFlight = false;
   transient var backTreasuryWithdrawalInFlight = false;
@@ -1437,6 +1454,23 @@ persistent actor ArcadeBackend {
     setGameBackedTicketPoolValue(gameId, getGameBackedTicketPoolValue(gameId) + amount);
   };
 
+  func validateGameSubmissionText(name : Text, developer : Text, thumbnailUrl : Text, description : Text, compatibility : Text) : ?Text {
+    if (Text.size(Text.trim(name, #char ' ')) == 0) return ?"Name required";
+    if (Text.size(name) > 80) return ?"Name too long (max 80 characters)";
+    if (Text.size(developer) > 80) return ?"Developer name too long (max 80 characters)";
+    if (Text.size(description) > 1_000) return ?"Description too long (max 1000 characters)";
+    if (Text.size(compatibility) > 200) return ?"Compatibility text too long";
+    if (Text.size(thumbnailUrl) > 2_048) return ?"Thumbnail URL too long";
+    if (Text.size(thumbnailUrl) > 0 and not Text.startsWith(thumbnailUrl, #text "https://") and not Text.startsWith(thumbnailUrl, #text "/") and not Text.startsWith(thumbnailUrl, #text "http://localhost") and not Text.startsWith(thumbnailUrl, #text "http://127.0.0.1")) return ?"Thumbnail URL must start with https://";
+    null
+  };
+  func validateProposalText(title : Text, body : Text, images : [Text]) : ?Text {
+    if (Text.size(title) > 120) return ?"Title too long (max 120 characters)";
+    if (Text.size(body) > 5_000) return ?"Description too long (max 5000 characters)";
+    if (images.size() > 5) return ?"Maximum 5 images";
+    for (im in images.vals()) { if (Text.size(im) > 400_000) return ?"An image is too large (max ~300KB each)" };
+    null
+  };
   func isBlankText(value : Text) : Bool {
     Text.size(value) == 0;
   };
@@ -1581,7 +1615,8 @@ persistent actor ArcadeBackend {
     getTicketReserveAuditSnapshot().totalBackedTicketPool;
   };
 
-  public shared(_msg) func getTreasuryBalance() : async TreasuryBalanceSnapshot {
+  public shared(msg) func getTreasuryBalance() : async TreasuryBalanceSnapshot {
+    assert isAdmin(msg.caller); // each call costs a ledger round-trip: admin only
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let actualBalanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = null });
     let outstandingTokens = totalOutstandingTokens();
@@ -1609,7 +1644,8 @@ persistent actor ArcadeBackend {
     };
   };
 
-  public shared(_msg) func getTreasuryLaneSnapshot() : async TreasuryLaneSnapshot {
+  public shared(msg) func getTreasuryLaneSnapshot() : async TreasuryLaneSnapshot {
+    assert isAdmin(msg.caller); // each call costs two ledger round-trips: admin only
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
     let treasury = await getTreasuryBalance();
     let operatingBalanceE8s = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?OPERATING_TREASURY_SUBACCOUNT });
@@ -2810,7 +2846,10 @@ persistent actor ArcadeBackend {
     if (isBlankText(gameId)) return #err("Game ID is required");
     if (Text.size(data) > CHECKPOINT_MAX_CHARS) return #err("Checkpoint too large (max 32,000 characters)");
     hydrateRuntimeStateIfNeeded();
-    switch (gameSubmissions.get(gameId)) { case null { return #err("Game not found") }; case (?_) {} };
+    switch (gameSubmissions.get(gameId)) {
+      case null { return #err("Game not found") };
+      case (?g) { if (isTicketGameSubmission(g)) return #err("Checkpoints are not available for ticket games: every paid run starts fresh") };
+    };
     let k = Principal.toText(msg.caller) # "::" # gameId;
     gameCheckpoints := Trie.put(gameCheckpoints, checkpointKey(k), Text.equal, data).0;
     #ok("Checkpoint saved")
@@ -3223,8 +3262,10 @@ persistent actor ArcadeBackend {
   ) : Result.Result<Text, Text> {
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    if (Text.size(name) == 0) return #err("Name required");
+    switch (validateNftListingText(name, description, rarity, imageUrl, collectionName)) { case (?e) return #err(e); case null {} };
     if (ticketCost < 25) return #err("Minimum ticket cost is 25");
+    if (ticketCost > 1_000_000) return #err("Ticket cost too high");
+    if (not nftCanisterAllowed(sourceCanisterId)) return #err("This NFT collection is not registered with the arcade");
     switch (chargeNftListingFee(caller)) {
       case (#err(err)) { return #err(err) };
       case (#ok(())) {};
@@ -3242,7 +3283,7 @@ persistent actor ArcadeBackend {
       imageUrl = imageUrl;
       creator = caller;
       tier = "open";
-      status = "live";
+      status = "pending_escrow"; // becomes "live" only once the NFT is verified in arcade custody
       feePaid = NFT_LISTING_FEE_E8S; // 5 Tokens = 0.05 ICP equivalent
       showroomFeePaid = 0;
       txId = feeTxId;
@@ -3272,9 +3313,11 @@ persistent actor ArcadeBackend {
   ) : Result.Result<Text, Text> {
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    if (Text.size(name) == 0) return #err("Name required");
+    switch (validateNftListingText(name, description, rarity, imageUrl, collectionName)) { case (?e) return #err(e); case null {} };
     if (ticketCost < 25) return #err("Minimum ticket cost is 25");
+    if (ticketCost > 1_000_000) return #err("Ticket cost too high");
     if (Text.size(sourceCanisterId) == 0) return #err("Source canister required");
+    if (not nftCanisterAllowed(sourceCanisterId)) return #err("This NFT collection is not registered with the arcade");
     switch (chargeNftListingFee(caller)) {
       case (#err(err)) { return #err(err) };
       case (#ok(())) {};
@@ -3355,46 +3398,6 @@ persistent actor ArcadeBackend {
     createPendingExistingNftListing(msg.caller, name, description, rarity, ticketCost, imageUrl, sourceCanisterId, sourceTokenId, sourceTokenKey, collectionName, feeTxId)
   };
 
-  /// Submit a new minted NFT
-  public shared(msg) func listMintedNft(
-    name : Text,
-    description : Text,
-    rarity : Text,
-    ticketCost : Nat,
-    imageUrl : Text,
-    feeTxId : Nat
-  ) : async Result.Result<Text, Text> {
-    let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    if (Text.size(name) == 0) return #err("Name required");
-    if (ticketCost < 25) return #err("Minimum ticket cost is 25");
-
-    let id = genListingId("nft-mint");
-    let listing : NftListing = {
-      id = id;
-      listingType = "mint";
-      name = name;
-      description = description;
-      rarity = rarity;
-      ticketCost = ticketCost;
-      imageUrl = imageUrl;
-      creator = caller;
-      tier = "open";
-      status = "live";
-      feePaid = 25_000_000; // 0.25 ICP
-      showroomFeePaid = 0;
-      txId = feeTxId;
-      createdAt = Time.now();
-      sourceCanisterId = "";
-      sourceTokenId = 0;
-      sourceTokenKey = "";
-      collectionName = "";
-    };
-    nftListings.put(id, listing);
-    logRevenue("nft-mint", 25_000_000, caller, 2);
-    #ok(id);
-  };
 
   /// Admin: promote to Jay's Picks
   public shared(msg) func promoteNftToJaysPicks(listingId : Text) : async Result.Result<Text, Text> {
@@ -3584,11 +3587,6 @@ persistent actor ArcadeBackend {
     };
   };
 
-  /// Backward-compatible alias for admin UI callsites that use the shorter name.
-  public shared(msg) func adminDeleteCol(collectionId : Text) : async Result.Result<Bool, Text> {
-    assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
-    await adminDeleteCollection(collectionId);
-  };
 
   /// Get token ability assignments for one official collection.
   public shared query(msg) func adminGetCollectionTokenAbilities(collectionId : Text) : async [(Nat, Text)] {
@@ -3690,6 +3688,51 @@ persistent actor ArcadeBackend {
   // Normalised (trimmed, lowercased) so escrow canister ids typed or passed in a different form still match.
   func isOfficialNftCanister(c : Text) : Bool {
     Text.toLowercase(Text.trim(c, #char ' ')) == Text.toLowercase(Text.trim(nftCanisterIdText, #char ' '))
+  };
+  func normCanisterId(c : Text) : Text { Text.toLowercase(Text.trim(c, #char ' ')) };
+  func sameCanisterId(a : Text, b : Text) : Bool { normCanisterId(a) == normCanisterId(b) };
+  /// Only the official NFT canister and admin-registered external collections may be listed.
+  func nftCanisterAllowed(c : Text) : Bool {
+    if (Text.size(normCanisterId(c)) == 0) return false;
+    if (isOfficialNftCanister(c)) return true;
+    for ((k, _) in externalCollections.entries()) { if (sameCanisterId(k, c)) return true };
+    false
+  };
+  /// True when some OTHER listing already holds this exact token in escrow.
+  func tokenAlreadyEscrowed(canisterId : Text, tokenId : Text, exceptListingId : Text) : Bool {
+    for ((lid, e) in escrows.entries()) {
+      if (lid != exceptListingId and e.status == "held" and e.tokenId == tokenId and sameCanisterId(e.canisterId, canisterId)) return true;
+    };
+    false
+  };
+  /// Shared pre-checks for both escrow confirmations: the listing must be a pending "existing"
+  /// listing owned by the caller, and the canister/token being confirmed must be the ones the
+  /// listing was created for (a confirmation can never attach someone else's NFT to a listing).
+  func escrowConfirmPrecheck(caller : Principal, listing : NftListing, canisterId : Text, tokenIdText : Text, tokenId : Nat) : ?Text {
+    if (not Principal.equal(listing.creator, caller) and not isAdmin(caller)) return ?"Not the listing owner";
+    if (listing.listingType != "existing") return ?"Only player-listed NFTs use escrow";
+    if (listing.status != "pending_escrow") return ?("Listing is not awaiting escrow (status: " # listing.status # ")");
+    if (not sameCanisterId(listing.sourceCanisterId, canisterId)) return ?"Canister does not match this listing";
+    if (tokenId != listing.sourceTokenId) return ?"Token ID does not match this listing";
+    if (not nftCanisterAllowed(canisterId)) return ?"This NFT collection is not registered with the arcade";
+    if (tokenAlreadyEscrowed(canisterId, tokenIdText, listing.id)) return ?"This NFT is already escrowed under another listing";
+    if (isOfficialNftCanister(canisterId)) {
+      switch (officialOwnerOf(tokenId)) {
+        case (?o) { if (not Principal.equal(o, listing.creator)) return ?"This Official NFT does not belong to the lister" };
+        case null { return ?"This Official NFT is not owned by a player" };
+      };
+    };
+    null
+  };
+  func validateNftListingText(name : Text, description : Text, rarity : Text, imageUrl : Text, collectionName : Text) : ?Text {
+    if (Text.size(name) == 0) return ?"Name required";
+    if (Text.size(name) > 80) return ?"Name too long (max 80 characters)";
+    if (Text.size(description) > 500) return ?"Description too long (max 500 characters)";
+    if (Text.size(rarity) > 24) return ?"Rarity too long";
+    if (Text.size(collectionName) > 120) return ?"Collection name too long";
+    if (Text.size(imageUrl) > 2_048) return ?"Image URL too long (max 2048 characters)";
+    if (Text.size(imageUrl) > 0 and not Text.startsWith(imageUrl, #text "https://") and not Text.startsWith(imageUrl, #text "/")) return ?"Image URL must start with https://";
+    null
   };
 
   stable var officialNftOwnerEntries : [(Nat, Principal)] = [];
@@ -4215,6 +4258,10 @@ persistent actor ArcadeBackend {
   public shared(msg) func setPlayerProfile(name : Text, avatarUrl : Text, bio : Text) : async Result.Result<Text, Text> {
     assert (not isBannedNow(msg.caller)); // banned: only withdrawals, claims and listing allowed
     if (Principal.isAnonymous(msg.caller)) return #err("Must be authenticated");
+    if (Text.size(name) > 40) return #err("Name too long (max 40 characters)");
+    if (Text.size(bio) > 300) return #err("Bio too long (max 300 characters)");
+    if (Text.size(avatarUrl) > 2_048) return #err("Avatar URL too long");
+    if (Text.size(avatarUrl) > 0 and not Text.startsWith(avatarUrl, #text "https://") and not Text.startsWith(avatarUrl, #text "/")) return #err("Avatar URL must start with https://");
     hydrateRuntimeStateIfNeeded();
     let now = Time.now();
     let createdAt = switch (getPlayerProfileOpt(msg.caller)) { case (?existing) existing.createdAt; case null now };
@@ -4330,7 +4377,7 @@ persistent actor ArcadeBackend {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    if (Text.size(name) == 0) return #err("Name required");
+    switch (validateGameSubmissionText(name, developer, thumbnailUrl, description, compatibility)) { case (?e) return #err(e); case null {} };
     if (hasPendingGameSubmission(caller)) return #err("You already have a submission pending admin review. Please wait for it to be approved or rejected before submitting another.");
     if (gameSubmissionInFlight.get(caller) == ?true) {
       return #err("A submission is already being processed. Please wait a moment and try again.");
@@ -5045,7 +5092,7 @@ persistent actor ArcadeBackend {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
     hydrateRuntimeStateIfNeeded();
-    if (Text.size(name) == 0) return #err("Name required");
+    switch (validateGameSubmissionText(name, developer, thumbnailUrl, description, compatibility)) { case (?e) return #err(e); case null {} };
     if (hasPendingGameSubmission(caller)) return #err("You already have a submission pending admin review. Please wait for it to be approved or rejected before submitting another.");
     if (gameSubmissionInFlight.get(caller) == ?true) {
       return #err("A submission is already being processed. Please wait a moment and try again.");
@@ -5189,6 +5236,28 @@ persistent actor ArcadeBackend {
   stable var daoInOfficialNftE8s : Nat = 0;
   stable var daoInPlayerNftE8s : Nat = 0;
   stable var daoInVpBadgeE8s : Nat = 0;
+  stable var daoInTipsE8s : Nat = 0; // 10% of every Token tip
+  transient let TIP_DAO_BPS : Nat = 1_000; // 10%
+  stable var tipDailyCapTokens : Nat = 100; // per sender per UTC day, admin adjustable
+  stable var tipDailySpend : [(Principal, Int, Nat)] = []; // (sender, day index, Tokens tipped that day)
+  func tipDayIndex(now : Int) : Int { now / 86_400_000_000_000 };
+  func tipsSentToday(p : Principal, day : Int) : Nat {
+    for ((q, d, amt) in tipDailySpend.vals()) { if (d == day and Principal.equal(q, p)) return amt };
+    0
+  };
+  func recordTipSpend(p : Principal, day : Int, amount : Nat) {
+    let prev = tipsSentToday(p, day);
+    // keep today's entries only (older days can never matter again), then write the sender's new total
+    let rest = Array.filter<(Principal, Int, Nat)>(tipDailySpend, func((q, d, _)) { d == day and not Principal.equal(q, p) });
+    tipDailySpend := Array.append<(Principal, Int, Nat)>(rest, [(p, day, prev + amount)]);
+  };
+  public shared(msg) func adminSetTipDailyCap(tokensPerDay : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Admin only");
+    if (tokensPerDay == 0) return #err("Cap must be at least 1 Token");
+    tipDailyCapTokens := tokensPerDay;
+    #ok("Daily tip cap set to " # Nat.toText(tokensPerDay) # " Tokens per player")
+  };
+  public query func getTipDailyCap() : async Nat { tipDailyCapTokens };
   stable var lotteryTokensPaidTotal : Nat = 0;
   stable var lotteryTicketsPaidTotal : Nat = 0;
   stable var lotteryDrawsTotal : Nat = 0;
@@ -5483,7 +5552,7 @@ persistent actor ArcadeBackend {
 
   public query func getDaoTreasuryOverview() : async {
     balanceE8s : Nat; lockedTokenE8s : Nat; lockedTicketE8s : Nat;
-    inGamesE8s : Nat; inProposalsE8s : Nat; inOfficialNftE8s : Nat; inPlayerNftE8s : Nat; inVpBadgeE8s : Nat;
+    inGamesE8s : Nat; inProposalsE8s : Nat; inOfficialNftE8s : Nat; inPlayerNftE8s : Nat; inVpBadgeE8s : Nat; inTipsE8s : Nat;
     lotteryTokensPaid : Nat; lotteryTicketsPaid : Nat; lotteryDraws : Nat; vpHolders : Nat;
   } {
     let lockedTok : Nat = switch (tokenLotteryCycle) { case null { 0 }; case (?c) { c.perWin * c.remaining.size() * TOKEN_LIABILITY_E8S } };
@@ -5493,7 +5562,7 @@ persistent actor ArcadeBackend {
     {
       balanceE8s = daoTreasuryE8s; lockedTokenE8s = lockedTok; lockedTicketE8s = lockedTix;
       inGamesE8s = daoInGamesE8s; inProposalsE8s = daoInProposalsE8s; inOfficialNftE8s = daoInOfficialNftE8s;
-      inPlayerNftE8s = daoInPlayerNftE8s; inVpBadgeE8s = daoInVpBadgeE8s;
+      inPlayerNftE8s = daoInPlayerNftE8s; inVpBadgeE8s = daoInVpBadgeE8s; inTipsE8s = daoInTipsE8s;
       lotteryTokensPaid = lotteryTokensPaidTotal; lotteryTicketsPaid = lotteryTicketsPaidTotal; lotteryDraws = lotteryDrawsTotal;
       vpHolders = holders;
     }
@@ -5712,7 +5781,7 @@ persistent actor ArcadeBackend {
   func countActivePendingZipUploadsForUser(who : Principal) : Nat {
     var count = 0;
     for ((_, upload) in pendingZipUploads.entries()) {
-      if (Principal.equal(upload.submitter, who) and upload.status != "published") {
+      if (Principal.equal(upload.submitter, who) and upload.status != "published" and not zipUploadIsStale(upload, Time.now())) {
         count += 1;
       };
     };
@@ -5735,6 +5804,14 @@ persistent actor ArcadeBackend {
       return #err("File must be between 1 byte and " # Nat.toText(maxBytes / (1024*1024)) # "MB");
     };
     if (chunkCount == 0) return #err("Chunk count must be greater than zero");
+    if (chunkCount > MAX_ZIP_CHUNKS_PER_UPLOAD) return #err("Too many chunks");
+    // every chunk must carry at least ~1MB on average (the website sends 1.5MB chunks), so chunkCount can't be padded
+    if (chunkCount > 1 and (chunkCount - 1) * 1_000_000 >= totalBytes) return #err("Chunk count does not match file size");
+    if (chunkCount * MAX_ZIP_CHUNK_BYTES < totalBytes) return #err("Chunk count too small for file size");
+    if (Text.size(filename) > 200) return #err("Filename too long");
+    if (not Text.endsWith(game.status, #text "zip-pending")) {
+      return #err("This game is not accepting file uploads (status: " # game.status # ")");
+    };
     if (countActivePendingZipUploadsForUser(caller) >= MAX_PENDING_ZIP_UPLOADS_PER_USER) {
       return #err("Too many pending uploads. Please wait for admin to review your existing submissions first.");
     };
@@ -5766,12 +5843,18 @@ persistent actor ArcadeBackend {
     };
     if (not Principal.equal(upload.submitter, caller)) return #err("Not your upload");
     if (upload.status != "uploading") return #err("This upload is no longer accepting chunks");
+    if (zipUploadIsStale(upload, Time.now())) return #err("This upload expired; start it again");
     if (chunkIndex >= upload.chunkCount) return #err("Chunk index out of range");
+    if (data.size() == 0) return #err("Empty chunk");
     if (data.size() > MAX_ZIP_CHUNK_BYTES) {
       return #err("Chunk too large: " # Nat.toText(data.size()) # " bytes; max " # Nat.toText(MAX_ZIP_CHUNK_BYTES) # " bytes per chunk");
     };
     let chunkKey = uploadId # "#" # Nat.toText(chunkIndex);
     let isNewChunk = Option.isNull(zipChunks.get(chunkKey));
+    if (isNewChunk and chunkIndex != upload.receivedChunks) return #err("Chunks must be uploaded in order");
+    let already = zipBytesReceived(uploadId, upload.chunkCount);
+    let replaced : Nat = switch (zipChunks.get(chunkKey)) { case (?b) b.size(); case null 0 };
+    if (already - replaced + data.size() > upload.totalBytes) return #err("Upload exceeds its declared size");
     zipChunks.put(chunkKey, data);
     let updated : PendingZipUpload = {
       upload with receivedChunks = if (isNewChunk) upload.receivedChunks + 1 else upload.receivedChunks
@@ -5792,6 +5875,7 @@ persistent actor ArcadeBackend {
     if (upload.receivedChunks != upload.chunkCount) {
       return #err("Missing chunks: received " # Nat.toText(upload.receivedChunks) # " of " # Nat.toText(upload.chunkCount));
     };
+    if (zipBytesReceived(uploadId, upload.chunkCount) != upload.totalBytes) return #err("Uploaded bytes do not match the declared file size");
     let updated : PendingZipUpload = { upload with status = "ready" };
     pendingZipUploads.put(uploadId, updated);
     #ok("Zip received. Pending admin review.")
@@ -6398,40 +6482,6 @@ persistent actor ArcadeBackend {
     Array.filter<GameSubmission>(all, func(g) { g.status == "live" and g.gameTier == tier });
   };
 
-  /// Record a display/audit receipt after a user's wallet has already sent ICP directly to a game creator.
-  public shared({ caller }) func recordIcpTip(
-    gameId : Text,
-    creator : Principal,
-    amountE8s : Nat,
-    anonymous : Bool,
-    displayName : Text,
-    txRef : Text
-  ) : async Result.Result<Text, Text> {
-    assert (not isBannedNow(caller)); // banned: only withdrawals, claims and listing allowed
-    if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
-    hydrateRuntimeStateIfNeeded();
-    let game = switch (gameSubmissions.get(gameId)) {
-      case null return #err("Game not found");
-      case (?g) g;
-    };
-    if (game.status != "live") return #err("Game is not live");
-    if (not Principal.equal(game.creator, creator)) return #err("Creator does not match game submission");
-    if (amountE8s < ICP_TIP_MIN_E8S) return #err("Tip amount is below the minimum display threshold");
-    let receiptId = gameId # "-icp-tip-" # Nat.toText(tipReceipts.size() + 1);
-    let receipt : TipReceipt = {
-      id = receiptId;
-      gameId = gameId;
-      creator = creator;
-      tipper = caller;
-      amountE8s = amountE8s;
-      anonymous = anonymous;
-      displayName = if (anonymous) "" else displayName;
-      txRef = txRef;
-      createdAt = Time.now();
-    };
-    tipReceipts.add(receipt);
-    #ok(receiptId);
-  };
 
   public query func getGameIcpTipSummary(gameId : Text) : async IcpTipSummary {
     let source = if (runtimeStateHydrated) { Buffer.toArray(tipReceipts) } else { tipReceiptEntries };
@@ -6900,13 +6950,24 @@ persistent actor ArcadeBackend {
     };
     if (game.status != "live") return #err("Game is not live");
     if (Principal.equal(game.creator, caller)) return #err("You cannot tip your own game");
+    let day = tipDayIndex(Time.now());
+    let sentToday = tipsSentToday(caller, day);
+    if (sentToday + tokenAmount > tipDailyCapTokens) {
+      let left : Nat = if (tipDailyCapTokens > sentToday) tipDailyCapTokens - sentToday else 0;
+      return #err("Daily tip limit is " # Nat.toText(tipDailyCapTokens) # " Tokens; you can still tip " # Nat.toText(left) # " today");
+    };
     let balance = getTokenBalance(caller);
     if (balance < tokenAmount) {
       return #err("Not enough Tokens. Have " # Nat.toText(balance) # ", need " # Nat.toText(tokenAmount));
     };
     tokens.put(caller, balance - tokenAmount);
+    recordTipSpend(caller, day, tokenAmount);
     let tipE8s = tokenAmount * TOKEN_TIP_E8S_PER_TOKEN;
-    restoreTipEarningsBalance(game.creator, tipE8s);
+    // 10% of every tip supports the DAO treasury; the creator's claimable tip pool gets the rest.
+    let daoE8s = tipE8s * TIP_DAO_BPS / 10_000;
+    daoTreasuryE8s += daoE8s;
+    daoInTipsE8s += daoE8s;
+    restoreTipEarningsBalance(game.creator, tipE8s - daoE8s);
     #ok("Tip sent")
   };
 
@@ -7192,7 +7253,7 @@ persistent actor ArcadeBackend {
               // Escrow already confirmed on a previous call — self-heal the listing status if
               // it's still stuck at pending_escrow (this was a real bug: earlier versions of
               // this function never promoted the listing itself), otherwise nothing to do.
-              if (listing.status == "pending_escrow") {
+              if (listing.status == "pending_escrow" and existing.standard == "dip721" and existing.tokenId == Nat64.toText(tokenId) and sameCanisterId(existing.canisterId, canisterId)) {
                 let healedListing : NftListing = { id = listing.id; listingType = listing.listingType; name = listing.name; description = listing.description; rarity = listing.rarity; ticketCost = listing.ticketCost; imageUrl = listing.imageUrl; creator = listing.creator; tier = listing.tier; status = "live"; feePaid = listing.feePaid; showroomFeePaid = listing.showroomFeePaid; txId = listing.txId; createdAt = listing.createdAt; sourceCanisterId = listing.sourceCanisterId; sourceTokenId = listing.sourceTokenId; sourceTokenKey = listing.sourceTokenKey; collectionName = listing.collectionName; };
                 nftListings.put(listingId, healedListing);
                 return #ok("✅ Listing status repaired — DIP-721 NFT was already escrowed.");
@@ -7202,9 +7263,13 @@ persistent actor ArcadeBackend {
           };
           case null {};
         };
+        switch (escrowConfirmPrecheck(caller, listing, canisterId, Nat64.toText(tokenId), Nat64.toNat(tokenId))) { case (?e) return #err(e); case null {} };
         try {
           let dip721 = getDip721Actor(canisterId);
           let ownerResult = await dip721.ownerOfDip721(tokenId);
+          // Re-check after the await: another call may have escrowed this token or changed the listing meanwhile.
+          switch (nftListings.get(listingId)) { case (?l) { if (l.status != "pending_escrow") return #err("Listing changed while verifying; try again") }; case null { return #err("Listing not found") } };
+          if (tokenAlreadyEscrowed(canisterId, Nat64.toText(tokenId), listingId)) return #err("This NFT is already escrowed under another listing");
           switch (ownerResult) {
             case (#Ok(owner)) {
               let self = Principal.fromActor(ArcadeBackend);
@@ -7237,7 +7302,7 @@ persistent actor ArcadeBackend {
               // Escrow already confirmed on a previous call — self-heal the listing status if
               // it's still stuck at pending_escrow (this was a real bug: earlier versions of
               // this function never promoted the listing itself), otherwise nothing to do.
-              if (listing.status == "pending_escrow") {
+              if (listing.status == "pending_escrow" and existing.standard == "icrc7" and existing.tokenId == Nat.toText(tokenId) and sameCanisterId(existing.canisterId, canisterId)) {
                 let healedListing : NftListing = { id = listing.id; listingType = listing.listingType; name = listing.name; description = listing.description; rarity = listing.rarity; ticketCost = listing.ticketCost; imageUrl = listing.imageUrl; creator = listing.creator; tier = listing.tier; status = "live"; feePaid = listing.feePaid; showroomFeePaid = listing.showroomFeePaid; txId = listing.txId; createdAt = listing.createdAt; sourceCanisterId = listing.sourceCanisterId; sourceTokenId = listing.sourceTokenId; sourceTokenKey = listing.sourceTokenKey; collectionName = listing.collectionName; };
                 nftListings.put(listingId, healedListing);
                 return #ok("✅ Listing status repaired — ICRC-7 NFT was already escrowed.");
@@ -7247,9 +7312,13 @@ persistent actor ArcadeBackend {
           };
           case null {};
         };
+        switch (escrowConfirmPrecheck(caller, listing, canisterId, Nat.toText(tokenId), tokenId)) { case (?e) return #err(e); case null {} };
         try {
           let icrc7 = getDynamicIcrc7Actor(canisterId);
           let ownerResult = await icrc7.icrc7_owner_of(tokenId);
+          // Re-check after the await: another call may have escrowed this token or changed the listing meanwhile.
+          switch (nftListings.get(listingId)) { case (?l) { if (l.status != "pending_escrow") return #err("Listing changed while verifying; try again") }; case null { return #err("Listing not found") } };
+          if (tokenAlreadyEscrowed(canisterId, Nat.toText(tokenId), listingId)) return #err("This NFT is already escrowed under another listing");
           switch (ownerResult) {
             case (#Ok(account)) {
               let self = Principal.fromActor(ArcadeBackend);
@@ -7283,6 +7352,8 @@ persistent actor ArcadeBackend {
         if (listing.status != "live") return #err("Listing is not active");
 
         if (listing.listingType == "mint") {
+          if (not isOfficialNftCanister(listing.sourceCanisterId)) return #err("Invalid official listing");
+          if (Option.isSome(officialOwnerOf(listing.sourceTokenId))) return #err("This Official NFT has already been sold");
           let balance = getTicketBalance(caller);
           let cost = listing.ticketCost;
           if (balance < cost) {
@@ -8054,6 +8125,10 @@ persistent actor ArcadeBackend {
     if (Text.size(title) == 0 or Text.size(description) == 0 or Text.size(url) == 0) {
       return #err("Fill out all three fields");
     };
+    if (Text.size(title) > 100) return #err("Title too long (max 100 characters)");
+    if (Text.size(description) > 1_000) return #err("Description too long (max 1000 characters)");
+    if (Text.size(url) > 2_048) return #err("Link too long");
+    if (not Text.startsWith(url, #text "https://")) return #err("Link must start with https://");
     hydrateRuntimeStateIfNeeded();
     if (activeHoleSubmissionCount(caller) >= 3) {
       return #err("Max 3 active Hole submissions. Delete one before adding another.");
@@ -8336,81 +8411,62 @@ persistent actor ArcadeBackend {
   };
 
   // Withdraw ICP to an account ID (hex) — for OISY/NNS style addresses
+  transient var depositWithdrawInFlight : [Principal] = [];
+  func withdrawLocked(p : Principal) : Bool { for (q in depositWithdrawInFlight.vals()) { if (Principal.equal(p, q)) return true }; false };
+  func withdrawUnlock(p : Principal) { depositWithdrawInFlight := Array.filter<Principal>(depositWithdrawInFlight, func(q) { not Principal.equal(p, q) }) };
+
+  /// Withdraw ICP from the caller's own deposit subaccount (their "Arcade Wallet") to any account id.
+  /// One withdrawal at a time per caller; the transfer carries a created_at_time so a retried call
+  /// after a timeout is deduplicated by the ledger instead of paying twice.
   public shared(msg) func withdrawDepositToAccount(toAccountHex : Text, amountE8s : Nat, subaccountHex : Text) : async Result.Result<Nat, Text> {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) return #err("Must be authenticated");
+    if (payoutsPaused) return #err(PAUSED_MSG);
     if (amountE8s < 20000) return #err("Minimum withdrawal: 0.0002 ICP");
-
-    let fromSubOpt = hexToBlob(subaccountHex);
-    let fromSub = switch(fromSubOpt) { case(?b) b; case(null) return #err("Invalid subaccount hex, len=" # Nat.toText(Text.size(subaccountHex))) };
-
-    // Pre-check: compare frontend vs backend subaccount derivation
-    let backendSub = principalToSubaccount(caller);
-    let backendSubArr = Blob.toArray(backendSub);
-    var backendSubHex = "";
-    for (b in backendSubArr.vals()) {
-      let hi = Nat8.toNat(b) / 16;
-      let lo = Nat8.toNat(b) % 16;
-      backendSubHex := backendSubHex # hexNibble(hi) # hexNibble(lo);
+    let fromSub = principalToSubaccount(caller);
+    switch (hexToBlob(subaccountHex)) {
+      case (?b) { if (not Blob.equal(b, fromSub)) return #err("Withdrawal subaccount does not belong to caller") };
+      case null { return #err("Invalid subaccount") };
     };
-    if (not Text.equal(blobToHex(fromSub), backendSubHex)) {
-      return #err("Withdrawal subaccount does not belong to caller");
-    };
-
-    // Check balance with BOTH subaccounts
+    let dest = switch (hexToBlob(toAccountHex)) { case (?d) d; case null { return #err("Invalid account ID format") } };
+    if (withdrawLocked(caller)) return #err("A withdrawal is already in progress. Please wait a moment.");
+    depositWithdrawInFlight := Array.append<Principal>(depositWithdrawInFlight, [caller]);
     let selfPrincipal = Principal.fromActor(ArcadeBackend);
-    let balFrontend = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?fromSub });
-    let balBackend = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?backendSub });
-
-    if (balFrontend == 0 and balBackend == 0) return #err(
-      "Both 0! frontSub=" # subaccountHex #
-      " backSub=" # backendSubHex #
-      " caller=" # Principal.toText(caller) #
-      " match=" # (if (subaccountHex == backendSubHex) "YES" else "NO")
-    );
-    if (balFrontend == 0 and balBackend > 0) return #err(
-      "Frontend sub=0, backend sub=" # Nat.toText(balBackend) # "e8s. Mismatch! Using backend sub instead. frontSub=" # subaccountHex # " backSub=" # backendSubHex
-    );
-
-    let toBytes = hexToBlob(toAccountHex);
-    switch (toBytes) {
-      case (null) { return #err("Invalid account ID format") };
-      case (?_dest) {
-        let oldLedger : actor { transfer : shared {
-          to : Blob; fee : { e8s : Nat64 }; memo : Nat64;
-          from_subaccount : ?Blob; created_at_time : ?{ timestamp_nanos : Nat64 };
-          amount : { e8s : Nat64 }
-        } -> async { #Ok : Nat64; #Err : {
-          #BadFee : { expected_fee : { e8s : Nat64 } };
-          #InsufficientFunds : { balance : { e8s : Nat64 } };
-          #TxTooOld : { allowed_window_nanos : Nat64 };
-          #TxCreatedInFuture; #TxDuplicate : { duplicate_of : Nat64 }
-        }} } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
-
-        try {
-          let result = await oldLedger.transfer({
-            to = _dest;
-            fee = { e8s = 10_000 : Nat64 };
-            memo = 0 : Nat64;
-            from_subaccount = ?fromSub;
-            created_at_time = null;
-            amount = { e8s = Nat64.fromNat(amountE8s) };
-          });
-          switch (result) {
-            case (#Ok(blockIndex)) { #ok(Nat64.toNat(blockIndex)) };
-            case (#Err(e)) {
-              switch (e) {
-                case (#InsufficientFunds(f)) { #err("Insufficient funds: " # Nat64.toText(f.balance.e8s) # " e8s available") };
-                case (#BadFee(f)) { #err("Bad fee: expected " # Nat64.toText(f.expected_fee.e8s)) };
-                case (_) { #err("Transfer failed") };
-              }
-            };
+    let bal = try { await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?fromSub }) } catch (e) { withdrawUnlock(caller); return #err("Balance check failed: " # Error.message(e)) };
+    if (bal < amountE8s + 10_000) { withdrawUnlock(caller); return #err("Insufficient funds: " # Nat.toText(bal) # " e8s available (fee 10000 e8s)") };
+    let oldLedger : actor { transfer : shared {
+      to : Blob; fee : { e8s : Nat64 }; memo : Nat64;
+      from_subaccount : ?Blob; created_at_time : ?{ timestamp_nanos : Nat64 };
+      amount : { e8s : Nat64 }
+    } -> async { #Ok : Nat64; #Err : {
+      #BadFee : { expected_fee : { e8s : Nat64 } };
+      #InsufficientFunds : { balance : { e8s : Nat64 } };
+      #TxTooOld : { allowed_window_nanos : Nat64 };
+      #TxCreatedInFuture; #TxDuplicate : { duplicate_of : Nat64 }
+    }} } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
+    let res : Result.Result<Nat, Text> = try {
+      let result = await oldLedger.transfer({
+        to = dest;
+        fee = { e8s = 10_000 : Nat64 };
+        memo = 0 : Nat64;
+        from_subaccount = ?fromSub;
+        created_at_time = ?{ timestamp_nanos = ledgerNow() };
+        amount = { e8s = Nat64.fromNat(amountE8s) };
+      });
+      switch (result) {
+        case (#Ok(blockIndex)) { #ok(Nat64.toNat(blockIndex)) };
+        case (#Err(e)) {
+          switch (e) {
+            case (#InsufficientFunds(f)) { #err("Insufficient funds: " # Nat64.toText(f.balance.e8s) # " e8s available") };
+            case (#BadFee(f)) { #err("Bad fee: expected " # Nat64.toText(f.expected_fee.e8s)) };
+            case (#TxDuplicate(d)) { #ok(Nat64.toNat(d.duplicate_of)) };
+            case (_) { #err("Transfer failed") };
           }
-        } catch (e) {
-          #err("Transfer error: " # Error.message(e))
-        }
-      };
-    }
+        };
+      }
+    } catch (e) { #err("Transfer error: " # Error.message(e)) };
+    withdrawUnlock(caller);
+    res
   };
 
   // Helper: hex string to Blob (32 bytes)
@@ -8445,20 +8501,6 @@ persistent actor ArcadeBackend {
   type Icrc1Account = { owner : Principal; subaccount : ?Blob };
   transient let ICP_LEDGER_ICRC1 : actor { icrc1_balance_of : shared query Icrc1Account -> async Nat } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
 
-  public shared(msg) func debugSubaccount() : async { subHex : Text; callerText : Text; selfText : Text; balanceE8s : Nat } {
-    let caller = msg.caller;
-    let sub = principalToSubaccount(caller);
-    let subArr = Blob.toArray(sub);
-    var hex = "";
-    for (b in subArr.vals()) {
-      let hi = Nat8.toNat(b) / 16;
-      let lo = Nat8.toNat(b) % 16;
-      hex := hex # hexNibble(hi) # hexNibble(lo);
-    };
-    let selfPrincipal = Principal.fromActor(ArcadeBackend);
-    let bal = await ICP_LEDGER_ICRC1.icrc1_balance_of({ owner = selfPrincipal; subaccount = ?sub });
-    { subHex = hex; callerText = Principal.toText(caller); selfText = Principal.toText(selfPrincipal); balanceE8s = bal }
-  };
 
   func hexNibble(n : Nat) : Text {
     let chars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
@@ -8901,7 +8943,9 @@ persistent actor ArcadeBackend {
     hydrateRuntimeStateIfNeeded();
     if (Text.size(Text.trim(canisterId, #char ' ')) == 0) return #err("Canister ID required");
     if (Text.size(Text.trim(name, #char ' ')) == 0) return #err("Collection name required");
-    externalCollections.put(canisterId, name);
+    if (Text.size(name) > 120) return #err("Collection name too long");
+    switch (Principal.fromText(normCanisterId(canisterId))) { case (_) {} };
+    externalCollections.put(normCanisterId(canisterId), name);
     #ok("External collection registered")
   };
 
@@ -8910,6 +8954,7 @@ persistent actor ArcadeBackend {
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
     externalCollections.delete(canisterId);
+    externalCollections.delete(normCanisterId(canisterId));
     #ok("External collection removed")
   };
 
@@ -8946,6 +8991,8 @@ persistent actor ArcadeBackend {
     if (vpBadgeCountOf(msg.caller) < 2 and not isAdmin(msg.caller)) return #err("2 Voting Power Badges required to create proposals");
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
+    switch (validateProposalText(title, body, images)) { case (?e) return #err(e); case null {} };
+    if (Text.size(category) > 40) return #err("Category too long");
     if (not isAdmin(msg.caller) and recentProposalBy(msg.caller, Time.now())) return #err("You've reached your proposal limit for the last 24 hours");
     // Proposals cost 5 Tokens only (the paymentLane argument is kept for interface compatibility but ignored).
     if (not isAdmin(msg.caller)) {
@@ -9036,6 +9083,8 @@ persistent actor ArcadeBackend {
     };
     if (Text.size(Text.trim(title, #char ' ')) == 0) return #err("Title required");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Description required");
+    switch (validateProposalText(title, body, images)) { case (?e) return #err(e); case null {} };
+    if (Text.size(target) > 200) return #err("Target too long");
     let now = Time.now();
     if (not admin and recentProposalBy(caller, now)) return #err("You've reached your proposal limit for the last 24 hours");
     let cleaned = Buffer.Buffer<Text>(4);
@@ -9401,6 +9450,7 @@ persistent actor ArcadeBackend {
     switch (muteBlockMessage(msg.caller)) { case (?m) { return #err(m) }; case null {} };
     if (votingPowerOf(msg.caller) == 0 and not isAdmin(msg.caller)) return #err("Voting Power Badge required for proposal discussion");
     if (Text.size(Text.trim(body, #char ' ')) == 0) return #err("Reply required");
+    if (Text.size(body) > 2_000) return #err("Reply too long (max 2000 characters)");
     var found = false;
     proposalEntries := Array.map<Proposal, Proposal>(proposalEntries, func(proposal) {
       if (proposal.id != proposalId) return proposal;
