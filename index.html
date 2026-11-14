@@ -2324,7 +2324,7 @@ window.addEventListener('message', (e) => {
 <div style='font-size:.65rem;color:#ffe08a;letter-spacing:2px;font-weight:800;margin-bottom:8px'>TICKET GAME SETUP</div>
 <div style='padding:10px;border:1px solid rgba(34,197,94,.3);border-radius:8px;background:rgba(34,197,94,.05);margin-bottom:10px'>
 <label style='display:flex;align-items:center;gap:8px;font-size:.72rem;color:#d8fbe4;font-weight:700'><input type='checkbox' id='uploadRunKeyOn' checked style='accent-color:#22c55e'/> Run check: insert the run key into the zip automatically</label>
-<div style='font-size:.62rem;color:#9fb0d6;margin:4px 0 6px'>Every <code>PASTE_KEY_HERE</code> in the game's files is replaced while uploading, and the key is saved on the game once the upload finishes. Re-uploading an existing game reuses its saved key.</div>
+<div style='font-size:.62rem;color:#9fb0d6;margin:4px 0 6px'>Every <code>PASTE_KEY_HERE</code> in the game's files is replaced while uploading, and the key is saved on the game once the upload finishes. If the zip is already keyed, its key is saved instead. Re-uploading an existing game reuses its saved key.</div>
 <div style='display:flex;gap:6px;flex-wrap:wrap;align-items:center'>
 <input id='uploadRunKey' type='text' maxlength='128' autocomplete='off' spellcheck='false' oninput='this.dataset.user="1"' style='flex:1;min-width:200px;padding:4px 6px;background:#0a0a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:.66rem;font-family:monospace'/>
 <button class='btn' onclick='uploadRunKeyGenerate()' style='font-size:.62rem;padding:3px 8px'>New key</button>
@@ -11513,7 +11513,7 @@ async function uploadGameToChain(){
     if(entries.length===0){return arcadeAlert('Empty Zip','No files found in zip.');}
 
     // Run check: insert the key into the build's text files (PASTE_KEY_HERE placeholders).
-    let runKeyToSave='', runKeyPaths=new Set();
+    let runKeyToSave='', runKeyPaths=new Set(), runKeyPreset='', preKeys=new Set();
     if(uploadTicketSetupActive()&&document.getElementById('uploadRunKeyOn')?.checked){
       const keyEl=document.getElementById('uploadRunKey');
       const target=pendingSubId||(findAdminGameUpdateTargetForSlug(gameId)||{}).id||'';
@@ -11524,9 +11524,11 @@ async function uploadGameToChain(){
       if(!/^[0-9a-f]{16,128}$/.test(key)){ status.innerHTML='<span style="color:#ef4444">The run key must be 16-128 hex characters. Press New key.</span>'; progress.style.display='none'; return; }
       for(const {path,entry} of entries){
         if(!RUN_KEY_TEXT_EXT.test(path)) continue;
-        try{ if((await entry.async('string')).includes('PASTE_KEY_HERE')) runKeyPaths.add(path); }catch(_){}
+        try{ const _t=await entry.async('string'); if(_t.includes('PASTE_KEY_HERE')) runKeyPaths.add(path); for(const m of _t.matchAll(/\bRUN_KEY\s*[:=]\s*['"`]([0-9a-fA-F]{16,128})['"`]/g)) preKeys.add(m[1].toLowerCase()); }catch(_){}
       }
       if(runKeyPaths.size){ runKeyToSave=key; }
+      else if(preKeys.size===1){ runKeyPreset=[...preKeys][0]; if(keyEl){ keyEl.value=runKeyPreset; keyEl.dataset.user='1'; } }
+      else if(preKeys.size>1){ if(!await arcadeConfirm('Different run keys','This zip contains more than one different RUN_KEY, so scores may not verify. Upload anyway without changing the saved key?')){ progress.style.display='none'; status.innerHTML=''; return; } }
       else if(!await arcadeConfirm('No run key placeholder','This zip has no <code>PASTE_KEY_HERE</code> placeholder, so no key can be inserted. Upload anyway and leave the run check as it is?')){ progress.style.display='none'; status.innerHTML=''; return; }
     }
 
@@ -11673,7 +11675,7 @@ async function uploadGameToChain(){
         const be=await getBackendActor(true);
         const r=await be.adminStageZipGameUrl(pendingSubId,onChainUrl);
         if(r.ok!==undefined){
-          const _tsP=await applyUploadTicketSetup(pendingSubId,{all:true,keyInserted:!!runKeyToSave,key:runKeyToSave});
+          const _tsP=await applyUploadTicketSetup(pendingSubId,{all:true,keyInserted:!!(runKeyToSave||runKeyPreset),key:(runKeyToSave||runKeyPreset)});
           status.innerHTML='<span style="color:#22c55e">'+_tsP+' Uploaded '+uploaded+' files for this submission. Now click <b>Accept</b> on its pending entry to publish it. <a href="'+onChainUrl+'" target="_blank" style="color:#22c55e">'+onChainUrl+'</a></span>';
           invalidateGameCache(); await refreshGameCache(); refreshAdminGameUpdateSelect();
         } else {
@@ -11683,7 +11685,7 @@ async function uploadGameToChain(){
         status.innerHTML='<span style="color:#ef4444">Files uploaded, but saving their location errored: '+escHtml(safeUserErrorMessage(stErr,'stage hosted url'))+'. Do not Accept yet - run Upload to Chain again.</span>';
       }
     } else if(updateTarget){
-      const _typeNoteU=(await applyUploadGameTypeIfNeeded(updateTarget.id,false))+(await applyUploadTicketSetup(updateTarget.id,{all:false,keyInserted:!!runKeyToSave,key:runKeyToSave}));
+      const _typeNoteU=(await applyUploadGameTypeIfNeeded(updateTarget.id,false))+(await applyUploadTicketSetup(updateTarget.id,{all:false,keyInserted:!!(runKeyToSave||runKeyPreset),key:(runKeyToSave||runKeyPreset)}));
       status.innerHTML='<span style="color:#22c55e">Updated '+uploaded+_typeNoteU+' files for '+escHtml(updateTarget.name||gameId)+'! Backend listing kept as-is. <a href="'+onChainUrl+'" target="_blank" style="color:#22c55e">'+onChainUrl+'</a></span>';
       invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); refreshAdminGameUpdateSelect(); refreshAdminPendingSubmissionSelect(); clearAdminPendingSubmissionPicker();
     } else if(f.name && f.dev){
@@ -11698,7 +11700,7 @@ async function uploadGameToChain(){
           BigInt(f.tokenCost), f.scoring, BigInt(f.purchasePrice)
         );
         if(r.ok!==undefined){
-          const _typeNote=(await applyUploadGameTypeIfNeeded(r.ok,true))+(await applyUploadTicketSetup(r.ok,{all:true,keyInserted:!!runKeyToSave,key:runKeyToSave}));
+          const _typeNote=(await applyUploadGameTypeIfNeeded(r.ok,true))+(await applyUploadTicketSetup(r.ok,{all:true,keyInserted:!!(runKeyToSave||runKeyPreset),key:(runKeyToSave||runKeyPreset)}));
           status.innerHTML='<span style="color:#22c55e">Uploaded '+uploaded+' files and registered!'+_typeNote+' Game ID: '+r.ok+' <a href="'+onChainUrl+'" target="_blank" style="color:#22c55e">'+onChainUrl+'</a></span>';
           invalidateGameCache(); await refreshGameCache(); renderGameAdminList(); refreshAdminGameUpdateSelect(); refreshAdminPendingSubmissionSelect(); clearAdminPendingSubmissionPicker();
         } else {
