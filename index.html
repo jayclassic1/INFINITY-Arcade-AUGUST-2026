@@ -525,22 +525,10 @@ function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(
 <!-- Game Rolodex Rows -->
 <div id='showroomRowsWrap' style='display:flex;flex-direction:column;gap:6px;padding:6px 20px 140px'>
 
-<!-- Spotlight -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(0,170,255,.2);border-radius:10px;padding:8px 12px'>
+<!-- Spotlight (only while a game is boosted) -->
+<div id='showroomSpotlightWrap' style='display:none;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(0,170,255,.2);border-radius:10px;padding:8px 12px'>
 <div onclick='openCategoryPage("showroom","spotlight")' style='font-size:.7rem;font-weight:800;color:#00aaff;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(0,170,255,.4);cursor:pointer'>SPOTLIGHT <span style='font-size:.55rem;opacity:.5'>View All</span></div>
 <div id='rowBoosted' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(0,170,255,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
-</div>
-
-<!-- DAO Favourites -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:8px 12px'>
-<div onclick='openCategoryPage("showroom","dao-approved")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES - TICKET <span style='font-size:.55rem;opacity:.5'>View All</span></div>
-<div id='rowJaysPicks' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
-</div>
-
-<!-- DAO Favourites - Non-Ticket -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:8px 12px'>
-<div onclick='openCategoryPage("showroom","dao-approved-nonticket")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES - NON-TICKET <span style='font-size:.55rem;opacity:.5'>View All</span></div>
-<div id='rowDaoFavNonTicket' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
 <!-- Ticket Games -->
@@ -555,10 +543,10 @@ function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(
 <div id='rowNonTicket' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(139,180,255,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
-<!-- Local Multiplayer -->
-<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:8px 12px'>
-<div onclick='openCategoryPage("showroom","local-multiplayer")' style='font-size:.7rem;font-weight:800;color:#a855f7;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(168,85,247,.4);cursor:pointer'>LOCAL MULTIPLAYER <span style='font-size:.55rem;opacity:.5'>View All</span></div>
-<div id='rowMultiplayer' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
+<!-- DAO Favourites -->
+<div style='background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:8px 12px'>
+<div onclick='openCategoryPage("showroom","dao-approved")' style='font-size:.7rem;font-weight:800;color:#ffd700;margin-bottom:5px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,.4);cursor:pointer'>DAO FAVOURITES <span style='font-size:.55rem;opacity:.5'>View All</span></div>
+<div id='rowJaysPicks' style='display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,215,0,.3) transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch'></div>
 </div>
 
 </div>
@@ -8965,8 +8953,7 @@ window.renderMobileGames=renderMobileGames; window.mobileGamesTab=mobileGamesTab
 async function renderShowroom(){
   await refreshGameCache();
   const allGames=getSubmissions().filter(s=>(s.tier==='showroom'||s.gameTier==='showroom'||s.tier==='jays-picks'||s.gameTier==='jays-picks')&&(s.status||'live')==='live');
-  const jaysPicks=allGames.filter(s=>s.daoFav&&s.paysTickets!==false); // DAO Favourites - Ticket
-  const daoFavNonTicket=allGames.filter(s=>s.daoFav&&s.paysTickets===false);
+  const jaysPicks=allGames.filter(s=>s.daoFav); // DAO Favourites (ticket and non-ticket)
   // Check on-chain boosts for spotlight
   let onChainBoosts=[];
   try{const be=await getBackendActor();onChainBoosts=await be.getActiveBoosts();}catch(_){}
@@ -8999,17 +8986,14 @@ async function renderShowroom(){
 
   const bRow=qs('rowBoosted');
   const jRow=qs('rowJaysPicks');
-  const multiplayer=allGames.filter(s=>!s.daoFav&&s.localMultiplayer);
-  const mRow=qs('rowMultiplayer');
-  const ticketGames=allGames.filter(s=>!s.daoFav&&!s.localMultiplayer&&s.paysTickets!==false);
+  const ticketGames=allGames.filter(s=>!s.daoFav&&s.paysTickets!==false);
   const tRow=qs('rowTicketGames');
-  const nonTicketGames=allGames.filter(s=>!s.daoFav&&!s.localMultiplayer&&s.paysTickets===false);
+  const nonTicketGames=allGames.filter(s=>!s.daoFav&&s.paysTickets===false);
   const nRow=qs('rowNonTicket');
 
-  bRow.innerHTML=boosted.length?boosted.map(s=>gameCard(s,'',true)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No spotlight games yet</div>';
+  bRow.innerHTML=boosted.map(s=>gameCard(s,'',true)).join('');
+  {const sw=qs('showroomSpotlightWrap'); if(sw) sw.style.display=boosted.length?'':'none';}
   jRow.innerHTML=jaysPicks.length?jaysPicks.map(s=>gameCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No DAO Favourites yet</div>';
-  {const dnRow=qs('rowDaoFavNonTicket');if(dnRow)dnRow.innerHTML=daoFavNonTicket.length?daoFavNonTicket.map(s=>gameCard(s,'#ffd700',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No DAO Favourites yet</div>';}
-  mRow.innerHTML=multiplayer.length?multiplayer.map(s=>gameCard(s,'#a855f7',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No local multiplayer games yet</div>';
   if(tRow) tRow.innerHTML=ticketGames.length?ticketGames.map(s=>gameCard(s,'#39ff14',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No ticket games yet</div>';
   if(nRow) nRow.innerHTML=nonTicketGames.length?nonTicketGames.map(s=>gameCard(s,'#8bb4ff',false)).join(''):'<div style="color:#3e537d;font-size:.8rem;padding:20px">No non-ticket games yet</div>';
   hydrateGameCardStats(allGames);
@@ -9812,11 +9796,11 @@ async function openCategoryPage(room,category){
   if(room==='showroom'){
     const pool=allGames.filter(s=>(s.tier==='showroom'||s.gameTier==='showroom'||s.tier==='jays-picks'||s.gameTier==='jays-picks')&&(s.status||'live')==='live');
     if(category==='spotlight'){title='Spotlight';titleColor='#00aaff';borderColor='#00aaff';{let ids=new Set();try{const be=await getBackendActor();ids=new Set((await be.getActiveBoosts()).map(b=>b.gameId));}catch(_){}games=pool.filter(s=>ids.has(s.id));}}
-    else if(category==='dao-approved'){title="DAO Favourites - Ticket";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.daoFav&&s.paysTickets!==false);}
+    else if(category==='dao-approved'){title="DAO Favourites";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.daoFav);}
     else if(category==='dao-approved-nonticket'){title="DAO Favourites - Non-Ticket";titleColor='#ffd700';borderColor='#ffd700';games=pool.filter(s=>s.daoFav&&s.paysTickets===false);}
     else if(category==='local-multiplayer'){title='Local Multiplayer';titleColor='#a855f7';borderColor='#a855f7';games=pool.filter(s=>!s.daoFav&&s.localMultiplayer);}
-    else if(category==='ticket-games'){title='Ticket Games';titleColor='#39ff14';borderColor='#39ff14';games=pool.filter(s=>!s.daoFav&&!s.localMultiplayer&&s.paysTickets!==false);}
-    else if(category==='non-ticket'){title='Non-Ticket Games';titleColor='#8bb4ff';borderColor='#8bb4ff';games=pool.filter(s=>!s.daoFav&&!s.localMultiplayer&&s.paysTickets===false);}
+    else if(category==='ticket-games'){title='Ticket Games';titleColor='#39ff14';borderColor='#39ff14';games=pool.filter(s=>!s.daoFav&&s.paysTickets!==false);}
+    else if(category==='non-ticket'){title='Non-Ticket Games';titleColor='#8bb4ff';borderColor='#8bb4ff';games=pool.filter(s=>!s.daoFav&&s.paysTickets===false);}
     else if(category==='popular'){title='Most Popular';titleColor='#00ff66';borderColor='#00ff66';games=[...pool].sort((a,b)=>(stats[b.id]?.plays||0)-(stats[a.id]?.plays||0)).filter(s=>(stats[s.id]?.plays||0)>0);}
     else{title='All Showroom Games';games=pool;}
   } else {
