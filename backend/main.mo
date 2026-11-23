@@ -5437,7 +5437,7 @@ persistent actor ArcadeBackend {
   };
 
   func lotterySnapshot(kind : Text) : [(Principal, Nat)] {
-    let thresholds : [Nat] = if (kind == "token") { [3, 6, 9] } else { [4, 8] };
+    let thresholds : [Nat] = if (kind == "token") { [5, 6, 9] } else { [4, 8] };
     let perkId = if (kind == "token") { "token-lottery" } else { "ticket-lottery" };
     // Candidates: VP badge holders plus Official NFT holders (lottery abilities work without badges).
     let seen = HashMap.HashMap<Principal, Bool>(64, Principal.equal, Principal.hash);
@@ -8673,7 +8673,7 @@ persistent actor ArcadeBackend {
     vp + (if (dev) 1 else 0) + (if (artist) 1 else 0) + abilityCountOf(owner, "vp-plus");
   };
 
-  // DAO forum access by section. Base DAO sections need any VP; tiers count VP Badges only (5 / 7 / 10);
+  // DAO forum access by section. Base DAO sections need any VP; tiers count VP Badges only (3 / 7 / 10);
   // contributor sections need that contributor badge. Admin can access every section.
   func daoSectionAllowed(p : Principal, section : Text) : Bool {
     if (not isDaoSection(section)) return true;
@@ -8688,7 +8688,7 @@ persistent actor ArcadeBackend {
     if (section == "dao-core" and perkHas("access-diplomat")) return true;
     if (votingPowerOf(p) == 0) return false;
     let n = vpBadgeCountOf(p);
-    if (section == "dao-voting" or section == "dao-treasury") return n >= 5;
+    if (section == "dao-voting" or section == "dao-treasury") return n >= 3;
     if (section == "dao-player-portal") return n >= 7;
     if (section == "dao-core") return n >= 10;
     if (section == "dao-game-developers") {
@@ -9024,7 +9024,7 @@ persistent actor ArcadeBackend {
     #ok(badge.id)
   };
 
-  let VP_BADGE_COSTS : [Nat] = [1000, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 25000, 50000];
+  let VP_BADGE_COSTS : [Nat] = [100, 500, 1000, 2000, 2500, 3000, 3500, 4000, 5000, 10000];
 
   func vpBadgeCountOf(owner : Principal) : Nat {
     var count = 0;

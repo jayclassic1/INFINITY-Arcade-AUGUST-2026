@@ -1254,7 +1254,7 @@ window.addEventListener('message', (e) => {
 <div class='fr-card' style='--c:#ef4444' onclick="openDaoSection('dao-proposal-talk')"><div class='fr-ico'>📜</div><div class='fr-body'><div class='fr-name'>PROPOSAL TALK</div><div class='fr-desc'>Discuss governance proposals and ideas</div></div><div class='fr-arrow'>›</div></div>
 <div class='fr-card' style='--c:#22c55e' onclick="openDaoSection('dao-game-developers')"><div class='fr-ico'>🛠️</div><div class='fr-body'><div class='fr-name'>GAME DEVELOPERS</div><div class='fr-desc'>Developer discussion, tips and collaboration</div><span class="fr-pill">🛠️ Game Contributor NFT</span></div><div class='fr-arrow'>›</div></div>
 <div class='fr-card' style='--c:#ff44cc' onclick="openDaoSection('dao-artists')"><div class='fr-ico'>🎨</div><div class='fr-body'><div class='fr-name'>ARTISTS</div><div class='fr-desc'>Art submissions, NFT creation and creative talk</div><span class="fr-pill">🎨 Artist Contributor NFT</span></div><div class='fr-arrow'>›</div></div>
-<div id='daoVotingSection' class='fr-card' style='--c:#fbbf24' onclick="openDaoSection('dao-voting')"><div class='fr-ico'>⚔️</div><div class='fr-body'><div class='fr-name'>VETERAN DISCUSSION</div><div class='fr-desc'>Discuss active votes and strategy</div><span class="fr-pill">🔑 5 VP Badges</span></div><div class='fr-arrow'>›</div></div>
+<div id='daoVotingSection' class='fr-card' style='--c:#fbbf24' onclick="openDaoSection('dao-voting')"><div class='fr-ico'>⚔️</div><div class='fr-body'><div class='fr-name'>VETERAN DISCUSSION</div><div class='fr-desc'>Discuss active votes and strategy</div><span class="fr-pill">🔑 3 VP Badges</span></div><div class='fr-arrow'>›</div></div>
 <div class='fr-card' style='--c:#00aaff' onclick="openDaoSection('dao-player-portal')"><div class='fr-ico'>💎</div><div class='fr-body'><div class='fr-name'>ELITE'S CORNER</div><div class='fr-desc'>An inner circle for dedicated DAO members</div><span class="fr-pill">🔑 7 VP Badges</span></div><div class='fr-arrow'>›</div></div>
 <div id='daoCoreSection' class='fr-card' style='--c:#f43f5e' onclick="openDaoSection('dao-core')"><div class='fr-ico'>👑</div><div class='fr-body'><div class='fr-name'>DIPLOMAT'S ONLY</div><div class='fr-desc'>High-level platform direction and critical decisions</div><span class="fr-pill">🔑 10 VP Badges</span></div><div class='fr-arrow'>›</div></div>
 <div class='fr-card' style='--c:#3b82f6' onclick="showView('forum');openVeteranPortal()"><div class='fr-ico'>🎖️</div><div class='fr-body'><div class='fr-name'>VETERAN LEGION</div><div class='fr-desc'>The seasoned players' lounge, earned by playing</div><span class="fr-pill">🎖️ Gamer XP required</span></div><div class='fr-arrow'>›</div></div>
@@ -1895,7 +1895,7 @@ window.addEventListener('message', (e) => {
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>What is the DAO?</button><div class='faq-a'>The DAO is the community governance system. Voting Power Badge holders can vote on proposals that shape the arcade - which games get promoted, what features get built, how the treasury is managed. It's a glorified polling machine: proposals that pass go to the dev team for implementation.</div></div>
 
-<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power: a Voting Power Badge from the Prize Booth, or a Dev/Artist Contributor badge. Enter through the DAO door on the landing page. Voting Power Badges unlock more as you collect them: 2 badges = create proposals, 3 = Token Lottery #1, 4 = Ticket Lottery #1, 5 = DAO forum tier 1 (Voting and Treasury Talk), 6 = Token Lottery #2, 7 = tier 2 (Elite’s Corner), 8 = Ticket Lottery #2, 9 = Token Lottery #3, 10 = tier 3 (Diplomat’s Only). Every lottery entry wins exactly once per 8-week cycle. Any Voting Power also makes you eligible to win game jackpots.</div></div>
+<div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>How do I access the DAO?</button><div class='faq-a'>You need at least 1 Voting Power: a Voting Power Badge from the Prize Booth, or a Dev/Artist Contributor badge. Enter through the DAO door on the landing page. Voting Power Badges unlock more as you collect them: 2 badges = create proposals, 3 = DAO forum tier 1 (Voting and Treasury Talk), 4 = Ticket Lottery #1, 5 = Token Lottery #1, 6 = Token Lottery #2, 7 = tier 2 (Elite’s Corner), 8 = Ticket Lottery #2, 9 = Token Lottery #3, 10 = tier 3 (Diplomat’s Only). Every lottery entry wins exactly once per 8-week cycle. Any Voting Power also makes you eligible to win game jackpots.</div></div>
 
 <div class='faq-item'><button class='faq-q' onclick='toggleFaq(this)'>Does the DAO control the platform?</button><div class='faq-a'>No. The DAO is advisory. All passed proposals are reviewed by the development team before implementation. The arcade reserves the right to reject proposals that would harm the platform, its economy, or its users. Think of it as a strong suggestion box, not a boardroom.</div></div>
 </div>
@@ -4073,7 +4073,7 @@ async function renderLotteryPanel(){
     const me=S.principalText?Principal.fromText(S.principalText):null;
     const [st,settings,hist,mine]=await Promise.all([be.getLotteryStatus(),be.getLotterySettings(),be.getLotteryHistory(),me?be.getMyLotteryEntries(me):Promise.resolve([])]);
     const cyc=o=>(Array.isArray(o)&&o.length)?o[0]:null;
-    const lots=[{kind:'token',name:'TOKEN LOTTERY',unit:'Tokens',color:'#ffd86b',c:cyc(st.token),tiers:[3,6,9]},{kind:'ticket',name:'TICKET LOTTERY',unit:'Tickets',color:'#c084fc',c:cyc(st.ticket),tiers:[4,8]}];
+    const lots=[{kind:'token',name:'TOKEN LOTTERY',unit:'Tokens',color:'#ffd86b',c:cyc(st.token),tiers:[5,6,9]},{kind:'ticket',name:'TICKET LOTTERY',unit:'Tickets',color:'#c084fc',c:cyc(st.ticket),tiers:[4,8]}];
     const card=l=>{
       const c=l.c; const my=(mine||[]).filter(e=>e[0]===l.kind);
       const myHtml=my.length?my.map(e=>`<span style="display:inline-block;margin:2px 4px 0 0;padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:800;border:1px solid ${e[2]?'rgba(34,197,94,.6)':'rgba(255,255,255,.18)'};color:${e[2]?'#22c55e':'#cbd5e1'}">#${Number(e[1])} ${e[2]?'✅ Won':'⏳ Waiting'}</span>`).join('')
@@ -14697,16 +14697,16 @@ const DAO_LEVELS={
 };
 // Voting Power Badge Definitions - 10 unique soulbound governance tokens
 const VP_NFTS=[
-  {id:'vp-1', vpNum:1, name:'Initiate Badge',    desc:'Opens the DAO Boardroom and Player Portal. Welcome to the DAO.',                ticketCost:1000,   rarity:'Common',    emoji:'🔰'},
-  {id:'vp-2', vpNum:2, name:'Voice Token',        desc:'Unlocks: create proposals. Your voice carries weight now.',                            ticketCost:2000,   rarity:'Common',    emoji:'🗣️'},
-  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks: Token Lottery #1 entry (wins once every 8-week cycle).',               ticketCost:3000,   rarity:'Uncommon',  emoji:'🔑'},
-  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Unlocks: Ticket Lottery #1 entry (wins once every 8-week cycle).',                ticketCost:5000,   rarity:'Uncommon',  emoji:'📜'},
-  {id:'vp-5', vpNum:5, name:'Guardian Crest',      desc:'Unlocks: DAO forum tier 1 (Voting and Treasury Talk).',               ticketCost:7500,   rarity:'Rare',      emoji:'🛡️'},
-  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'Unlocks: Token Lottery #2 entry (wins once every 8-week cycle).',    ticketCost:10000,  rarity:'Rare',      emoji:'♟️'},
-  {id:'vp-7', vpNum:7, name:'Treasury Sigil',     desc:'Unlocks: DAO forum tier 2 (Elite’s Corner).',                   ticketCost:15000,  rarity:'Rare',      emoji:'💎'},
-  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'Unlocks: Ticket Lottery #2 entry (wins once every 8-week cycle).',                   ticketCost:20000,  rarity:'Legendary', emoji:'🏗️'},
-  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'Unlocks: Token Lottery #3 entry (wins once every 8-week cycle).',                 ticketCost:25000,  rarity:'Legendary', emoji:'👁️'},
-  {id:'vp-10',vpNum:10,name:'Infinity Crown',     desc:'Unlocks: DAO forum tier 3 (Diplomat’s Only). The final VP badge.',              ticketCost:50000,  rarity:'Legendary', emoji:'👑'},
+  {id:'vp-1', vpNum:1, name:'Initiate Badge',    desc:'Opens the DAO Boardroom and Player Portal. Welcome to the DAO.',                ticketCost:100,   rarity:'Common',    emoji:'🔰'},
+  {id:'vp-2', vpNum:2, name:'Voice Token',        desc:'Unlocks: create proposals. Your voice carries weight now.',                            ticketCost:500,   rarity:'Common',    emoji:'🗣️'},
+  {id:'vp-3', vpNum:3, name:'Proposal Key',       desc:'Unlocks: DAO forum tier 1 (Voting and Treasury Talk).',               ticketCost:1000,   rarity:'Uncommon',  emoji:'🔑'},
+  {id:'vp-4', vpNum:4, name:'Council Seal',       desc:'Unlocks: Ticket Lottery #1 entry (wins once every 8-week cycle).',                ticketCost:2000,   rarity:'Uncommon',  emoji:'📜'},
+  {id:'vp-5', vpNum:5, name:'Guardian Crest',      desc:'Unlocks: Token Lottery #1 entry (wins once every 8-week cycle).',               ticketCost:2500,   rarity:'Rare',      emoji:'🛡️'},
+  {id:'vp-6', vpNum:6, name:'Strategist Mark',    desc:'Unlocks: Token Lottery #2 entry (wins once every 8-week cycle).',    ticketCost:3000,  rarity:'Rare',      emoji:'♟️'},
+  {id:'vp-7', vpNum:7, name:'Treasury Sigil',     desc:'Unlocks: DAO forum tier 2 (Elite’s Corner).',                   ticketCost:3500,  rarity:'Rare',      emoji:'💎'},
+  {id:'vp-8', vpNum:8, name:'Architect Token',    desc:'Unlocks: Ticket Lottery #2 entry (wins once every 8-week cycle).',                   ticketCost:4000,  rarity:'Legendary', emoji:'🏗️'},
+  {id:'vp-9', vpNum:9, name:'Oracle Eye',          desc:'Unlocks: Token Lottery #3 entry (wins once every 8-week cycle).',                 ticketCost:5000,  rarity:'Legendary', emoji:'👁️'},
+  {id:'vp-10',vpNum:10,name:'Infinity Crown',     desc:'Unlocks: DAO forum tier 3 (Diplomat’s Only). The final VP badge.',              ticketCost:10000,  rarity:'Legendary', emoji:'👑'},
 ];
 
 function _perkGrantsSection(key){ const a=(window._myPerks&&window._myPerks.access)||[]; if(a.includes('access-all')) return true; const m={'dao-game-developers':'access-dev','dao-artists':'access-art','dao-voting':'access-veteran','dao-player-portal':'access-elite','dao-core':'access-diplomat'}; return !!(m[key]&&a.includes(m[key])); }
@@ -14739,7 +14739,7 @@ function getUserVpLevel(){
   const vpCount=getUserVpCount();
   if(vpCount>=10) return 4;
   if(vpCount>=7) return 3;
-  if(vpCount>=5) return 2;
+  if(vpCount>=3) return 2;
   if(getUserVotingPower()>=1) return 1;
   return 0;
 }
