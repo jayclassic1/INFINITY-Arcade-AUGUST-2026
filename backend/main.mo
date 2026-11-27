@@ -3517,6 +3517,24 @@ persistent actor ArcadeBackend {
 
   /// Admin: set a ticket price for every NFT in an unminted official collection (image order).
   /// Pass an empty array to go back to the collection's single price.
+  /// Admin: change the Ticket price of one Official NFT that is still for sale in the Prize Booth.
+  /// Player-listed NFTs are priced by their seller and cannot be changed here.
+  public shared(msg) func adminSetNftPrice(listingId : Text, ticketCost : Nat) : async Result.Result<Text, Text> {
+    if (not isAdmin(msg.caller)) return #err("Not authorized");
+    if (ticketCost < 1) return #err("Price must be at least 1 ticket");
+    if (ticketCost > 1_000_000) return #err("Price is too high");
+    hydrateRuntimeStateIfNeeded();
+    switch (nftListings.get(listingId)) {
+      case null { #err("Listing not found") };
+      case (?listing) {
+        if (listing.listingType != "mint") return #err("Only Official NFT prices can be changed here");
+        if (listing.status != "live") return #err("This NFT is not for sale right now (status: " # listing.status # ")");
+        nftListings.put(listingId, { listing with ticketCost = ticketCost });
+        #ok("Price set to " # Nat.toText(ticketCost) # " tickets")
+      };
+    };
+  };
+
   public shared(msg) func adminSetCollectionPrices(collectionId : Text, prices : [Nat]) : async Result.Result<Text, Text> {
     if (not isAdmin(msg.caller)) return #err("Not authorized");
     hydrateRuntimeStateIfNeeded();
