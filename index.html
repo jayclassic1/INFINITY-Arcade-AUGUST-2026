@@ -452,7 +452,7 @@ function safeUrl(u){u=String(u??'').trim();if(/[\s"'<>\\]/.test(u))return '';if(
         : renderWalletNftMedia(n,'width:100%;height:58px;object-fit:contain;background:#0a0a1a'); // mobile-wallet-nft-fallback
       const collection=n.collection||n.standard||'NFT';
       const token=n.tokenId||n.index||'';
-      return `<div role="button" tabindex="0" aria-label="Withdraw ${escHtml(label)}" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;text-align:center;padding:4px;cursor:pointer;min-width:0" onclick='withdrawNft(${n.index})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();withdrawNft(${n.index})}'>
+      return `<div role="button" tabindex="0" aria-label="Withdraw ${escHtml(label)}" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;text-align:center;padding:4px;cursor:pointer;min-width:0" onclick='withdrawNft(${n.index},"${n.canisterId||''}")' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();withdrawNft(${n.index},"${n.canisterId||''}")}'>
         ${media}
         <div style="font-size:.58rem;color:#e0e6f0;white-space:normal;overflow-wrap:anywhere;line-height:1.15;margin-top:4px">${escHtml(label)}</div>
         <div style="font-size:.46rem;color:#6f8eb8;white-space:normal;overflow-wrap:anywhere;line-height:1.15;margin-top:2px">${escHtml(collection)}${token?' #'+escHtml(String(token)):''}</div>
@@ -3010,9 +3010,8 @@ async function scanNftsOf(principalText){
   const items=[];
   try{
     const nftActor=await getNftActor();
-    const owned=await nftActor.icrc7_tokens_of({owner:Principal.fromText(principalText),subaccount:[]});
-    const metaActor=await getNftMetadataActor();
-    const metas=await Promise.all(owned.map(tid=>metaActor.icrc7_token_metadata(tid).catch(()=>[])));
+    const owned=await icrc7TokensOf(NFT_CANISTER,principalText);
+    const metas=await icrc7TokenMetadata(NFT_CANISTER,owned).catch(()=>[]);
     owned.forEach((tid,i)=>{
       const tokenNum=Number(tid); let name='Infinity Arcade #'+tokenNum, imageUrl='';
       const m=metas[i];
@@ -4455,9 +4454,10 @@ async function recoverNftSend(){
   }catch(e){ console.error('Recover NFT send failed:',e); _recStatus('Send failed: '+escHtml(safeUserErrorMessage(e,'NFT transfer'))+'. Press Find my NFTs to check whether it still shows here.','#ef4444'); }
   _recSending=false;
 }
-function openSupportedCollectionsModal(){
+async function openSupportedCollectionsModal(){
   const existing=document.getElementById('supportedCollectionsModal'); if(existing) existing.remove();
   const collections=[{name:'Infinity Arcade',id:NFT_CANISTER,standard:'ICRC-7'}];
+  try{ const ext=await getExtColCache(); for(const [cid,name] of Object.entries(ext||{})){ if(cid&&cid!==NFT_CANISTER) collections.push({name:name||cid,id:cid,standard:'ICRC-7'}); } }catch(_){}
   const modal=document.createElement('div');
   modal.id='supportedCollectionsModal';
   modal.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.82);display:grid;place-items:center;padding:18px;backdrop-filter:blur(6px)';
@@ -4629,41 +4629,59 @@ async function scanOwnedWalletNfts(force=false){
 
   // ICRC-7 (house) collection
   try{
-    const nftActor=await getNftActor();
-    const owned=await nftActor.icrc7_tokens_of({owner:Principal.fromText(S.principalText),subaccount:[]});
-    const metaActor=await getNftMetadataActor();
-    for(const tid of owned){
+    const owned=await icrc7TokensOf(NFT_CANISTER,S.principalText);
+    const metas=await icrc7TokenMetadata(NFT_CANISTER,owned).catch(metaErr=>{console.warn('Metadata fetch failed:',metaErr);return [];});
+    owned.forEach((tid,i)=>{
       const tokenNum=Number(tid);
-      let name='Infinity Arcade #'+tokenNum;
-      let imageUrl='';
-      try{
-        const metaOpt=await metaActor.icrc7_token_metadata(tid);
-        if(metaOpt.length){
-          for(const [k,v] of metaOpt[0]){
-            if(k==='name'&&'Text' in v) name=v.Text;
-            if(k==='image'&&'Text' in v) imageUrl=v.Text;
-          }
-        }
-      }catch(metaErr){console.warn('Metadata fetch failed for token',tokenNum,metaErr);}
+      const md=(metas[i]&&metas[i].length)?metas[i][0]:[];
       items.push({
         collection:'Infinity Arcade',
         canisterId:NFT_CANISTER,
         index:tokenNum,
         tokenId:String(tokenNum),
-        name,
-        imageUrl,
+        name:icrc7MetaText(md,['name'])||('Infinity Arcade #'+tokenNum),
+        imageUrl:icrc7MetaText(md,['image']),
         standard:'ICRC-7',
         standardKey:'icrc7'
       });
-    }
-    successes.push({id:NFT_CANISTER,name:'Infinity Arcade',count:Array.isArray(owned)?owned.length:0,standard:'ICRC-7'});
+    });
+    successes.push({id:NFT_CANISTER,name:'Infinity Arcade',count:owned.length,standard:'ICRC-7'});
   }catch(e){
     console.warn('ICRC-7 scan unavailable:',e);
     failures.push({id:NFT_CANISTER,name:'Infinity Arcade',standard:'ICRC-7',reason:e?.message||'unavailable'});
   }
 
+  // Registered outside ICRC-7 collections (Admin > External Collection Registry)
+  let extCols={};
+  try{ extCols=await getExtColCache(); }catch(_){ extCols={}; }
+  const extList=Object.entries(extCols||{}).filter(([cid])=>cid&&cid!==NFT_CANISTER);
+  await Promise.all(extList.map(async([cid,colName])=>{
+    try{
+      const owned=await icrc7TokensOf(cid,S.principalText);
+      const metas=owned.length?await icrc7TokenMetadata(cid,owned).catch(()=>[]):[];
+      owned.forEach((tid,i)=>{
+        const tokenNum=Number(tid);
+        const md=(metas[i]&&metas[i].length)?metas[i][0]:[];
+        items.push({
+          collection:colName||'NFT',
+          canisterId:cid,
+          index:tokenNum,
+          tokenId:String(tid),
+          name:icrc7MetaText(md,['name','icrc7:name'])||((colName||'NFT')+' #'+tokenNum),
+          imageUrl:icrc7MetaText(md,['image','icrc7:image','icrc7:logo','logo','thumbnail']),
+          standard:'ICRC-7',
+          standardKey:'icrc7'
+        });
+      });
+      successes.push({id:cid,name:colName,count:owned.length,standard:'ICRC-7'});
+    }catch(e){
+      console.warn('Outside collection scan unavailable:',cid,e);
+      failures.push({id:cid,name:colName,standard:'ICRC-7',reason:e?.message||'unavailable'});
+    }
+  }));
+
   _ownedWalletNftsCache={principal:S.principalText,ts:now,items};
-  setOwnedWalletNftScanState({principal:S.principalText,ts:now,total:1,successes,failures,fatal:null});
+  setOwnedWalletNftScanState({principal:S.principalText,ts:now,total:1+extList.length,successes,failures,fatal:null});
   return items;
 }
 
@@ -6049,18 +6067,66 @@ const VAULT_PRINCIPAL=BACKEND_CANISTER;
 
 // ICRC-7 IDL factory
 function icrc7Idl({IDL}){
-  const Account=IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))});
-  const Metadata=IDL.Variant({Nat:IDL.Nat,Int:IDL.Int,Text:IDL.Text,Blob:IDL.Vec(IDL.Nat8)});
-  const MetadataResult=IDL.Variant({Ok:IDL.Vec(IDL.Tuple(IDL.Text,Metadata)),Err:IDL.Variant({InvalidTokenId:IDL.Null,GenericError:IDL.Record({error_code:IDL.Nat,message:IDL.Text})})});
-  const TokensOfResult=IDL.Variant({Ok:IDL.Vec(IDL.Nat),Err:IDL.Variant({InvalidTokenId:IDL.Null,GenericError:IDL.Record({error_code:IDL.Nat,message:IDL.Text})})});
+  const Sub=IDL.Opt(IDL.Vec(IDL.Nat8));
+  const Account=IDL.Record({owner:IDL.Principal,subaccount:Sub});
+  const Value=IDL.Rec();
+  Value.fill(IDL.Variant({Nat:IDL.Nat,Int:IDL.Int,Text:IDL.Text,Blob:IDL.Vec(IDL.Nat8),Map:IDL.Vec(IDL.Tuple(IDL.Text,Value)),Array:IDL.Vec(Value)}));
+  const Metadata=IDL.Vec(IDL.Tuple(IDL.Text,Value));
+  const TransferArg=IDL.Record({from_subaccount:Sub,to:Account,token_id:IDL.Nat,memo:IDL.Opt(IDL.Vec(IDL.Nat8)),created_at_time:IDL.Opt(IDL.Nat64)});
+  const TransferError=IDL.Variant({
+    NonExistingTokenId:IDL.Null,InvalidRecipient:IDL.Null,Unauthorized:IDL.Null,TooOld:IDL.Null,
+    CreatedInFuture:IDL.Record({ledger_time:IDL.Nat64}),Duplicate:IDL.Record({duplicate_of:IDL.Nat}),
+    GenericError:IDL.Record({error_code:IDL.Nat,message:IDL.Text}),GenericBatchError:IDL.Record({error_code:IDL.Nat,message:IDL.Text}),
+  });
   return IDL.Service({
     icrc7_name:IDL.Func([],[ IDL.Text],['query']),
     icrc7_total_supply:IDL.Func([],[IDL.Nat],['query']),
-    icrc7_metadata:IDL.Func([IDL.Nat],[MetadataResult],['query']),
-    icrc7_owner_of:IDL.Func([IDL.Nat],[IDL.Variant({Ok:Account,Err:IDL.Variant({InvalidTokenId:IDL.Null})})],['query']),
-    icrc7_tokens_of:IDL.Func([Account],[IDL.Vec(IDL.Nat)],['query']),
+    icrc7_owner_of:IDL.Func([IDL.Vec(IDL.Nat)],[IDL.Vec(IDL.Opt(Account))],['query']),
+    icrc7_tokens_of:IDL.Func([Account,IDL.Opt(IDL.Nat),IDL.Opt(IDL.Nat)],[IDL.Vec(IDL.Nat)],['query']),
+    icrc7_token_metadata:IDL.Func([IDL.Vec(IDL.Nat)],[IDL.Vec(IDL.Opt(Metadata))],['query']),
+    icrc7_transfer:IDL.Func([IDL.Vec(TransferArg)],[IDL.Vec(IDL.Opt(IDL.Variant({Ok:IDL.Nat,Err:TransferError})))],[]),
     addOperator:IDL.Func([IDL.Principal],[],[]),
   });
+}
+// Every token id an account holds in an ICRC-7 collection (follows the standard's paging).
+async function icrc7TokensOf(canisterId,principalText){
+  const a=await getDynamicNftActor(canisterId);
+  const acct={owner:Principal.fromText(principalText),subaccount:[]};
+  const out=[]; let prev=[];
+  for(let page=0;page<50;page++){
+    const ids=await a.icrc7_tokens_of(acct,prev,[100n]);
+    out.push(...ids);
+    if(ids.length<100) break;
+    prev=[ids[ids.length-1]];
+  }
+  return out;
+}
+// Metadata for a list of tokens, same order; each entry is [] (none) or [ [[key,value],...] ].
+async function icrc7TokenMetadata(canisterId,tokenIds){
+  const a=await getDynamicNftActor(canisterId);
+  const out=[];
+  for(let i=0;i<tokenIds.length;i+=50){
+    const part=await a.icrc7_token_metadata(tokenIds.slice(i,i+50).map(t=>BigInt(t)));
+    out.push(...part);
+  }
+  return out;
+}
+function icrc7MetaText(md,keys){
+  for(const [k,v] of (md||[])){ if(keys.includes(k)&&v&&('Text' in v)) return String(v.Text); }
+  return '';
+}
+// Move ONE token the signed-in player owns. Throws with a readable message if it did not move.
+async function icrc7TransferOne(canisterId,toPrincipalText,tokenId){
+  const actor=await getAuthenticatedIcrc7TransferActor(canisterId);
+  const r=await actor.icrc7_transfer([{from_subaccount:[],to:{owner:Principal.fromText(toPrincipalText),subaccount:[]},token_id:BigInt(tokenId),memo:[],created_at_time:[]}]);
+  const first=Array.isArray(r)&&r.length?r[0]:[];
+  const res=first&&first.length?first[0]:null;
+  if(!res) throw new Error('The NFT canister did not process the transfer');
+  if('Err' in res){
+    const k=Object.keys(res.Err)[0], v=res.Err[k];
+    throw new Error(k==='Unauthorized'?'This NFT cannot be moved that way':(k+(v&&v.message?': '+v.message:'')));
+  }
+  return res.Ok;
 }
 
 // ============ MULTI-STANDARD NFT SUPPORT (DIP-721 + ICRC-7) ============
@@ -6388,8 +6454,9 @@ async function getDynamicNftActor(canisterId){
 async function fetchExternalNftMetadata(canisterId,tokenId){
   try{
     const actor=await getDynamicNftActor(canisterId);
-    const metaResult=await actor.icrc7_token_metadata(BigInt(tokenId));
-    if('Ok' in metaResult){
+    const _mr=await actor.icrc7_token_metadata([BigInt(tokenId)]);
+    const metaResult={Ok:(_mr&&_mr[0]&&_mr[0].length)?_mr[0][0]:null};
+    if(metaResult.Ok){
       const meta={};
       for(const [key,val] of metaResult.Ok){
         if(val.Text) meta[key]=val.Text;
@@ -6423,7 +6490,7 @@ function nftMetadataIdl({IDL}){
   }));
   const Metadata=IDL.Vec(IDL.Tuple(IDL.Text,MetadataValue));
   return IDL.Service({
-    icrc7_token_metadata:IDL.Func([IDL.Nat],[IDL.Opt(Metadata)],['query']),
+    icrc7_token_metadata:IDL.Func([IDL.Vec(IDL.Nat)],[IDL.Vec(IDL.Opt(Metadata))],['query']),
   });
 }
 async function getNftMetadataActor(){
@@ -6435,32 +6502,7 @@ async function getNftMetadataActor(){
 }
 
 // ============ QUICK LIST: one popup, ticket price only, everything else automatic ============
-function icrc7TransferIdl({IDL}){
-  const Account=IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))});
-  const TransferArg=IDL.Record({
-    to:Account,
-    spender_subaccount:IDL.Opt(IDL.Vec(IDL.Nat8)),
-    from:IDL.Opt(Account),
-    memo:IDL.Opt(IDL.Vec(IDL.Nat8)),
-    is_atomic:IDL.Opt(IDL.Bool),
-    token_ids:IDL.Vec(IDL.Nat),
-    created_at_time:IDL.Opt(IDL.Nat64),
-  });
-  const TransferResult=IDL.Variant({
-    Ok:IDL.Vec(IDL.Nat),
-    Err:IDL.Variant({
-      Unauthorized:IDL.Null,
-      TooOld:IDL.Null,
-      CreatedInFuture:IDL.Record({ledger_time:IDL.Nat64}),
-      Duplicate:IDL.Record({duplicate_of:IDL.Nat}),
-      GenericError:IDL.Record({error_code:IDL.Nat,message:IDL.Text}),
-      GenericBatchError:IDL.Record({error_code:IDL.Nat,message:IDL.Text}),
-    }),
-  });
-  return IDL.Service({
-    icrc7_transfer:IDL.Func([TransferArg],[TransferResult],[]),
-  });
-}
+function icrc7TransferIdl(x){ return icrc7Idl(x); }
 async function getAuthenticatedIcrc7TransferActor(canisterId){
   if(!authClient) throw new Error('Not connected via Internet Identity');
   const agent=await signedAgent();
@@ -6496,7 +6538,8 @@ function openQuickListNftPopup(jsonStr){
 async function officialNftCollectionName(tokenId){
   try{
     const a=await getNftMetadataActor();
-    const r=await a.icrc7_token_metadata(BigInt(tokenId));
+    const r0=await a.icrc7_token_metadata([BigInt(tokenId)]);
+    const r=Array.isArray(r0)&&r0.length?r0[0]:[];
     const md=Array.isArray(r)&&r.length?r[0]:[];
     for(const [k,v] of md){ if(k==='collection'&&v&&('Text' in v)) return String(v.Text).trim(); }
   }catch(e){ console.warn('Official collection lookup failed:',e); }
@@ -6550,17 +6593,7 @@ async function quickListOwnedNft(jsonStr){
 
     setStatus('Step 2/3: Transferring NFT to Arcade custody...');
     try{
-      const icrcActor=await getAuthenticatedIcrc7TransferActor(n.canisterId);
-      const transferResult=await icrcActor.icrc7_transfer({
-        to:{owner:Principal.fromText(BACKEND_CANISTER),subaccount:[]},
-        spender_subaccount:[],
-        from:[],
-        memo:[],
-        is_atomic:[],
-        token_ids:[BigInt(numericTokenId)],
-        created_at_time:[],
-      });
-      if('Err' in transferResult) throw new Error(JSON.stringify(transferResult.Err));
+      await icrc7TransferOne(n.canisterId,BACKEND_CANISTER,numericTokenId);
     }catch(transferErr){
       setStatus(escHtml(safeUserErrorMessage(transferErr,'NFT transfer'))+'<br>Listing created but NFT not yet transferred — you can retry from My Collection.','red');
       if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Retry';}
@@ -7957,9 +7990,8 @@ let myOnChainTokenIds=[];
 async function loadMyTokens(){
   if(!S.principalText) return [];
   try{
-    const actor=await getNftActor();
-    const result=await actor.icrc7_tokens_of({owner:Principal.fromText(S.principalText),subaccount:[]});
-    if('Ok' in result){myOnChainTokenIds=result.Ok.map(Number); return myOnChainTokenIds;}
+    myOnChainTokenIds=(await icrc7TokensOf(NFT_CANISTER,S.principalText)).map(Number);
+    return myOnChainTokenIds;
   }catch(e){console.error('Failed to load my tokens',e);}
   return [];
 }
@@ -8317,7 +8349,7 @@ async function renderCollection(forceRefresh=false){
     const borderColor='#39ff14';
     const imgTag=n.imageUrl?buildNftImageTag(n.imageUrl,[],`width:100%;height:100%;object-fit:contain`):'';
     const isOfficialNft=n.canisterId===NFT_CANISTER;
-    const sendBtn=(isOfficialNft&&!OFFICIAL_NFT_WITHDRAWAL_ENABLED)?'':`<button class='btn' style='flex:1;font-size:.55rem;padding:3px 4px;background:linear-gradient(135deg,#8b5cf6,#6366f1)' onclick='event.stopPropagation();withdrawNft(${n.index})'>Withdraw</button>`;
+    const sendBtn=(isOfficialNft&&!OFFICIAL_NFT_WITHDRAWAL_ENABLED)?'':`<button class='btn' style='flex:1;font-size:.55rem;padding:3px 4px;background:linear-gradient(135deg,#8b5cf6,#6366f1)' onclick='event.stopPropagation();withdrawNft(${n.index},"${n.canisterId||''}")'>Withdraw</button>`;
     const listBtn=`<button class='btn' style='flex:1;font-size:.55rem;padding:3px 4px;border-color:var(--gold);color:var(--gold)' onclick='event.stopPropagation();openQuickListNftPopup(${JSON.stringify(JSON.stringify(n))})'>List</button>`;
     return `<div class='card' onclick='showCollectionNftDetail(${JSON.stringify(JSON.stringify(n))})' style='padding:0;overflow:hidden;width:min(120px,100%);max-width:120px;border:2px solid ${borderColor};box-shadow:0 0 12px ${borderColor}66,0 0 24px ${borderColor}33;cursor:pointer'>
       <div style='height:100px;background:#0a0a1a;overflow:hidden;display:grid;place-items:center'>${imgTag}</div>
@@ -8395,7 +8427,7 @@ function showCollectionNftDetail(jsonStr){
   const existing=document.getElementById('collectionNftModal');
   if(existing) existing.remove();
   const isOfficialNft=n.canisterId===NFT_CANISTER;
-  const actionBtn=(isOfficialNft&&!OFFICIAL_NFT_WITHDRAWAL_ENABLED)?'':`<button class='btn' style='flex:1;font-size:.85rem;padding:10px 14px;background:linear-gradient(135deg,#8b5cf6,#6366f1)' onclick='event.stopPropagation();withdrawNft(${n.index})'>Withdraw</button>`;
+  const actionBtn=(isOfficialNft&&!OFFICIAL_NFT_WITHDRAWAL_ENABLED)?'':`<button class='btn' style='flex:1;font-size:.85rem;padding:10px 14px;background:linear-gradient(135deg,#8b5cf6,#6366f1)' onclick='event.stopPropagation();withdrawNft(${n.index},"${n.canisterId||''}")'>Withdraw</button>`;
   const modal=document.createElement('div');
   modal.id='collectionNftModal';
   modal.style.cssText='position:fixed;inset:0;z-index:220;background:rgba(0,0,0,.88);display:grid;place-items:center;backdrop-filter:blur(8px)';
@@ -8420,10 +8452,11 @@ function showCollectionNftDetail(jsonStr){
 }
 
 // Withdraw NFT to external wallet
-async function withdrawNft(tokenId){
+async function withdrawNft(tokenId,canisterId){
+  const nftCid=canisterId||NFT_CANISTER;
   if(!S.connected) return showConnect();
   const TOKEN_NAMES={1:'Arcade Warrior',2:'Neon Racer',3:'Slot Master',4:'Grenade King',5:'Infinity Guardian',6:'Lightning Bolt',7:'Coin Phantom',8:'Roulette Rose'};
-  const name=TOKEN_NAMES[tokenId]||'NFT #'+tokenId;
+  const name=(nftCid!==NFT_CANISTER)?('NFT #'+tokenId):(TOKEN_NAMES[tokenId]||'NFT #'+tokenId);
 
   const dest=await arcadePrompt('📤 Withdraw '+name,'<b>ICRC-7 #'+tokenId+'</b><br><br>Enter the destination Principal ID:<br><span style="font-size:.75rem;color:#888">(Your Plug, OISY, or any ICP wallet principal)</span>','');
   if(!dest||!dest.trim()) return;
@@ -8443,52 +8476,15 @@ async function withdrawNft(tokenId){
   if(!await arcadeConfirm('⚠️ Confirm Transfer','Transfer <b>'+name+'</b> to:<br><code style="font-size:.75rem;word-break:break-all;color:#8b9fda">'+destPrincipal+'</code><br><br><span style="color:#ef4444">⚠️ This is irreversible! The NFT will leave your arcade wallet.</span>')) return;
 
   try{
-    // Create NFT actor with user's II identity for transfer auth
-    const agent=await signedAgent();
-    await fetchRootKeyIfLocal(agent);
-    const transferIdl=({IDL})=>{
-      const Account=IDL.Record({owner:IDL.Principal,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))});
-      const TransferArg=IDL.Record({
-        to:Account,
-        spender_subaccount:IDL.Opt(IDL.Vec(IDL.Nat8)),
-        from:IDL.Opt(Account),
-        memo:IDL.Opt(IDL.Vec(IDL.Nat8)),
-        is_atomic:IDL.Opt(IDL.Bool),
-        token_ids:IDL.Vec(IDL.Nat),
-        created_at_time:IDL.Opt(IDL.Nat64),
-      });
-      const TransferResult=IDL.Variant({Ok:IDL.Nat,Err:IDL.Variant({
-        Unauthorized:IDL.Record({token_ids:IDL.Vec(IDL.Nat)}),
-        TooOld:IDL.Null,
-        CreatedInFuture:IDL.Record({ledger_time:IDL.Nat64}),
-        Duplicate:IDL.Record({duplicate_of:IDL.Nat}),
-        GenericError:IDL.Record({error_code:IDL.Nat,message:IDL.Text}),
-        TemporarilyUnavailable:IDL.Null,
-      })});
-      return IDL.Service({
-        icrc7_transfer:IDL.Func([TransferArg],[TransferResult],[]),
-      });
-    };
-    const nft=Actor.createActor(transferIdl,{agent,canisterId:NFT_CANISTER});
-    const result=await nft.icrc7_transfer({
-      to:{owner:Principal.fromText(destPrincipal),subaccount:[]},
-      spender_subaccount:[],
-      from:[],
-      memo:[],
-      is_atomic:[],
-      token_ids:[BigInt(tokenId)],
-      created_at_time:[],
-    });
-    if('Ok' in result){
+    await icrc7TransferOne(nftCid,destPrincipal,tokenId);
+    {
       // Check if withdrawn NFT was the user's profile picture - clear it
-      clearPfpIfNftGone(NFT_CANISTER,tokenId);
+      clearPfpIfNftGone(nftCid,tokenId);
       alert('🎉 '+name+' transferred successfully!\n\nIt\'s now in wallet:\n'+destPrincipal);
       sBig();
       invalidateNftCache();
       await loadMyTokens().catch(()=>{});
       renderCollection(true);
-    } else {
-      alert('Transfer failed. '+safeUserErrorMessage(result.Err,'NFT transfer'));
     }
   }catch(e){
     console.error('Withdraw error:',e);

@@ -34,27 +34,37 @@ persistent actor ArcadeBackend {
   // === TYPES ===
   type TokenId = Nat;
   type Account = { owner : Principal; subaccount : ?Blob };
-  type TransferArg = {
+  // ICRC-7 standard transfer: one request per token, one optional result per request.
+  type Icrc7TransferArg = {
+    from_subaccount : ?Blob;
     to : Account;
-    spender_subaccount : ?Blob;
-    from : ?Account;
+    token_id : Nat;
     memo : ?Blob;
-    is_atomic : ?Bool;
-    token_ids : [Nat];
     created_at_time : ?Nat64;
   };
-  type TransferResult = {
-    #Ok : [Nat];
+  type Icrc7TransferResult = {
+    #Ok : Nat;
     #Err : {
-      #Unauthorized : { token_ids : [Nat] };
+      #NonExistingTokenId;
+      #InvalidRecipient;
+      #Unauthorized;
       #TooOld;
       #CreatedInFuture : { ledger_time : Nat64 };
       #Duplicate : { duplicate_of : Nat };
       #GenericError : { error_code : Nat; message : Text };
-      #TemporarilyUnavailable;
       #GenericBatchError : { error_code : Nat; message : Text };
     };
   };
+  // One token from arcade custody to `to`.
+  func icrc7SendArg(to : Principal, tokenId : Nat) : [Icrc7TransferArg] {
+    [{ from_subaccount = null; to = { owner = to; subaccount = null }; token_id = tokenId; memo = null; created_at_time = null }]
+  };
+  // True only when the single requested token really moved (a missing or unreadable answer counts as failed).
+  func icrc7Sent(r : [?Icrc7TransferResult]) : Bool {
+    if (r.size() != 1) return false;
+    switch (r[0]) { case (?(#Ok(_))) { true }; case _ { false } }
+  };
+  func icrc7FirstOwner(r : [?Account]) : ?Account { if (r.size() == 0) null else r[0] };
   // Matches nft.mo's Metadata/MetadataValue shape exactly, for calling mint/mintBatch there.
   type NftMetadataValue = {
     #Nat : Nat;
@@ -90,8 +100,8 @@ persistent actor ArcadeBackend {
 
   // Create dynamic ICRC-7 actor for any canister (for user-listed NFTs)
   func getDynamicIcrc7Actor(canisterId : Text) : actor {
-    icrc7_owner_of : shared query (Nat) -> async { #Ok : Account; #Err : { #InvalidTokenId } };
-    icrc7_transfer : shared (TransferArg) -> async TransferResult;
+    icrc7_owner_of : shared query ([Nat]) -> async [?Account];
+    icrc7_transfer : shared ([Icrc7TransferArg]) -> async [?Icrc7TransferResult];
   } {
     actor(canisterId);
   };
@@ -508,8 +518,8 @@ persistent actor ArcadeBackend {
   stable var nftCanisterIdText : Text = "aaaaa-aa"; // "aaaaa-aa" = IC management canister ID, used as an obvious placeholder that will fail loudly rather than silently pointing at someone else's canister
 
   type NftCanisterActor = actor {
-    icrc7_transfer : shared (TransferArg) -> async TransferResult;
-    icrc7_owner_of : shared query (Nat) -> async { #Ok : Account; #Err : { #InvalidTokenId } };
+    icrc7_transfer : shared ([Icrc7TransferArg]) -> async [?Icrc7TransferResult];
+    icrc7_owner_of : shared query ([Nat]) -> async [?Account];
     icrc7_total_supply : shared query () -> async Nat;
     mintBatch : shared (Account, [NftMetadata]) -> async [Nat];
   };
@@ -4046,11 +4056,11 @@ persistent actor ArcadeBackend {
     var players : Nat = 0; var arcade : Nat = 0; var failed : Nat = 0;
     for (t in ids.vals()) {
       try {
-        switch (await nftCanister().icrc7_owner_of(t)) {
-          case (#Ok(acc)) {
+        switch (icrc7FirstOwner(await nftCanister().icrc7_owner_of([t]))) {
+          case (?acc) {
             if (Principal.equal(acc.owner, self)) { setOfficialOwner(t, null); arcade += 1 } else { setOfficialOwner(t, ?acc.owner); players += 1 };
           };
-          case (#Err(_)) { failed += 1 };
+          case null { failed += 1 };
         };
       } catch (_) { failed += 1 };
     };
@@ -7442,12 +7452,12 @@ persistent actor ArcadeBackend {
         switch (escrowConfirmPrecheck(caller, listing, canisterId, Nat.toText(tokenId), tokenId)) { case (?e) return #err(e); case null {} };
         try {
           let icrc7 = getDynamicIcrc7Actor(canisterId);
-          let ownerResult = await icrc7.icrc7_owner_of(tokenId);
+          let ownerResult = icrc7FirstOwner(await icrc7.icrc7_owner_of([tokenId]));
           // Re-check after the await: another call may have escrowed this token or changed the listing meanwhile.
           switch (nftListings.get(listingId)) { case (?l) { if (l.status != "pending_escrow") return #err("Listing changed while verifying; try again") }; case null { return #err("Listing not found") } };
           if (tokenAlreadyEscrowed(canisterId, Nat.toText(tokenId), listingId)) return #err("This NFT is already escrowed under another listing");
           switch (ownerResult) {
-            case (#Ok(account)) {
+            case (?account) {
               let self = Principal.fromActor(ArcadeBackend);
               if (not Principal.equal(account.owner, self)) return #err("NFT not yet transferred to arcade. Owner: " # Principal.toText(account.owner) # ". Transfer to: " # Principal.toText(self));
               let escrow : EscrowedNft = { listingId; canisterId; tokenId = Nat.toText(tokenId); standard = "icrc7"; depositor = listing.creator; depositedAt = Time.now(); status = "held"; redeemedBy = null; redeemedAt = null; };
@@ -7456,7 +7466,7 @@ persistent actor ArcadeBackend {
               nftListings.put(listingId, updatedListing);
               #ok("✅ ICRC-7 NFT escrowed! " # listing.name # " is now available for purchase.");
             };
-            case (#Err(_)) { #err("Token not found on ICRC-7 canister") };
+            case null { #err("Token not found on ICRC-7 canister") };
           };
         } catch (e) { #err("ICRC-7 verification failed: " # Error.message(e)); };
       };
@@ -7491,16 +7501,8 @@ persistent actor ArcadeBackend {
           tickets.put(caller, balance - cost);
           nftListings.put(listingId, { listing with status = "redeeming" });
           let mintTransferOk : Result.Result<Text, Text> = try {
-            let r = await nftCanister().icrc7_transfer({
-              to = { owner = caller; subaccount = null };
-              spender_subaccount = null;
-              from = null;
-              memo = null;
-              is_atomic = null;
-              token_ids = [listing.sourceTokenId];
-              created_at_time = null;
-            });
-            switch (r) { case (#Ok(_)) { #ok("ok") }; case (#Err(_)) { #err("ICRC-7 transfer failed") }; };
+            let r = await nftCanister().icrc7_transfer(icrc7SendArg(caller, listing.sourceTokenId));
+            if (icrc7Sent(r)) { #ok("ok") } else { #err("ICRC-7 transfer failed") };
           } catch (e) { #err("ICRC-7 call failed: " # Error.message(e)) };
           switch (mintTransferOk) {
             case (#err(errMsg)) {
@@ -7557,8 +7559,8 @@ persistent actor ArcadeBackend {
               try {
                 let icrc7 = getDynamicIcrc7Actor(escrow.canisterId);
                 let tid : Nat = switch (Nat.fromText(escrow.tokenId)) { case (?n) n; case null 0; };
-                let r = await icrc7.icrc7_transfer({ to = { owner = caller; subaccount = null }; spender_subaccount = null; from = null; memo = null; is_atomic = null; token_ids = [tid]; created_at_time = null; });
-                switch (r) { case (#Ok(_)) { #ok("ok") }; case (#Err(_)) { #err("ICRC-7 transfer failed") }; };
+                let r = await icrc7.icrc7_transfer(icrc7SendArg(caller, tid));
+                if (icrc7Sent(r)) { #ok("ok") } else { #err("ICRC-7 transfer failed") };
               } catch (e) { #err("ICRC-7 call failed: " # Error.message(e)) };
             } else {
               #err("Unknown NFT standard: " # escrow.standard);
@@ -7627,8 +7629,8 @@ persistent actor ArcadeBackend {
           try {
             let icrc7 = getDynamicIcrc7Actor(escrow.canisterId);
             let tid : Nat = switch (Nat.fromText(escrow.tokenId)) { case (?n) n; case null 0; };
-            let r = await icrc7.icrc7_transfer({ to = { owner = escrow.depositor; subaccount = null }; spender_subaccount = null; from = null; memo = null; is_atomic = null; token_ids = [tid]; created_at_time = null; });
-            switch (r) { case (#Ok(_)) { #ok("ok") }; case (#Err(_)) { #err("ICRC-7 return failed") }; };
+            let r = await icrc7.icrc7_transfer(icrc7SendArg(escrow.depositor, tid));
+            if (icrc7Sent(r)) { #ok("ok") } else { #err("ICRC-7 return failed") };
           } catch (e) { #err("ICRC-7 call: " # Error.message(e)) };
         } else { #err("Unknown standard: " # escrow.standard) };
 
@@ -7782,24 +7784,16 @@ persistent actor ArcadeBackend {
     // Debit BEFORE the await (session #3 fix); refunded below if the transfer fails.
     tickets.put(caller, balance - cost);
     try {
-      let result = await nftCanister().icrc7_transfer({
-        to = { owner = caller; subaccount = null };
-        spender_subaccount = null;
-        from = null;
-        memo = null;
-        is_atomic = null;
-        token_ids = [tokenId];
-        created_at_time = null;
-      });
+      let result = icrc7Sent(await nftCanister().icrc7_transfer(icrc7SendArg(caller, tokenId)));
 
       switch (result) {
-        case (#Ok(_)) {
+        case (true) {
           let log = Buffer.fromArray<(Principal, TokenId, Int)>(redemptionLog);
           log.add((caller, tokenId, Time.now()));
           redemptionLog := Buffer.toArray(log);
           #ok("NFT #" # Nat.toText(tokenId) # " transferred to your wallet!");
         };
-        case (#Err(e)) {
+        case (false) {
           tickets.put(caller, getTicketBalance(caller) + cost);
           #err("Transfer failed. The NFT may not be available.");
         };
