@@ -2412,6 +2412,20 @@ window.addEventListener('message', (e) => {
 <div id='extColStatus' style='font-size:.65rem;min-height:1em;margin-bottom:8px'></div>
 <div id='extColList' style='font-size:.7rem;color:#3d6090'>Loading...</div>
 </div>
+<div id='recoverNftSection' style='background:rgba(192,132,252,.05);border:1px solid rgba(192,132,252,.25);border-radius:10px;padding:12px;margin-bottom:12px'>
+<div style='font-size:.75rem;font-weight:800;color:#c084fc;letter-spacing:2px;margin-bottom:8px'>RECOVER AN UNSUPPORTED NFT</div>
+<div style='font-size:.65rem;color:#8f7fb8;margin-bottom:10px'>For an NFT from an older (EXT) collection that was sent to this account&#39;s Principal ID. The arcade cannot show it, but it can send it back out to another wallet.</div>
+<div style='display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap'>
+  <input type='text' id='recNftCanister' placeholder='Collection canister ID' style='flex:1;min-width:220px;padding:5px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(192,132,252,.3);border-radius:6px;color:#fff;font-size:.7rem' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/>
+  <button class='btn' onclick='recoverNftFind()' style='font-size:.65rem;padding:3px 10px;border-color:#c084fc;color:#c084fc;white-space:nowrap'>Find my NFTs</button>
+</div>
+<div id='recNftList' style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px'></div>
+<div style='display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap'>
+  <input type='text' id='recNftDest' placeholder='Send to: Principal ID or 64-character account address' style='flex:1;min-width:220px;padding:5px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(192,132,252,.3);border-radius:6px;color:#fff;font-size:.7rem' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'/>
+  <button class='btn' id='recNftSendBtn' onclick='recoverNftSend()' disabled style='font-size:.65rem;padding:3px 10px;border-color:#22c55e;color:#22c55e;white-space:nowrap;opacity:.45'>Send NFT</button>
+</div>
+<div id='recNftStatus' style='font-size:.65rem;min-height:1em;color:#8f7fb8'></div>
+</div>
 
 
 <div id='liveGamesManagementSection' style='margin-bottom:16px'>
@@ -4367,6 +4381,80 @@ function fillMaxWithdraw(){try{const bal=Math.max(0,(Number(S.icpBalanceE8s||0)/
 function showToast(msg){const t=document.createElement('div');t.textContent=msg;t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,215,0,.15);border:1px solid var(--gold);color:var(--gold);padding:8px 20px;border-radius:10px;font-size:.8rem;font-weight:700;z-index:9999;pointer-events:none;backdrop-filter:blur(8px);animation:fadeInUp .3s ease';document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400);},1500);}
 async function copyDepositAddress(){ if(!S.depositAddress) return; try{await navigator.clipboard.writeText(S.depositAddress); showToast('📋 Deposit address copied!');}catch(_e){showToast('❌ Copy failed');} }
 async function copyPrincipal(){ if(!S.principalText) return; try{await navigator.clipboard.writeText(S.principalText); showToast('📋 NFT address copied!');}catch(_e){showToast('❌ Copy failed');} }
+// ---- Recover an unsupported (EXT) NFT: withdraw only ------------------------------------------
+function _recPrincipalText(bytes){
+  let crc=0xFFFFFFFF; for(const b of bytes){ crc^=b; for(let i=0;i<8;i++) crc=(crc>>>1)^(crc&1?0xEDB88320:0); } crc=(crc^0xFFFFFFFF)>>>0;
+  const all=new Uint8Array(4+bytes.length); all[0]=crc>>>24; all[1]=(crc>>>16)&255; all[2]=(crc>>>8)&255; all[3]=crc&255; all.set(bytes,4);
+  const A='abcdefghijklmnopqrstuvwxyz234567'; let bits=0,val=0,out='';
+  for(const b of all){ val=(val<<8)|b; bits+=8; while(bits>=5){ out+=A[(val>>>(bits-5))&31]; bits-=5; } }
+  if(bits>0) out+=A[(val<<(5-bits))&31];
+  return out.match(/.{1,5}/g).join('-');
+}
+function recExtTokenId(canisterBytes,index){
+  const pre=[10,116,105,100]; // "\x0Atid"
+  const b=new Uint8Array(4+canisterBytes.length+4); b.set(pre,0); b.set(canisterBytes,4);
+  const o=4+canisterBytes.length; b[o]=(index>>>24)&255; b[o+1]=(index>>>16)&255; b[o+2]=(index>>>8)&255; b[o+3]=index&255;
+  return _recPrincipalText(b);
+}
+function recExtIdl({IDL}){
+  const User=IDL.Variant({address:IDL.Text,principal:IDL.Principal});
+  const CommonError=IDL.Variant({InvalidToken:IDL.Text,Other:IDL.Text});
+  return IDL.Service({
+    tokens:IDL.Func([IDL.Text],[IDL.Variant({ok:IDL.Vec(IDL.Nat32),err:CommonError})],['query']),
+    transfer:IDL.Func([IDL.Record({from:User,to:User,token:IDL.Text,amount:IDL.Nat,memo:IDL.Vec(IDL.Nat8),notify:IDL.Bool,subaccount:IDL.Opt(IDL.Vec(IDL.Nat8))})],
+      [IDL.Variant({ok:IDL.Nat,err:IDL.Variant({CannotNotify:IDL.Text,InsufficientBalance:IDL.Null,InvalidToken:IDL.Text,Other:IDL.Text,Rejected:IDL.Null,Unauthorized:IDL.Text})})],[]),
+  });
+}
+let _recNft={canister:'',tokenId:'',index:null};
+function _recStatus(html,color){ const el=document.getElementById('recNftStatus'); if(el){ el.innerHTML=html; el.style.color=color||'#8f7fb8'; } }
+function _recSetSend(on){ const b=document.getElementById('recNftSendBtn'); if(b){ b.disabled=!on; b.style.opacity=on?'1':'.45'; } }
+async function _recActor(canisterId){ const agent=await signedAgent(); await fetchRootKeyIfLocal(agent); return Actor.createActor(recExtIdl,{agent,canisterId}); }
+async function recoverNftFind(){
+  const list=document.getElementById('recNftList'); if(list) list.innerHTML='';
+  _recNft={canister:'',tokenId:'',index:null}; _recSetSend(false);
+  if(!S.connected||!S.principalText) return _recStatus('Connect first.','#ef4444');
+  const cid=(document.getElementById('recNftCanister')?.value||'').trim();
+  let canP; try{ canP=Principal.fromText(cid); }catch(_){ return _recStatus('That is not a valid canister ID.','#ef4444'); }
+  _recStatus('Looking for your NFTs in that collection…');
+  try{
+    const actor=await _recActor(cid);
+    const r=await actor.tokens(principalToAccountHex(S.principalText));
+    const idx=(r&&r.ok)?Array.from(r.ok).map(Number):[];
+    if(!idx.length) return _recStatus('No NFTs from that collection are held by this account'+(r&&r.err&&r.err.Other?' ('+escHtml(String(r.err.Other))+')':'')+'.','#fbbf24');
+    const bytes=canP.toUint8Array();
+    list.innerHTML=idx.map(i=>{ const tid=recExtTokenId(bytes,i);
+      const img=safeUrl('https://'+cid+'.raw.icp0.io/?tokenid='+tid+'&type=thumbnail');
+      return `<div data-rec-idx='${i}' onclick='recoverNftPick(${i})' style='width:92px;cursor:pointer;border:2px solid rgba(192,132,252,.3);border-radius:8px;overflow:hidden;background:#0a0a1a;text-align:center'><img src='${img}' loading='lazy' onerror='this.style.display="none"' style='width:100%;height:80px;object-fit:contain;display:block'/><div style='font-size:.62rem;color:#e9d5ff;padding:3px'>#${i+1}</div></div>`; }).join('');
+    _recNft.canister=cid;
+    _recStatus('Found '+idx.length+'. Click the NFT you want to send.');
+    if(idx.length===1) recoverNftPick(idx[0]);
+  }catch(e){ console.error('Recover NFT lookup failed:',e); _recStatus('Could not read that collection. It may not be an EXT collection. '+escHtml(safeUserErrorMessage(e,'NFT lookup')),'#ef4444'); }
+}
+function recoverNftPick(i){
+  if(!_recNft.canister) return;
+  _recNft.index=i; _recNft.tokenId=recExtTokenId(Principal.fromText(_recNft.canister).toUint8Array(),i);
+  document.querySelectorAll('#recNftList [data-rec-idx]').forEach(el=>{ el.style.borderColor=Number(el.dataset.recIdx)===i?'#22c55e':'rgba(192,132,252,.3)'; });
+  _recSetSend(true); _recStatus('Selected #'+(i+1)+'. Enter where to send it, then press Send NFT.');
+}
+let _recSending=false;
+async function recoverNftSend(){
+  if(_recSending||!_recNft.tokenId) return;
+  const dest=(document.getElementById('recNftDest')?.value||'').trim();
+  let to=null;
+  if(/^[0-9a-fA-F]{64}$/.test(dest)) to={address:dest.toLowerCase()};
+  else { try{ to={principal:Principal.fromText(dest)}; }catch(_){ } }
+  if(!to) return _recStatus('Enter a valid Principal ID or 64-character account address.','#ef4444');
+  if(dest===S.principalText||dest.toLowerCase()===principalToAccountHex(S.principalText)) return _recStatus('That is this account. Enter a different wallet.','#ef4444');
+  if(!await arcadeConfirm('Send NFT','Send NFT <b>#'+(_recNft.index+1)+'</b> from collection <code style="font-size:.7rem">'+escHtml(_recNft.canister)+'</code> to:<br><code style="font-size:.72rem;word-break:break-all;color:#8b9fda">'+escHtml(dest)+'</code><br><br><span style="color:#fbbf24">This cannot be undone. Make sure the destination wallet supports this collection.</span>')) return;
+  _recSending=true; _recSetSend(false); _recStatus('Sending…');
+  try{
+    const actor=await _recActor(_recNft.canister);
+    const r=await actor.transfer({from:{principal:Principal.fromText(S.principalText)},to,token:_recNft.tokenId,amount:1n,memo:[],notify:false,subaccount:[]});
+    if(r&&r.err){ const k=Object.keys(r.err)[0]; const v=r.err[k]; _recStatus('The collection refused the transfer: '+escHtml(k+(v?': '+String(v):''))+'. Nothing was sent.','#ef4444'); _recSetSend(true); }
+    else { _recStatus('Sent. NFT #'+(_recNft.index+1)+' is now in the destination wallet.','#22c55e'); const l=document.getElementById('recNftList'); if(l) l.innerHTML=''; _recNft={canister:'',tokenId:'',index:null}; }
+  }catch(e){ console.error('Recover NFT send failed:',e); _recStatus('Send failed: '+escHtml(safeUserErrorMessage(e,'NFT transfer'))+'. Press Find my NFTs to check whether it still shows here.','#ef4444'); }
+  _recSending=false;
+}
 function openSupportedCollectionsModal(){
   const existing=document.getElementById('supportedCollectionsModal'); if(existing) existing.remove();
   const collections=[{name:'Infinity Arcade',id:NFT_CANISTER,standard:'ICRC-7'}];
@@ -17201,7 +17289,7 @@ function closeNftDetail(){
 
   ['showProfileModal',showProfileModal],['pickAvatarNft',pickAvatarNft],['saveProfile',saveProfile],['closeProfileModal',closeProfileModal],
   ['filterPlayers',filterPlayers],['openVeteranPortal',openVeteranPortal],['openForumSection',openForumSection],['closeForumSection',closeForumSection],['buyVpNft',buyVpNft],['openThreadDetail',openThreadDetail],['closeThreadDetail',closeThreadDetail],['scanForumUpdates',scanForumUpdates],['renderProfileView',renderProfileView],['openProfileEdit',openProfileEdit],['closeProfileEdit',closeProfileEdit],['saveProfileEdit',saveProfileEdit],['pickEditAvatar',pickEditAvatar],['submitChosenName',submitChosenName],['removeProfilePfp',removeProfilePfp],['closeShowroomEdit',closeShowroomEdit],['saveShowroomEdit',saveShowroomEdit],['toggleShowroomNft',toggleShowroomNft],['viewPublicProfile',viewPublicProfile],['registerPublicPresence',registerPublicPresence],['adminUnban',adminUnban],['renderBanList',renderBanList],['showBanUserModal',showBanUserModal],['showNewPostForm',showNewPostForm],['hideNewPostForm',hideNewPostForm],['submitForumPost',submitForumPost],['submitReply',submitReply],['toggleNestedReplies',toggleNestedReplies],['toggleNestedReplyBox',toggleNestedReplyBox],['deletePost',deletePost],['deleteReply',deleteReply],['adminAddMod',adminAddMod],['adminRemoveMod',adminRemoveMod],['renderModList',renderModList],['adminAddBoost',adminAddBoost],['renderBoostList',renderBoostList],['quickBoostGame',quickBoostGame],['openDaoView',openDaoView],['closeDaoView',closeDaoView],['showDaoRestricted',showDaoRestricted],['openDaoSection',openDaoSection],['closeDaoSection',closeDaoSection],['renderDaoPage',renderDaoPage],['openDaoProposals',openDaoProposals],['closeDaoProposals',closeDaoProposals],['renderDaoThreadList',renderDaoThreadList],['closeDaoThreadDetail',closeDaoThreadDetail],['showDaoNewThread',showDaoNewThread],['hideDaoNewThread',hideDaoNewThread],['submitDaoThread',submitDaoThread],['openDaoThread',openDaoThread],['submitDaoReply',submitDaoReply],['deleteDaoPost',deleteDaoPost],['deleteDaoReply',deleteDaoReply],['renderDaoMain',renderDaoMain],['rescanEditProfileNfts',rescanEditProfileNfts],['showCreateProposal',showCreateProposal],['hideCreateProposal',hideCreateProposal],['submitProposal',submitProposal],['castVote',castVote],['viewProposal',viewProposal],['submitProposalReply',submitProposalReply],['deleteProposal',deleteProposal],['saveAdminResponse',saveAdminResponse],['removeAdminResponse',removeAdminResponse],['previewProposalImages',previewProposalImages],['removeProposalImage',removeProposalImage],['viewProposalImage',viewProposalImage],
-  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['uploadRunKeyGenerate',uploadRunKeyGenerate],['updateUploadTicketSetupVisibility',updateUploadTicketSetupVisibility],['gamePlacementChanged',gamePlacementChanged],['saveGamePlacement',saveGamePlacement],['renderGamePlacementPanel',renderGamePlacementPanel],['uploadGameTypeChanged',uploadGameTypeChanged],['adminChangeGameType',adminChangeGameType],['chooseNameUpdateCount',chooseNameUpdateCount],['adminEditPendingNftPrice',adminEditPendingNftPrice],['openCollectionPricing',openCollectionPricing],['colPricingFillAll',colPricingFillAll],['colPricingSave',colPricingSave],['colPricingClear',colPricingClear],['adminToggleNftGrail',adminToggleNftGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
+  ['updateProfileDisplay',updateProfileDisplay],['uploadGamePreview',uploadGamePreview],['uploadGameToChain',uploadGameToChain],['setUploadGameTier',setUploadGameTier],['updateUploadGameActionBtnVisibility',updateUploadGameActionBtnVisibility],['updateShowSubMonetizationUi',updateShowSubMonetizationUi],['adminSetPendingGamePricing',adminSetPendingGamePricing],['submitGameNavigate',submitGameNavigate],['refreshAdminPendingSubmissionSelect',refreshAdminPendingSubmissionSelect],['loadAdminPendingSubmissionTarget',loadAdminPendingSubmissionTarget],['useAdminPendingThumbnail',useAdminPendingThumbnail],['swapAdminPendingThumbnail',swapAdminPendingThumbnail],['handleAdminPendingThumbnailSwap',handleAdminPendingThumbnailSwap],['clearAdminPendingSubmissionPicker',clearAdminPendingSubmissionPicker],['refreshAdminGameUpdateSelect',refreshAdminGameUpdateSelect],['loadAdminGameUpdateTarget',loadAdminGameUpdateTarget],['selectAdminGameUpdateTarget',selectAdminGameUpdateTarget],['adminSuspendGame',adminSuspendGame],['adminRelistGame',adminRelistGame],['adminDeleteGamePermanently',adminDeleteGamePermanently],['loadTreasuryInfo',loadTreasuryInfo],['fillMaxTreasuryWithdraw',fillMaxTreasuryWithdraw],['adminWithdrawTreasury',adminWithdrawTreasury],['copyCommonOperatingWithdrawAddress',copyCommonOperatingWithdrawAddress],['loadDaoTreasuryAdmin',loadDaoTreasuryAdmin],['adminBurnDaoTokensFn',adminBurnDaoTokensFn],['adminBurnDaoTicketsFn',adminBurnDaoTicketsFn],['adminTransferDaoTokensFn',adminTransferDaoTokensFn],['adminTransferDaoTicketsFn',adminTransferDaoTicketsFn],['adminAwardDevBadge',adminAwardDevBadge],['adminAwardArtistBadge',adminAwardArtistBadge],['adminRevokeBadge',adminRevokeBadge],['checkJackpotNotifications',checkJackpotNotifications],['showJackpotPopup',showJackpotPopup],['openCollectionBrowser',openCollectionBrowser],['openCollectionManager',openCollectionManager],['recoverNftFind',recoverNftFind],['recoverNftPick',recoverNftPick],['recoverNftSend',recoverNftSend],['uploadRunKeyGenerate',uploadRunKeyGenerate],['updateUploadTicketSetupVisibility',updateUploadTicketSetupVisibility],['gamePlacementChanged',gamePlacementChanged],['saveGamePlacement',saveGamePlacement],['renderGamePlacementPanel',renderGamePlacementPanel],['uploadGameTypeChanged',uploadGameTypeChanged],['adminChangeGameType',adminChangeGameType],['chooseNameUpdateCount',chooseNameUpdateCount],['adminEditPendingNftPrice',adminEditPendingNftPrice],['openCollectionPricing',openCollectionPricing],['colPricingFillAll',colPricingFillAll],['colPricingSave',colPricingSave],['colPricingClear',colPricingClear],['adminToggleNftGrail',adminToggleNftGrail],['adminToggleSpotlight',adminToggleSpotlight],['adminEditNftPrice',adminEditNftPrice],['adminEditNftAbility',adminEditNftAbility],['adminClearNftAbility',adminClearNftAbility],['openAbilityPicker',openAbilityPicker],['applyAbilityToTokens',applyAbilityToTokens],['clearAbilityFromTokens',clearAbilityFromTokens],['colMgrSelectAll',colMgrSelectAll],['colMgrDeselectAll',colMgrDeselectAll],['colMgrAssignSelected',colMgrAssignSelected],['openDisabledAbilities',openDisabledAbilities],['toggleAbilityState',toggleAbilityState],['adminCreateCollection',adminCreateCollection],['adminLoadCollections',adminLoadCollections],['adminMintCollection',adminMintCollection],['adminDeleteCol',adminDeleteCol],
   ['runTreasuryScan',runTreasuryScan],
   ['closeNftDetail',closeNftDetail],
   ['submitExistingNft',submitExistingNft],['switchNftTab',switchNftTab],['resetExistingNftFlow',resetExistingNftFlow],['renderMyNftSubmissions',renderMyNftSubmissions],['showUserNftDetail',showUserNftDetail],
