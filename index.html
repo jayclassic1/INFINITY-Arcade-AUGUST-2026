@@ -5229,7 +5229,7 @@ window.addEventListener('message',async(event)=>{
   if(msgType==='arcade-get-player-stats'){
     if(!S.principal){event.source?.postMessage({type:'arcade-player-stats',error:'not-logged-in'},'*');return;}
     try{
-      const levels=await be.getPlayerLevels(S.principal);
+      const levels=await fetchPlayerXpLevels(S.principal);
       const gxpLevel=Number(levels.gxpLevel||0);
       const dvpLevel=Number(levels.dvpLevel||0);
       const gxp=Number(levels.gxp||0);
@@ -7108,10 +7108,21 @@ async function resolveHighScoreHolderProfile(be, highScore){
 function renderHighScoreHolder(owner){
   if(!owner) return '';
   const avatar=renderSquareAvatar(owner,22,5);
-  return `<span style='display:inline-flex;align-items:center;gap:6px;min-width:0;color:#eaf2ff' title='High score holder'>
+  const pid=/^[a-z0-9-]{5,70}$/.test(String(owner.principal||''))?String(owner.principal):'';
+  const link=pid?` onclick='event.stopPropagation();openHighScoreHolder("${pid}")' onmouseenter='this.style.textDecoration="underline"' onmouseleave='this.style.textDecoration=""'`:'';
+  return `<span${link} style='display:inline-flex;align-items:center;gap:6px;min-width:0;color:#eaf2ff${pid?';cursor:pointer':''}' title='${pid?'View profile':'High score holder'}'>
     ${avatar}
     <span style='max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${escHtml(owner.name||'Unknown')}</span>
   </span>`;
+}
+function openHighScoreHolder(principal){
+  try{ if(document.getElementById('m-backroom-game')&&typeof closeGameModal==='function') closeGameModal(); }catch(_){}
+  viewPublicProfile(principal);
+}
+window.openHighScoreHolder=openHighScoreHolder;
+function renderGameCardTicketsLine(stats){
+  if(stats?.poolAvailable===false) return '';
+  return `<span style='color:#86efac'>Available Tickets</span> ${formatPrizePoolEstimate(stats?.ticketPool)}`;
 }
 async function getGameHighScoreForDisplay(be,gameId){
   if(be?.getHighScore){
@@ -7130,7 +7141,6 @@ function renderCompactGameStats(stats,compact=false){
   if(compact){
     const wrapStyle='display:grid;gap:2px;padding:3px 6px;background:rgba(2,6,23,.5);border-top:1px solid rgba(255,255,255,.06);font-size:.54rem;font-weight:900;line-height:1.15;color:#eaf2ff;letter-spacing:.2px;text-align:center';
     return `<div style='${wrapStyle}' title='${showTicketPool?'Available Tickets is the rounded game-backed ticket pool available to win; ':''}Highest Scored is the all-time high score.'>
-      ${showTicketPool?`<span><span style='color:#86efac'>Available Tickets</span> ${poolLabel}</span>`:''}
       <span><span style='color:#ffd86b'>Highest Scored</span> ${scoreLabel}${holderHtml?` ${holderHtml}`:''}</span>
     </div>`;
   }
@@ -7176,7 +7186,7 @@ async function hydrateGameCardStats(gameList){
   }catch(e){console.warn('Game card batch fetch failed:',e);}
   await Promise.all(games.map(async game=>{
     const els=[...document.querySelectorAll(`[data-game-stats-key="${cssEscapeValue(game.id)}"]`)];
-    if(!els.length) return;
+    if(!els.length&&!document.querySelector(`[data-game-tickets-key="${cssEscapeValue(game.id)}"]`)) return;
     const isTicketGame=game.paysTickets!==false;
     try{
       let stats;
@@ -7196,6 +7206,7 @@ async function hydrateGameCardStats(gameList){
         stats=await fetchGameStatsForDisplay(game.id,isTicketGame,poolMap);
       }
       for(const el of els) el.innerHTML=renderCompactGameStats(stats,true);
+      for(const el of document.querySelectorAll(`[data-game-tickets-key="${cssEscapeValue(game.id)}"]`)) el.innerHTML=renderGameCardTicketsLine(stats);
     }catch(e){
       console.warn('Game card stats fetch failed for',game.id,e);
       for(const el of els) el.innerHTML=renderCompactGameStats({ticketPool:null,highScore:null,poolAvailable:isTicketGame},true);
@@ -9046,7 +9057,7 @@ async function renderShowroom(){
 
   function gameCard(s,borderColor,isSpotlight){
     const detailsBtn=`<div onclick='event.stopPropagation();openGameDetails("${s.id}")' style='padding:3px 8px;text-align:center;font-size:.6rem;color:var(--cyan);cursor:pointer;border-top:1px solid rgba(255,255,255,.08);letter-spacing:.5px;transition:color .2s' onmouseenter='this.style.color="#fff"' onmouseleave='this.style.color="var(--cyan)"'>DETAILS</div>`;
-    const creatorStatsRow=`<div style='padding:8px 9px 6px;background:rgba(2,6,23,.5);border-bottom:1px solid rgba(255,255,255,.06)'><div style='font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</div></div>`;
+    const creatorStatsRow=`<div style='padding:8px 9px 6px;background:rgba(2,6,23,.5);border-bottom:1px solid rgba(255,255,255,.06)'><div style='font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${escHtml(s.name)}</div>${s.paysTickets!==false?`<div data-game-tickets-key='${escHtml(s.id)}' style='margin-top:3px;font-size:.58rem;font-weight:900;letter-spacing:.2px;color:#eaf2ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' title='Tickets available to win in this game (rounded)'>${renderGameCardTicketsLine({ticketPool:null})}</div>`:''}</div>`;
     const statsRow=renderGameCardStatsSlot(s.id,s.paysTickets!==false);
     if(isSpotlight){
       return `<div onclick='openBackroomGame("${s.id}")' style='min-width:140px;max-width:140px;margin:5px 7px;cursor:pointer;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);transition:transform .18s ease,box-shadow .18s ease;flex-shrink:0;border:2px solid transparent;background-image:linear-gradient(#0a0a1a,#0a0a1a),linear-gradient(135deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);background-origin:border-box;background-clip:padding-box,border-box;box-shadow:0 0 8px rgba(255,0,100,.25),0 0 16px rgba(0,150,255,.15);position:relative;transform-origin:center' onmouseenter='this.style.transform="translateY(-2px) scale(1.04)";this.style.zIndex="5";this.style.boxShadow="0 0 16px rgba(255,0,100,.4),0 0 30px rgba(0,150,255,.3)"' onmouseleave='this.style.transform="translateY(0) scale(1)";this.style.zIndex="";this.style.boxShadow="0 0 8px rgba(255,0,100,.25),0 0 16px rgba(0,150,255,.15)"'>
@@ -9469,13 +9480,13 @@ async function openGameDetails(id){
     accessibilityTags.madeWithAi?`<span style='background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>🤖 Made with AI</span>`:'',
     (getSubmissions().find(x=>x.id===id)||{}).localMultiplayer?`<span style='background:rgba(100,100,100,.15);border:1px solid rgba(150,150,150,.3);color:#aaa;padding:3px 10px;border-radius:6px;font-size:.75rem;letter-spacing:1px'>👥 Local Multiplayer</span>`:'',
   ].join(''):'';
-  const ticketPayoutTruthSection=isTicketGame?`<div style='padding:10px 12px;border:1px solid rgba(255,216,107,.2);border-radius:10px;background:rgba(255,216,107,.06);font-size:.74rem;color:#f8e5a0;line-height:1.5'>Ticket payouts are based on the admin score ladder plus any configured jackpot percentage tiers. Backend caps apply before tickets are awarded.</div>`:'';
+  const ticketPayoutTruthSection='';
   const backedPoolLabel=backedTicketPoolCount===null?'--':Number(backedTicketPoolCount||0).toLocaleString();
   const rawPoolLabel=rawTicketPoolCount===null?'--':Number(rawTicketPoolCount||0).toLocaleString();
   const ticketPoolSection=isTicketGame?`<div style='padding:12px 14px;border:1px solid rgba(134,239,172,.22);border-radius:12px;background:rgba(34,197,94,.06);display:grid;gap:6px'>
-    <div style='font-size:.8rem;font-weight:900;color:#86efac;letter-spacing:1px'>Backed Ticket Pool</div>
-    <div style='font-size:.76rem;color:#d8fbe4'>Currently backed for payouts: <b style='color:#fff'>${backedPoolLabel} Tickets</b></div>
-    ${adminView?`<div style='margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:.7rem;color:#9dd6ff'>Admin Audit · Backed Pool: ${backedPoolLabel} Tickets · Raw Pool: ${rawPoolLabel} Tickets</div>`:''}
+    <div style='font-size:.8rem;font-weight:900;color:#86efac;letter-spacing:1px'>Ticket Pool</div>
+    <div style='font-size:.76rem;color:#d8fbe4'>Tickets left to win: <b style='color:#fff'>${backedPoolLabel}</b></div>
+    ${adminView?`<div style='margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:.7rem;color:#9dd6ff'>Admin · Funded all-time: ${rawPoolLabel} · Paid out to players: ${(backedTicketPoolCount===null||rawTicketPoolCount===null)?'--':Math.max(0,Number(rawTicketPoolCount||0)-Number(backedTicketPoolCount||0)).toLocaleString()} · Left to win: ${backedPoolLabel}</div>`:''}
   </div>`:'';
 
   // Build tags
@@ -12946,12 +12957,29 @@ function applyLevelColor(el, color){
 
 // Cache of player levels (principal → {gxpLevel, dvpLevel, badgeTypes})
 const _levelCache = {};
+// Level 1-10 = how a player's XP compares with the current top player (top player = 10).
+function xpToLevel(xp,maxXp){
+  xp=Number(xp)||0; maxXp=Number(maxXp)||0;
+  if(xp<=0||maxXp<=0) return 1;
+  return Math.max(1,Math.min(10,Math.ceil(10*xp/maxXp)));
+}
+function xpToPercent(xp,maxXp){
+  xp=Number(xp)||0; maxXp=Number(maxXp)||0;
+  if(xp<=0||maxXp<=0) return 0;
+  return Math.max(0,Math.min(100,Math.round(100*xp/maxXp)));
+}
+async function fetchPlayerXpLevels(principal){
+  const be=await getBackendActor();
+  const [gxp,maxGxp,dxp,maxDxp]=await Promise.all([be.getGxp(principal),be.getMaxGxp(),be.getDxp(principal),be.getMaxDxp()]);
+  const g=Number(gxp)||0, d=Number(dxp)||0;
+  return {gxp:g,dvp:d,gxpLevel:xpToLevel(g,maxGxp),dvpLevel:xpToLevel(d,maxDxp),gxpPercentile:xpToPercent(g,maxGxp),dvpPercentile:xpToPercent(d,maxDxp),achievements:[]};
+}
 async function getPlayerLevel(principalText){
   if(_levelCache[principalText]) return _levelCache[principalText];
   try{
     const be=await getBackendActor();
     const [info, badges]=await Promise.all([
-      be.getPlayerLevels(Principal.fromText(principalText)),
+      fetchPlayerXpLevels(Principal.fromText(principalText)),
       be.getGamerBadges(Principal.fromText(principalText))
     ]);
     const badgeTypes=[...new Set(badges.map(b=>b.badgeType))];
@@ -14994,7 +15022,7 @@ async function openVeteranPortal(){
   if(isAdmin()){ openForumSection('player-portal'); return; }
   // Fetch live GXP from backend
   let gxp = 0;
-  try { const res = await be.getPlayerLevels(S.principal); gxp = Number(res.gxp) || 0; } catch(e){}
+  try { const _vb = await getBackendActor(); gxp = Number(await _vb.getGxp(S.principal)) || 0; } catch(e){ console.warn('Veteran Legion GXP check failed:',e); }
   if(gxp >= VETERAN_PORTAL_GXP){
     openForumSection('player-portal');
   } else {
@@ -17030,10 +17058,7 @@ async function endArcadeGame(gameId,score){
 async function getLeaderboardHighScore(gameId){
   try{
     const be=await getBackendActor();
-    const lb=await be.getLeaderboard(gameId);
-    if(lb.length===0) return null;
-    // Leaderboard returns [(Principal, Nat, Int)] sorted by score desc
-    return {player:lb[0][0],score:Number(lb[0][1]),timestamp:Number(lb[0][2])};
+    return normalizeHighScoreResult(await be.getHighScore(gameId));
   }catch(e){return null;}
 }
 
